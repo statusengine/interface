@@ -1,0 +1,81 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close" ng-click="cancel()">
+        <span aria-hidden="true">×</span>
+    </button>
+    <h4 class="modal-title">
+        <i class="fa fa-plug"></i> Set service downtime
+    </h4>
+</div>
+<div class="modal-body">
+
+    <div class="form-horizontal form-container">
+        <div class="row">
+            <div class="form-group">
+                <label for="forStart" class="col-sm-3 control-label">Start in</label>
+                <div class="col-sm-9">
+                    <select class="form-control" id="forStart" ng-model="start">
+                        <option value="0">now</option>
+                        <option value="{{ 60 * 1}}">60 seconds</option>
+                        <option value="{{ 60 * 5}}">5 minutes</option>
+                        <option value="{{ 60 * 15}}">15 minutes</option>
+                        <option value="{{ 60 * 30}}">30 minutes</option>
+                        <option value="{{ 60 * 60}}">1 hour</option>
+                        <option value="{{ 60 * 90}}">1.5 hours</option>
+                        <option value="{{ 60 * 60 * 2}}">2 hours</option>
+                        <option value="{{ 60 * 60 * 4}}">4 hours</option>
+                        <option value="{{ 60 * 60 * 8}}">8 hours</option>
+                        <option value="{{ 60 * 60 * 12}}">12 hours</option>
+                        <option value="{{ 60 * 60 * 24}}">24 hours</option>
+                        <option value="{{ 60 * 60 * 36}}">36 hours</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="forEnd" class="col-sm-3 control-label">Duration</label>
+                <div class="col-sm-9">
+                    <select class="form-control" id="forEnd" ng-model="end">
+                        <option value="{{ 60 * 1}}">60 seconds</option>
+                        <option value="{{ 60 * 5}}">5 minutes</option>
+                        <option value="54000">15 minutes</option>
+                        <option value="{{ 60 * 30}}">30 minutes</option>
+                        <option value="{{ 60 * 60}}">1 hour</option>
+                        <option value="{{ 60 * 90}}">1.5 hours</option>
+                        <option value="{{ 60 * 60 * 2}}">2 hours</option>
+                        <option value="{{ 60 * 60 * 4}}">4 hours</option>
+                        <option value="{{ 60 * 60 * 8}}">8 hours</option>
+                        <option value="{{ 60 * 60 * 12}}">12 hours</option>
+                        <option value="{{ 60 * 60 * 24}}">24 hours</option>
+                        <option value="{{ 60 * 60 * 36}}">36 hours</option>
+                        <option value="{{ 60 * 60 * 24 * 365 * 5}}">5 years</option>
+
+                    </select>
+                </div>
+            </div>
+
+
+            <div class="form-group">
+                <label for="forComment" class="col-sm-3 control-label">Comment</label>
+                <div class="col-sm-9">
+                    <input type="text" id="forComment" class="form-control" ng-model="comment"/>
+                </div>
+            </div>
+
+            <div class="col-xs-12">
+                <div class="help-block">
+                    Downtimes are useful for maintenance periods, to notice your team that you are working on this service.
+                    <br/>
+                    E.g to run software updates. While a downtime is running, notifications for this service will be
+                    suppressed.
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-success" ng-click="submit()">Submit</button>
+    <button type="button" class="btn btn-default pull-left" data-dismiss="modal" ng-click="cancel()">
+        Cancel [ESC]
+    </button>
+</div>

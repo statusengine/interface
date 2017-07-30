@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="Login">
+<head>
+    <meta charset="UTF-8">
+
+    <!--
+
+      ____  _        _                              _
+     / ___|| |_ __ _| |_ _   _ ___  ___ _ __   __ _(_)_ __   ___
+     \___ \| __/ _` | __| | | / __|/ _ \ '_ \ / _` | | '_ \ / _ \
+      ___) | || (_| | |_| |_| \__ \  __/ | | | (_| | | | | |  __/
+     |____/ \__\__,_|\__|\__,_|___/\___|_| |_|\__, |_|_| |_|\___|
+                                              |___/
+                     the missing event broker
+                    https://www.statusengine.org
+                  https://github.com/statusengine
+
+Statusengine UI
+Copyright (C) 2016-2017  Daniel Ziegler
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    -->
+
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <title>Statusengine UI</title>
+
+    <link rel="shortcut icon" href="img/favicons/favicon.ico" type="image/x-icon"/>
+    <link rel="apple-touch-icon" sizes="57x57" href="img/favicons/apple-touch-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="img/favicons/apple-touch-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="img/favicons/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="img/favicons/apple-touch-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="img/favicons/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="img/favicons/apple-touch-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="img/favicons/apple-touch-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="img/favicons/apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="img/favicons/apple-touch-icon-180x180.png">
+    <link rel="icon" type="image/png" href="img/favicons/favicon-16x16.png" sizes="16x16">
+    <link rel="icon" type="image/png" href="img/favicons/favicon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="img/favicons/favicon-96x96.png" sizes="96x96">
+    <link rel="icon" type="image/png" href="img/favicons/android-chrome-192x192.png" sizes="192x192">
+    <meta name="msapplication-square70x70logo" content="img/favicons/smalltile.png"/>
+    <meta name="msapplication-square150x150logo" content="img/favicons/mediumtile.png"/>
+    <meta name="msapplication-wide310x150logo" content="img/favicons/widetile.png"/>
+    <meta name="msapplication-square310x310logo" content="img/favicons/largetile.png"/>
+
+    <script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="js/jquery-backgrounder/jquery.backgrounder.js"></script>
+    <script type="text/javascript" src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="bower_components/angular/angular.min.js"></script>
+
+
+    <script type="text/javascript" src="js/login/scripts/ng.app.js"></script>
+    <script type="text/javascript" src="js/AdminLTE/AdminLTE.js"></script>
+
+
+    <script type="text/javascript" src="js/login/scripts/controllers/IndexController.js"></script>
+
+
+    <link rel="stylesheet" href="bower_components/angular/angular-csp.css"/>
+    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css"/>
+
+    <link rel="stylesheet" href="css/AdminLTE/AdminLTE.min.css"/>
+    <link rel="stylesheet" href="css/AdminLTE/skin-blue.min.css"/>
+
+    <link rel="stylesheet" href="bower_components/font-awesome/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="css/app.css"/>
+
+</head>
+<body class="hold-transition login-page">
+<div class="wrapper" ng-controller="IndexController">
+
+    <noscript>
+        <div class="callout callout-danger lead">
+            <h4>JavaScript disabled!</h4>
+            <p>This page requires JavaScript. Please enable JavaScript in your browser and reload this page.</p>
+        </div>
+    </noscript>
+
+    <div id="background-image">
+        <img src="img/switch-hd-dark.jpg" alt="Network device"/>
+    </div>
+
+    <div class="login-box login-shadow">
+        <div class="login-logo login-headline">
+            <b>Statusengine</b>
+        </div>
+        <div class="login-box-body login-bg">
+            <p class="login-box-msg" ng-hide="wrongCredentials">
+                Please Sign in
+            </p>
+
+            <p class="login-box-msg text-red" ng-show="wrongCredentials">
+                Authentication failed.
+                <br/>
+                Wrong username or password?
+            </p>
+
+
+            <div class="form-horizontal">
+                <div class="form-group has-feedback">
+                    <div class="col col-xs-12">
+                        <input class="form-control" placeholder="Username" type="text" ng-model="username"
+                               ng-keyup="$event.keyCode == 13 && submit()" autocapitalize="none"/>
+                    </div>
+                    <span class="fa fa-user form-control-feedback"></span>
+                </div>
+                <div class="form-group has-feedback">
+                    <div class="col col-xs-12">
+                        <input class="form-control" placeholder="Password" type="password" ng-model="password"
+                               ng-keyup="$event.keyCode == 13 && submit()" autocapitalize="none"/>
+                    </div>
+                    <span class="fa fa-lock form-control-feedback"></span>
+                </div>
+                <div class="row">
+                    <div class="col-xs-4 pull-right">
+                        <input class="btn btn-primary btn-block btn-flat" type="button" value="Sign in"
+                               ng-keyup="$event.keyCode == 13 && submit()" ng-click="submit()"/>
+                    </div>
+                    <div class="col-xs-8 pull-left" ng-show="isAnonymousAllowed">
+                        <a href="/" class="btn btn-default btn-block btn-flat login-anonymous" type="button">
+                            <i class="fa fa-user-secret"></i> Continue as Anonymous
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal modal-danger" id="ajax-modal">
+        <div class="modal-dialog" id="ajax-modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span></button>
+                    <h4 class="modal-title text-center">
+                        <i class="fa fa-exclamation-triangle"></i> Oh no! There have been errors!
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <p>Lost connection to API...</p>
+                    <p>Typically this is due to one of the following reasons:</p>
+                    <p>
+                    <ul>
+                        <li>Your device lost network connection</li>
+                        <li>You're disconnected from the internet</li>
+                        <li>Statusengine API backend is not running</li>
+                        <li>You're Sysadmin is playing around</li>
+                    </ul>
+                    </p>
+                    <p>Please try to reload the page to solve the issue.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal modal-danger" id="server-error-modal">
+        <div class="modal-dialog modal-lg" id="server-error-modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span></button>
+                    <h4 class="modal-title text-center">
+                        <i class="fa fa-exclamation-triangle"></i> {{ ajax_server_error }}
+                    </h4>
+                </div>
+                <div class="modal-body">
+<pre>
+{{ ajax_server_error_message }}
+</pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+

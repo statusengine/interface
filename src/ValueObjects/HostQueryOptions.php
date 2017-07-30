@@ -1,0 +1,146 @@
+<?php
+/**
+ * Statusengine UI
+ * Copyright (C) 2016-2017  Daniel Ziegler
+
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+namespace Statusengine\ValueObjects;
+
+
+class HostQueryOptions extends QueryOptions {
+
+    private $columnsForOrder = [
+        'hostname',
+        'current_state',
+        'last_check',
+        'output',
+        'last_state_change'
+    ];
+
+    /**
+     * @var string
+     */
+    private $order = 'hostname';
+
+    /**
+     * @var string
+     */
+    private $direction = 'asc';
+
+    /**
+     * @var array
+     */
+    private $state = [];
+
+    /**
+     * @var array
+     */
+    private $stateMatch = [
+        'up' => 0,
+        'down' => 1,
+        'unreachable' => 2
+    ];
+
+    /**
+     * @var string
+     */
+    private $hostname__like = '';
+
+    /**
+     * @var string
+     */
+    private $hostname;
+
+    /**
+     * HostQueryOptions constructor.
+     * @param array $params
+     * @throws \Exception
+     */
+    public function __construct($params) {
+        parent::__construct($params);
+
+        if (isset($params['order'])) {
+            if (!in_array($params['order'], $this->columnsForOrder)) {
+                throw new \Exception('Invalid column for order by condition!');
+            }
+            $this->order = $params['order'];
+        }
+
+        if (isset($params['direction'])) {
+            //asc is class default
+            if ($params['direction'] == 'desc') {
+                $this->direction = 'desc';
+            }
+        }
+
+        if (isset($this->params['state']) && is_array($this->params['state'])) {
+            $_state = [];
+            foreach ($this->params['state'] as $state) {
+                if (isset($this->stateMatch[$state])) {
+                    $_state[] = $this->stateMatch[$state];
+                }
+            }
+            $this->state = $_state;
+        }
+
+        if (isset($this->params['hostname__like'])) {
+            $this->hostname__like = $this->params['hostname__like'];
+        }
+
+        if (isset($this->params['hostname'])) {
+            $this->hostname = $params['hostname'];
+        }
+
+    }
+
+    /**
+     * @return string
+     */
+    public function getOrder() {
+        return $this->order;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDirection() {
+        return $this->direction;
+    }
+
+    public function getStateFilter() {
+        return $this->state;
+    }
+
+    public function sizeOfStateFilter() {
+        return sizeof($this->state);
+    }
+
+    /**
+     * @return string
+     */
+    public function getHostnameLike() {
+        return $this->hostname__like;
+    }
+
+    /**
+     * @return string
+     */
+    public function getHostname() {
+        return $this->hostname;
+    }
+
+}
+

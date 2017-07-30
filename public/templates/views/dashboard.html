@@ -1,0 +1,225 @@
+<div class="row">
+    <div class="col-xs-12">
+        <div class="box box-primary">
+            <div class="box-header">
+                <div class="col-sm-2 hidden-xs">
+                    <h3 class="pull-left"><i class="fa fa-home"></i> Overview</h3>
+                </div>
+
+            </div>
+            <div class="box-body">
+
+
+                <div class="row">
+                    <div class="col-lg-4 col-xs-6">
+                        <a ui-sref="nodes" class="a-no-hover">
+                            <div class="small-box bg-primary">
+                                <div class="inner">
+                                    <h3>{{ data.number_of_monitored_hosts }}</h3>
+
+                                    <p>Nodes are monitored</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fa fa-hdd-o"></i>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-lg-4 col-xs-6">
+                        <a ui-sref="services" class="a-no-hover">
+                            <div class="small-box bg-aqua">
+                                <div class="inner">
+                                    <h3>{{ data.number_of_monitored_services }}</h3>
+
+                                    <p>Services are monitored</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fa fa-cog"></i>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-lg-4 col-xs-12">
+                        <a ui-sref="problems" class="a-no-hover">
+                            <div class="small-box bg-info a-no-hover">
+                                <div class="inner">
+                                    <h3>{{ data.number_of_service_problems }}</h3>
+
+                                    <p>Issues detected</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fa fa-exclamation-triangle"></i>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+
+                <div class="col-xs-12">
+                    <hr/>
+                </div>
+
+                <div class="col-xs-12 col-md-6">
+                    <div class="box box-primary">
+                        <div class="box-header with-border">
+                            <h3 class="box-title"><i class="fa fa-hdd-o"></i> Node status summary</h3>
+                        </div>
+                        <div class="box-body">
+                            <a ui-sref="nodes({'show_state':'up'})"
+                               class="a-no-hover">
+                                <div class="info-box bg-green">
+                                    <span class="info-box-icon"><i class="fa fa-check"></i></span>
+
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Nodes up</span>
+                                        <span class="info-box-number">{{  data.hoststatus_overview.up / data.number_of_monitored_hosts * 100 | number: 1}}%</span>
+
+                                        <div class="progress">
+                                            <div class="progress-bar"
+                                                 style="width: {{  data.hoststatus_overview.up / data.number_of_monitored_hosts * 100 }}%"></div>
+                                        </div>
+                                        <span class="progress-description">
+                                            {{ data.hoststatus_overview.up }} nodes of {{ data.number_of_monitored_hosts }} are in state: Up
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+
+                            <a ui-sref="nodes({'show_state':'down'})"
+                               class="a-no-hover">
+                                <div class="info-box bg-red">
+                                    <span class="info-box-icon"><i class="fa fa-exclamation-triangle"></i></span>
+
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Nodes down</span>
+                                        <span class="info-box-number">{{  data.hoststatus_overview.down / data.number_of_monitored_hosts * 100 | number: 1}}%</span>
+
+                                        <div class="progress">
+                                            <div class="progress-bar"
+                                                 style="width: {{  data.hoststatus_overview.down / data.number_of_monitored_hosts * 100}}%"></div>
+                                        </div>
+                                        <span class="progress-description">
+                                            {{ data.hoststatus_overview.down }} nodes of {{ data.number_of_monitored_hosts }} are in state: Down
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+
+                            <a ui-sref="nodes({'show_state':'unreachable'})"
+                               class="a-no-hover">
+                                <div class="info-box bg-blue">
+                                    <span class="info-box-icon"><i class="fa fa-question-circle"></i></span>
+
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Nodes unreachable</span>
+                                        <span class="info-box-number">{{  data.hoststatus_overview.unreachable / data.number_of_monitored_hosts * 100 | number: 1}}%</span>
+
+                                        <div class="progress">
+                                            <div class="progress-bar"
+                                                 style="width: {{  data.hoststatus_overview.unreachable / data.number_of_monitored_hosts * 100 }}%"></div>
+                                        </div>
+                                        <span class="progress-description">
+                                            {{ data.hoststatus_overview.unreachable }} nodes of {{ data.number_of_monitored_hosts }} are in state: Unreachable
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xs-12 col-md-6">
+                    <div class="box box-primary">
+                        <div class="box-header with-border">
+                            <h3 class="box-title"><i class="fa fa-cog"></i> Service status summary</h3>
+                        </div>
+                        <div class="box-body">
+                            <a ui-sref="services({'show_state':'ok'})"
+                               class="a-no-hover">
+                                <div class="info-box bg-green">
+                                    <span class="info-box-icon"><i class="fa fa-check"></i></span>
+
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Services ok</span>
+                                        <span class="info-box-number">{{  data.servicestatus_overview.ok / data.number_of_monitored_services * 100 | number: 1}}%</span>
+
+                                        <div class="progress">
+                                            <div class="progress-bar"
+                                                 style="width: {{  data.servicestatus_overview.ok / data.number_of_monitored_services * 100 }}%"></div>
+                                        </div>
+                                        <span class="progress-description">
+                                            {{ data.servicestatus_overview.ok }} services of {{ data.number_of_monitored_services }} are in state: Ok
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+
+                            <a ui-sref="services({'show_state':'warning'})"
+                               class="a-no-hover">
+                                <div class="info-box bg-yellow">
+                                    <span class="info-box-icon"><i class="fa fa-bell"></i></span>
+
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Services warning</span>
+                                        <span class="info-box-number">{{  data.servicestatus_overview.warning / data.number_of_monitored_services * 100 | number: 1}}%</span>
+
+                                        <div class="progress">
+                                            <div class="progress-bar"
+                                                 style="width: {{  data.servicestatus_overview.warning / data.number_of_monitored_services * 100 }}%"></div>
+                                        </div>
+                                        <span class="progress-description">
+                                            {{ data.servicestatus_overview.warning }} services of {{ data.number_of_monitored_services }} are in state: Warning
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+
+                            <a ui-sref="services({'show_state':'critical'})"
+                               class="a-no-hover">
+                                <div class="info-box bg-red">
+                                    <span class="info-box-icon"><i class="fa fa-exclamation-triangle"></i></span>
+
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Services critical</span>
+                                        <span class="info-box-number">{{  data.servicestatus_overview.critical / data.number_of_monitored_services * 100 | number: 1}}%</span>
+
+                                        <div class="progress">
+                                            <div class="progress-bar"
+                                                 style="width: {{  data.servicestatus_overview.critical / data.number_of_monitored_services * 100 }}%"></div>
+                                        </div>
+                                        <span class="progress-description">
+                                            {{ data.servicestatus_overview.critical }} services of {{ data.number_of_monitored_services }} are in state: Critical
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+
+                            <a ui-sref="services({'show_state':'unknown'})"
+                               class="a-no-hover">
+                                <div class="info-box bg-blue">
+                                    <span class="info-box-icon"><i class="fa fa-check"></i></span>
+
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Services unknown</span>
+                                        <span class="info-box-number">{{  data.servicestatus_overview.unknown / data.number_of_monitored_services * 100 | number: 1}}%</span>
+
+                                        <div class="progress">
+                                            <div class="progress-bar"
+                                                 style="width: {{  data.servicestatus_overview.unknown / data.number_of_monitored_services * 100 }}%"></div>
+                                        </div>
+                                        <span class="progress-description">
+                                            {{ data.servicestatus_overview.unknown }} services of {{ data.number_of_monitored_services }} are in state: Unknown
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

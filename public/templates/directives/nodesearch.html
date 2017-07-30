@@ -1,0 +1,30 @@
+<div class="sidebar-form">
+    <div class="input-group">
+        <input type="text" ng-model="nodename" ng-model-options="{debounce: 250}" class="form-control"
+               placeholder="Search by node name">
+        <span class="input-group-btn">
+            <button type="button" name="search" id="search-btn" class="btn btn-flat">
+                <i class="fa fa-search" ng-show="!searching"></i>
+                <i class="fa fa-refresh fa-spin" ng-show="searching"></i>
+            </button>
+        </span>
+    </div>
+</div>
+<ul class="sidebar-menu">
+
+    <li class="header" ng-show="!emptySearchString">Search results:</li>
+
+
+    <li ng-repeat="record in result track by $index">
+        <a ui-sref="nodedetails({'nodename':'{{ record.hostname | encodeURI}}'})" class="search-result">
+            <i class="fa fa-hdd-o text-purple"></i> <span>{{ record.hostname }}</span>
+        </a>
+    </li>
+
+    <li ng-show="noResult" ng-show="!emptySearchString">
+        <a href="javascript:void(0);" class="search-result">
+            <span class="text-red">No records found :(</span>
+        </a>
+    </li>
+
+</ul>

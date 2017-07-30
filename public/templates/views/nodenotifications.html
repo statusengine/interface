@@ -1,0 +1,135 @@
+<div infinite-scroll="loadMoreHostsOnScroll()" infinite-scroll-disabled="apiIsBusyOrNoDataAnymore"
+     infinite-scroll-distance="0">
+
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="box box-primary">
+
+                <div class="box-header">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <h3 class="pull-left">
+                                <i class="fa fa-envelope-o"></i>
+                                Sent notifications for
+                                <a ui-sref="nodedetails({'nodename':'{{ nodename | encodeURI }}'})">
+                                    {{ nodename }}
+                                </a>
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xs-12">
+                    <div class="input-group input-group">
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
+                                    aria-expanded="false">By state
+                                <span class="fa fa-caret-down"></span></button>
+                            <ul class="dropdown-menu">
+                                <li><label><input type="checkbox" ng-model="state_filter[0]" ng-true-value="'up'"
+                                                  ng-model-options="{debounce: 500}"/>
+                                    Up</label></li>
+                                <li><label><input type="checkbox" ng-model="state_filter[1]" ng-true-value="'down'"
+                                                  ng-model-options="{debounce: 500}"/>
+                                    Down</label></li>
+                                <li><label><input type="checkbox" ng-model="state_filter[2]"
+                                                  ng-true-value="'unreachable'" ng-model-options="{debounce: 500}"/>
+                                    Unreachable</label></li>
+
+                            </ul>
+                        </div>
+                        <input type="text" class="form-control" ng-model="output__like"
+                               ng-model-options="{debounce: 500}" placeholder="Type to search in output...">
+                    </div>
+                </div>
+                <hr/>
+
+                <div class="box-body">
+
+                    <div class="col-sm-2 hidden-xs text-bold">State</div>
+                    <div class="col-sm-2 hidden-xs text-bold">Date</div>
+                    <div class="col-sm-2 hidden-xs text-bold">Contact</div>
+                    <div class="col-sm-2 hidden-xs text-bold">Via</div>
+                    <div class="col-sm-4 hidden-xs text-bold">Output</div>
+
+                    <div ng-repeat="nodenotification in data track by $index">
+                        <div class="col-xs-12 no-padding row-hover" ng-class="{ 'row-even':$even }">
+
+
+                            <div class="col-sm-2 hidden-xs">
+                                <hoststatuspill hoststatus="nodenotification"></hoststatuspill>
+                            </div>
+
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg shield-mobile shield-host-{{ nodenotification.state }}">
+                                <a ui-sref="nodedetails({'nodename':'{{ nodename }}'})">
+                                    {{ nodename }}
+                                </a>
+                            </div>
+
+
+                            <div class="hidden-xs col-sm-2">
+                                {{ nodenotification.start_time * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                Date:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                {{ nodenotification.start_time * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                            </div>
+
+                            <div class="hidden-xs col-sm-2">
+                                {{ nodenotification.contact_name }}
+
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                Contact:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                {{ nodenotification.contact_name }}
+                            </div>
+
+                            <div class="hidden-xs col-sm-2">
+                                {{ nodenotification.command_name }}
+
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                Via:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                {{ nodenotification.command_name }}
+                            </div>
+
+
+                            <div class="hidden-xs col-sm-4">
+                                {{ nodenotification.output }}
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                Output:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                {{ nodenotification.output }}
+                            </div>
+
+
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                &nbsp;
+                            </div>
+
+
+                        </div>
+                    </div> <!-- end foreach -->
+
+                    <div class="col-xs-12 text-yellow text-center text-bold" ng-show="loading">
+                        <i class="fa fa-refresh fa-spin"></i> Loading more records, standby...
+                    </div>
+
+                    <div class="col-xs-12 text-info text-center text-bold" ng-show="!moreDataAvailable">
+                        <i class="fa fa-info-circle"></i> No more records available
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

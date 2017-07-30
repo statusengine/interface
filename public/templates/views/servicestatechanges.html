@@ -1,0 +1,127 @@
+<div infinite-scroll="loadMoreHostsOnScroll()" infinite-scroll-disabled="apiIsBusyOrNoDataAnymore"
+     infinite-scroll-distance="0">
+
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="box box-primary">
+
+                <div class="box-header">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <h3 class="pull-left">
+                                <i class="fa fa-retweet"></i>
+                                State changes for <a
+                                    ui-sref="servicedetails({nodename:'{{ nodename | encodeURI}}', 'servicedescription':'{{ servicedescription | encodeURI }}'})">{{
+                                servicedescription }}
+                            </a> on <a ui-sref="nodedetails({'nodename':'{{ nodename | encodeURI }}'})">{{ nodename }}</a>
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xs-12">
+                    <div class="input-group input-group">
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
+                                    aria-expanded="false">By state
+                                <span class="fa fa-caret-down"></span></button>
+                            <ul class="dropdown-menu">
+                                <li><label><input type="checkbox" ng-model="state_filter[0]" ng-true-value="'ok'"
+                                                  ng-model-options="{debounce: 500}"/>
+                                    Ok</label></li>
+                                <li><label><input type="checkbox" ng-model="state_filter[1]" ng-true-value="'warning'"
+                                                  ng-model-options="{debounce: 500}"/>
+                                    Warning</label></li>
+                                <li><label><input type="checkbox" ng-model="state_filter[2]"
+                                                  ng-true-value="'critical'" ng-model-options="{debounce: 500}"/>
+                                    Critical</label></li>
+                                <li><label><input type="checkbox" ng-model="state_filter[3]"
+                                                  ng-true-value="'unknown'" ng-model-options="{debounce: 500}"/>
+                                    Unknown</label></li>
+
+                            </ul>
+                        </div>
+                        <input type="text" class="form-control" ng-model="output__like"
+                               ng-model-options="{debounce: 500}" placeholder="Type to search in output...">
+                    </div>
+                </div>
+                <hr/>
+
+                <div class="box-body">
+
+                    <div class="col-sm-2 hidden-xs text-bold">State</div>
+                    <div class="col-sm-2 hidden-xs text-bold">Date</div>
+                    <div class="col-sm-2 hidden-xs text-bold">State type</div>
+                    <div class="col-sm-4 hidden-xs text-bold">Output</div>
+
+                    <div ng-repeat="servicestatehistory in data track by $index">
+                        <div class="col-xs-12 no-padding row-hover" ng-class="{ 'row-even':$even }">
+
+
+                            <div class="col-sm-2 hidden-xs">
+                                <servicestatuspill servicestatus="servicestatehistory"></servicestatuspill>
+                            </div>
+
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg shield-mobile shield-service-{{ servicestatehistory.state }}">
+                                <a ui-sref="nodedetails({'nodename':'{{ nodename }}'})">
+                                    {{ nodename }}
+                                </a>
+                            </div>
+
+
+                            <div class="hidden-xs col-sm-2">
+                                {{ servicestatehistory.state_time * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                Date:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                {{ servicestatehistory.state_time * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                            </div>
+
+                            <div class="hidden-xs col-sm-2">
+                                {{ servicestatehistory.is_hardstate | stateType }}
+                                ({{ servicestatehistory.current_check_attempt }}/{{ servicestatehistory.max_check_attempts }})
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                State type:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                {{ servicestatehistory.is_hardstate | stateType }}
+                                ({{ servicestatehistory.current_check_attempt }}/{{ servicestatehistory.max_check_attempts }})
+                            </div>
+
+
+                            <div class="hidden-xs col-sm-4">
+                                {{ servicestatehistory.output }}
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                Output:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                {{ servicestatehistory.output }}
+                            </div>
+
+
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                &nbsp;
+                            </div>
+
+
+                        </div>
+                    </div> <!-- end foreach -->
+
+                    <div class="col-xs-12 text-yellow text-center text-bold" ng-show="loading">
+                        <i class="fa fa-refresh fa-spin"></i> Loading more records, standby...
+                    </div>
+
+                    <div class="col-xs-12 text-info text-center text-bold" ng-show="!moreDataAvailable">
+                        <i class="fa fa-info-circle"></i> No more records available
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

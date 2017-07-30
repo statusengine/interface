@@ -1,0 +1,52 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close" ng-click="cancel()">
+        <span aria-hidden="true">×</span>
+    </button>
+    <h4 class="modal-title">
+        <i class="fa fa-arrow-down"></i> Submit passive check result
+    </h4>
+</div>
+<div class="modal-body">
+
+    <div class="form-horizontal form-container">
+        <div class="row">
+
+            <div class="form-group">
+                <label for="forState" class="col-sm-2 control-label">State</label>
+                <div class="col-sm-10">
+                    <select class="form-control" id="forState" ng-model="state">
+                        <option value="0">Ok</option>
+                        <option value="1">Warning</option>
+                        <option value="2">Critical</option>
+                        <option value="3">Unknown</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="forOutput" class="col-sm-2 control-label">Output</label>
+                <div class="col-sm-10">
+                    <input type="text" id="forOutput" class="form-control" ng-model="output"/>
+                </div>
+            </div>
+
+            <div class="col-xs-12">
+                <div class="help-block">
+                    This is more or less a debug method, if you want to check what happens if the service hits a particular
+                    status.
+                    <br/>
+                    You can also submit performance data via output like
+                    <br/>
+                    <code>This is a test | rta=5ms; pl=25%;</code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-success" ng-click="submit()">Submit</button>
+    <button type="button" class="btn btn-default pull-left" data-dismiss="modal" ng-click="cancel()">
+        Cancel [ESC]
+    </button>
+</div>

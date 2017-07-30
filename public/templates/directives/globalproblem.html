@@ -1,0 +1,19 @@
+<a href="javascript:void(0);" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+    <i class="fa fa-exclamation-triangle"></i>
+    <span class="label"
+          ng-class="{'label-success': issueCount == 0, 'label-warning': issueCount > 0 && issueCount < 26, 'label-danger': issueCount > 25}">{{ issueCount }}</span>
+</a>
+<ul class="dropdown-menu">
+    <li class="header">{{ issueCount }} issues detected</li>
+    <li>
+        <ul class="menu">
+            <li ng-repeat="service in services track by $index">
+                <a ui-sref="servicedetails({'nodename':'{{ service.hostname | encodeURI }}', 'servicedescription':'{{ service.service_description |encodeURI }}'})">
+                    <i class="text-{{ service.current_state | bootstrapClassStatusCodeService }} fa {{ service.current_state | iconByStatusCodeService }} "></i>
+                    {{ service.hostname }}/{{ service.service_description }}
+                </a>
+            </li>
+        </ul>
+    </li>
+    <li class="footer"><a ui-sref="problems">View all issues</a></li>
+</ul>

@@ -1,0 +1,83 @@
+<div class="row">
+    <div class="col-xs-12">
+        <div class="box box-primary">
+
+            <div class="box-header">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <h3 class="pull-left">
+                            <i class="fa fa-server"></i> Statusengine Cluster Overview
+                        </h3>
+                    </div>
+                </div>
+            </div>
+
+            <hr/>
+
+            <div class="box-body">
+
+                <div class="col-sm-3 hidden-xs text-bold">Cluster Node Name</div>
+                <div class="col-sm-3 hidden-xs text-bold">Statusengine Version</div>
+                <div class="col-sm-2 hidden-xs text-bold">Number of nodes</div>
+                <div class="col-sm-2 hidden-xs text-bold">Number of Services</div>
+                <div class="col-sm-2 hidden-xs text-bold">Start time</div>
+
+                <div ng-repeat="clusternode in data track by $index">
+                    <div class="col-xs-12 no-padding row-hover" ng-class="{ 'row-even':$even }">
+
+
+                        <div class="col-sm-3 hidden-xs">
+                            {{ clusternode.node_name }}
+                        </div>
+
+                        <div class="col-xs-12 hidden-sm hidden-md hidden-lg shield-mobile shield-info">
+                            <h5>
+                                <i class="fa fa-server"></i>&nbsp;
+                                {{ clusternode.node_name }}
+                            </h5>
+                        </div>
+
+                        <div class="hidden-xs col-sm-3">
+                            {{ clusternode.node_version }}
+                        </div>
+
+                        <div class="col-xs-6 hidden-sm hidden-md hidden-lg">
+                            <i class="fa fa-tag"></i>&nbsp;
+                            {{ clusternode.node_version }}
+                        </div>
+
+                        <div class="col-xs-6 hidden-sm hidden-md hidden-lg">
+                            <i class="fa fa-clock-o"></i>&nbsp;
+                            {{ clusternode.node_start_time * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                        </div>
+
+                        <div class="hidden-xs col-sm-2">
+                            {{ clusternode.number_of_hosts }}
+                        </div>
+
+                        <div class="hidden-xs col-sm-2">
+                            {{ clusternode.number_of_services }}
+                        </div>
+
+                        <div class="hidden-xs col-sm-2">
+                            {{ clusternode.node_start_time * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                        </div>
+
+                        <div class="col-xs-6 hidden-sm hidden-md hidden-lg">
+                            <i class="fa fa-hdd-o"></i>&nbsp;
+                            {{ clusternode.number_of_hosts }}
+                        </div>
+
+                        <div class="col-xs-6 hidden-sm hidden-md hidden-lg">
+                            <i class="fa fa-cog"></i>&nbsp;
+                            {{ clusternode.number_of_services }}
+                        </div>
+
+                    </div>
+                </div> <!-- end foreach -->
+
+            </div>
+        </div>
+    </div>
+</div>
+

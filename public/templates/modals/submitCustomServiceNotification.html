@@ -1,0 +1,63 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close" ng-click="cancel()">
+        <span aria-hidden="true">×</span>
+    </button>
+    <h4 class="modal-title">
+        <i class="fa fa-envelope"></i> Sent custom notification
+    </h4>
+</div>
+<div class="modal-body">
+
+    <div class="form-horizontal form-container">
+        <div class="row">
+            <div class="form-group">
+                <label for="forComment" class="col-sm-2 control-label">Comment</label>
+                <div class="col-sm-10">
+                    <input type="text" id="forComment" class="form-control" ng-model="comment"/>
+                    <div class="help-block">
+                        You can access the comment in your notification script via <code>$NOTIFICATIONCOMMENT$</code>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" ng-model="force"> Force
+                        </label>
+                        <div class="help-block">
+                            Ignore time period configuration, notification disabled flag, etc...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" ng-model="broadcast"> Broadcast
+                        </label>
+                        <div class="help-block">
+                            Send notification to all contacts (including escalation contacts) for this service.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xs-12">
+                <div class="help-block">
+                    The <code>$NOTIFICATIONTYPE$</code> macro will set to <b>CUSTOM</b>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-success" ng-click="submit()">Submit</button>
+    <button type="button" class="btn btn-default pull-left" data-dismiss="modal" ng-click="cancel()">
+        Cancel [ESC]
+    </button>
+</div>

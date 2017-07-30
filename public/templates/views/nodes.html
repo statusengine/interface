@@ -1,0 +1,165 @@
+<div infinite-scroll="loadMoreHostsOnScroll()" infinite-scroll-disabled="apiIsBusyOrNoDataAnymore"
+     infinite-scroll-distance="0">
+
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="box box-primary">
+
+                <div class="box-header">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <h3 class="pull-left">
+                                <i class="fa fa-hdd-o"></i> Nodes
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xs-12">
+                    <div class="input-group input-group">
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
+                                    aria-expanded="false">By state
+                                <span class="fa fa-caret-down"></span></button>
+                            <ul class="dropdown-menu">
+                                <li><label><input type="checkbox" ng-model="state_filter[0]" ng-true-value="'up'"
+                                                  ng-model-options="{debounce: 500}"/>
+                                    Up</label></li>
+                                <li><label><input type="checkbox" ng-model="state_filter[1]" ng-true-value="'down'"
+                                                  ng-model-options="{debounce: 500}"/>
+                                    Down</label></li>
+                                <li><label><input type="checkbox" ng-model="state_filter[2]"
+                                                  ng-true-value="'unreachable'" ng-model-options="{debounce: 500}"/>
+                                    Unreachable</label></li>
+                                <li class="divider"></li>
+                                <li ng-repeat="nodeName in clusterNodes track by $index">
+                                    <label><input type="checkbox" ng-model="cluster_filter[$index]"
+                                                  ng-false-value="''" ng-true-value="'{{ nodeName.node_name }}'"
+                                                  ng-model-options="{debounce: 500}"/>
+                                        {{ nodeName.node_name }}</label>
+                                </li>
+
+                            </ul>
+                        </div>
+                        <input type="text" class="form-control" ng-model="hostname__like"
+                               ng-model-options="{debounce: 500}" placeholder="Type to search by node name...">
+                    </div>
+                </div>
+                <hr/>
+
+                <div class="box-body">
+
+                    <div class="col-sm-6 hidden-xs text-bold">Node name</div>
+                    <div class="col-sm-2 hidden-xs text-bold">Last check</div>
+                    <div class="col-sm-2 hidden-xs text-bold">State since</div>
+                    <div class="col-sm-2 hidden-xs text-bold">Service summary</div>
+
+                    <div ng-repeat="hoststatus in data track by $index">
+                        <div class="col-xs-12 no-padding row-hover" ng-class="{ 'row-even':$even }">
+
+
+                            <div class="col-sm-6 hidden-xs">
+                                <hoststatuspill hoststatus="hoststatus"></hoststatuspill>
+
+                                <a ui-sref="nodedetails({'nodename':'{{ hoststatus.hostname | encodeURI }}'})">
+                                    {{ hoststatus.hostname }}
+                                </a>
+
+                                <small class="label bg-purple state-addition" title="Issue has been acknowledged"
+                                       ng-show="hoststatus.problem_has_been_acknowledged">
+                                    <i class="fa fa-commenting-o"></i>
+                                </small>
+
+                                <small class="label bg-purple state-addition" title="Scheduled downtime is running"
+                                       ng-class="{'fix-downtime-icon': hoststatus.problem_has_been_acknowledged}"
+                                       ng-show="hoststatus.scheduled_downtime_depth > 0">
+                                    <i class="fa fa-plug"></i>
+                                </small>
+
+                                <small class="label bg-purple state-addition" title="State of node is flapping"
+                                       ng-class="{'fix-downtime-icon': hoststatus.problem_has_been_acknowledged || hoststatus.scheduled_downtime_depth}"
+                                       ng-show="hoststatus.is_flapping">
+                                    <i class="fa fa-adjust"></i>
+                                </small>
+
+                            </div>
+
+
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg shield-mobile shield-host-{{ hoststatus.current_state }}">
+                                <a ui-sref="nodedetails({'nodename':'{{ hoststatus.hostname | encodeURI }}'})">
+                                    {{ hoststatus.hostname }}
+                                </a>
+
+                                <small class="label bg-purple" title="Issue has been acknowledged"
+                                       ng-show="hoststatus.problem_has_been_acknowledged">
+                                    <i class="fa fa-commenting-o"></i>
+                                </small>
+
+                                <small class="label bg-purple" title="Scheduled downtime is running"
+                                       ng-class="{'fix-downtime-icon': hoststatus.problem_has_been_acknowledged}"
+                                       ng-show="hoststatus.scheduled_downtime_depth > 0">
+                                    <i class="fa fa-plug"></i>
+                                </small>
+
+                                <small class="label bg-purple state-addition" title="State of node is flapping"
+                                       ng-class="{'fix-downtime-icon': hoststatus.problem_has_been_acknowledged || hoststatus.scheduled_downtime_depth}"
+                                       ng-show="hoststatus.is_flapping">
+                                    <i class="fa fa-adjust"></i>
+                                </small>
+
+                            </div>
+
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                Last check:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                {{ hoststatus.last_check * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                            </div>
+                            <div class="hidden-xs col-sm-2">
+                                {{ hoststatus.last_check * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                            </div>
+
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                State since:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                {{ hoststatus.last_state_change * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                            </div>
+                            <div class="hidden-xs col-sm-2">
+                                {{ hoststatus.last_state_change * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                            </div>
+
+                            <div class="col-sm-2 hidden-xs">
+                            <span class="label"
+                                  ng-class="{'label-success': hoststatus.servicestatus_overview.ok > 0, 'label-default': hoststatus.servicestatus_overview.ok == 0}">{{ hoststatus.servicestatus_overview.ok }}</span>
+                                <span class="label"
+                                      ng-class="{'label-warning': hoststatus.servicestatus_overview.warning > 0, 'label-default': hoststatus.servicestatus_overview.warning == 0}">{{ hoststatus.servicestatus_overview.warning }}</span>
+
+                                <span class="label"
+                                      ng-class="{'label-danger': hoststatus.servicestatus_overview.critical > 0, 'label-default': hoststatus.servicestatus_overview.critical == 0}">{{ hoststatus.servicestatus_overview.critical }}</span>
+
+                                <span class="label"
+                                      ng-class="{'label-primary': hoststatus.servicestatus_overview.unknown > 0, 'label-default': hoststatus.servicestatus_overview.unknown == 0}">{{ hoststatus.servicestatus_overview.unknown }}</span>
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                &nbsp;
+                            </div>
+
+
+                        </div>
+                    </div> <!-- end foreach -->
+
+                    <div class="col-xs-12 text-yellow text-center text-bold" ng-show="loading">
+                        <i class="fa fa-refresh fa-spin"></i> Loading more records, standby...
+                    </div>
+
+                    <div class="col-xs-12 text-info text-center text-bold" ng-show="!moreDataAvailable">
+                        <i class="fa fa-info-circle"></i> No more records available
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

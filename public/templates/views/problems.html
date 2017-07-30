@@ -1,0 +1,200 @@
+<div infinite-scroll="loadMoreHostsOnScroll()" infinite-scroll-disabled="apiIsBusyOrNoDataAnymore"
+     infinite-scroll-distance="0">
+
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="box box-primary">
+
+                <div class="box-header">
+                    <div class="row">
+                        <div class="col-xs-12 col-md-9 col-sm-8">
+                            <h3 class="pull-left">
+                                <i class="fa fa-exclamation-triangle"></i> Service issues
+                            </h3>
+                        </div>
+                        <div class="col-xs-12 col-md-3 col-sm-4">
+                            <span class="btn btn-app" ng-class="{active:!tiles}" ng-click="changeView()">
+                                <i class="fa fa-align-justify"></i> Details
+                            </span>
+                            <span class="btn btn-app" ng-class="{active:tiles}" ng-click="changeView()">
+                                <i class="fa fa-th-large"></i> Tiles
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xs-12 col-md-6">
+                    <div class="input-group input-group">
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
+                                    aria-expanded="false">By cluster node
+                                <span class="fa fa-caret-down"></span></button>
+                            <ul class="dropdown-menu">
+                                <li ng-repeat="nodeName in clusterNodes track by $index">
+                                    <label><input type="checkbox" ng-model="cluster_filter[$index]"
+                                                  ng-false-value="''" ng-true-value="'{{ nodeName.node_name }}'"
+                                                  ng-model-options="{debounce: 500}"/>
+                                        {{ nodeName.node_name }}</label>
+                                </li>
+                            </ul>
+                        </div>
+                        <input type="text" class="form-control" ng-model="servicedescription__like"
+                               ng-model-options="{debounce: 500}"
+                               placeholder="Type to search by service description...">
+                    </div>
+                </div>
+
+                <div class="col-xs-12 col-md-6">
+                    <input type="text" class="form-control" ng-model="hostname__like"
+                           ng-model-options="{debounce: 500}" placeholder="Type to search by node name..."/>
+                </div>
+
+                <hr/>
+
+                <div class="box-body">
+
+                    <div ng-if="!tiles">
+                        <div class="row">
+                            <div class="col-sm-4 hidden-xs text-bold">Service description</div>
+                            <div class="col-sm-2 hidden-xs text-bold">Last check</div>
+                            <div class="col-sm-2 hidden-xs text-bold">State since</div>
+                            <div class="col-sm-4 hidden-xs text-bold">Output</div>
+                        </div>
+
+                        <div ng-repeat="nodeContainer in data track by $index">
+                            <div ng-repeat="node in nodeContainer">
+                                <div class="col-xs-3 col-md-1 no-padding">
+                                    <div class="shield-label-mobile">Node</div>
+                                </div>
+                                <div class="col-xs-9 col-md-11 shield-mobile shield-host-{{ node.hoststatus.current_state }}">
+                                    <a ui-sref="nodedetails({'nodename':'{{ node.hoststatus.hostname | encodeURI }}'})">
+                                        {{node.hoststatus.hostname }}
+                                    </a>
+
+                                    <small class="label bg-purple" title="Issue has been acknowledged"
+                                           ng-show="node.hoststatus.problem_has_been_acknowledged">
+                                        <i class="fa fa-commenting-o"></i>
+                                    </small>
+
+                                    <small class="label bg-purple" title="Scheduled downtime is running"
+                                           ng-class="{'fix-downtime-icon': node.hoststatus.problem_has_been_acknowledged}"
+                                           ng-show="node.hoststatus.scheduled_downtime_depth > 0">
+                                        <i class="fa fa-plug"></i>
+                                    </small>
+
+                                    <small class="label bg-purple" title="State of node is flapping"
+                                           ng-class="{'fix-downtime-icon': node.hoststatus.problem_has_been_acknowledged || node.hoststatus.scheduled_downtime_depth}"
+                                           ng-show="node.hoststatus.is_flapping">
+                                        <i class="fa fa-adjust"></i>
+                                    </small>
+
+                                </div>
+
+                                <div ng-repeat="servicestatus in node.servicestatus">
+                                    <div class="col-xs-12 no-padding row-hover" ng-class="{ 'row-even':$even }">
+
+
+                                        <div class="col-xs-12 hidden-sm hidden-md hidden-lg shield-mobile shield-service-{{ servicestatus.current_state }}">
+                                            <a ui-sref="servicedetails({nodename:'{{ node.hoststatus.hostname | encodeURI }}', 'servicedescription':'{{ servicestatus.service_description | encodeURI }}'})">
+                                                {{ servicestatus.service_description }}
+                                            </a>
+
+                                            <small class="label bg-purple" title="State of service is flapping"
+                                                   ng-show="servicestatus.is_flapping">
+                                                <i class="fa fa-adjust"></i>
+                                            </small>
+                                        </div>
+
+
+                                        <div class="hidden-xs col-sm-4">
+                                            <servicestatuspill servicestatus="servicestatus"></servicestatuspill>
+
+                                            <a ui-sref="servicedetails({'nodename':'{{ node.hoststatus.hostname | encodeURI }}', 'servicedescription':'{{ servicestatus.service_description | encodeURI }}'})">
+                                                {{ servicestatus.service_description }}
+                                            </a>
+
+                                            <small class="label bg-purple" title="State of service is flapping"
+                                                   ng-show="servicestatus.is_flapping">
+                                                <i class="fa fa-adjust"></i>
+                                            </small>
+                                        </div>
+
+                                        <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                            Last check:
+                                        </div>
+                                        <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                            {{ servicestatus.last_check * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                                        </div>
+                                        <div class="hidden-xs col-sm-2">
+                                            {{ servicestatus.last_check * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                                        </div>
+
+                                        <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                            State since:
+                                        </div>
+                                        <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                            {{ servicestatus.last_state_change * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                                        </div>
+                                        <div class="hidden-xs col-sm-2">
+                                            {{ servicestatus.last_state_change * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                                        </div>
+
+                                        <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                            Output:
+                                        </div>
+                                        <div class="col-xs-12 col-sm-4">
+                                            {{ servicestatus.output }}
+                                        </div>
+
+                                        <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                            &nbsp;
+                                        </div>
+
+                                    </div>
+                                </div> <!-- end foreach services -->
+                            </div><!-- end foreach nodes -->
+                        </div> <!-- end foreach nodeContainer -->
+                    </div>
+
+                    <div ng-if="tiles">
+                        <div ng-repeat="nodeContainer in data track by $index">
+                            <div ng-repeat="node in nodeContainer">
+                                <div ng-repeat="servicestatus in node.servicestatus">
+
+                                    <div class="col-lg-4 col-md-6 col-xs-12">
+                                        <a ui-sref="servicedetails({nodename:'{{ node.hoststatus.hostname | encodeURI }}', 'servicedescription':'{{ servicestatus.service_description | encodeURI }}'})"
+                                           class="a-no-hover">
+                                            <div class="small-box {{ servicestatus.current_state | statusBgByStatusCodeService }}">
+                                                <div class="inner">
+                                                    <h3 class="truncate-text">
+                                                        {{ servicestatus.service_description }}
+                                                    </h3>
+
+                                                    <p class="truncate-text">{{ node.hoststatus.hostname }}</p>
+                                                </div>
+                                                <div class="icon">
+                                                    <i class="fa {{ servicestatus.current_state | iconByStatusCodeService }}"></i>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12 text-yellow text-center text-bold" ng-show="loading">
+                        <i class="fa fa-refresh fa-spin"></i> Loading more records, standby...
+                    </div>
+
+                    <div class="col-xs-12 text-info text-center text-bold" ng-show="!moreDataAvailable">
+                        <i class="fa fa-info-circle"></i> No more records available
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

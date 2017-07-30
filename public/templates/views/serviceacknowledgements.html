@@ -1,0 +1,138 @@
+<div infinite-scroll="loadMoreHostsOnScroll()" infinite-scroll-disabled="apiIsBusyOrNoDataAnymore"
+     infinite-scroll-distance="0">
+
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="box box-primary">
+
+                <div class="box-header">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <h3 class="pull-left">
+                                <i class="fa fa-commenting-o"></i>
+                                Acknowledgements for <a
+                                    ui-sref="servicedetails({nodename:'{{ nodename | encodeURI }}', 'servicedescription':'{{ servicedescription | encodeURI }}'})">{{
+                                servicedescription }}
+                            </a> on <a ui-sref="nodedetails({'nodename':'{{ nodename | encodeURI }}'})">{{ nodename }}</a>
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xs-12">
+                    <div class="input-group input-group">
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
+                                    aria-expanded="false">By state
+                                <span class="fa fa-caret-down"></span></button>
+                            <ul class="dropdown-menu">
+                                <li><label><input type="checkbox" ng-model="state_filter[0]" ng-true-value="'ok'"
+                                                  ng-model-options="{debounce: 500}"/>
+                                    Ok</label></li>
+                                <li><label><input type="checkbox" ng-model="state_filter[1]" ng-true-value="'warning'"
+                                                  ng-model-options="{debounce: 500}"/>
+                                    Warning</label></li>
+                                <li><label><input type="checkbox" ng-model="state_filter[2]"
+                                                  ng-true-value="'critical'" ng-model-options="{debounce: 500}"/>
+                                    Critical</label></li>
+                                <li><label><input type="checkbox" ng-model="state_filter[3]"
+                                                  ng-true-value="'unknown'" ng-model-options="{debounce: 500}"/>
+                                    Unknown</label></li>
+
+                            </ul>
+                        </div>
+                        <input type="text" class="form-control" ng-model="comment_data__like"
+                               ng-model-options="{debounce: 500}" placeholder="Type to search in comment data...">
+                    </div>
+                </div>
+                <hr/>
+
+                <div class="box-body">
+
+                    <div class="col-sm-2 hidden-xs text-bold">State</div>
+                    <div class="col-sm-2 hidden-xs text-bold">Date</div>
+                    <div class="col-sm-1 hidden-xs text-bold">Sticky</div>
+                    <div class="col-sm-2 hidden-xs text-bold">Author</div>
+                    <div class="col-sm-5 hidden-xs text-bold">Comment data</div>
+
+                    <div ng-repeat="acknowledgement in data track by $index">
+                        <div class="col-xs-12 no-padding row-hover" ng-class="{ 'row-even':$even }">
+
+
+                            <div class="col-sm-2 hidden-xs">
+                                <servicestatuspill servicestatus="acknowledgement"></servicestatuspill>
+                            </div>
+
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg shield-mobile shield-service-{{ acknowledgement.state }}">
+                                <a ui-sref="nodedetails({'nodename':'{{ nodename }}'})">
+                                    {{ nodename }}
+                                </a>
+                            </div>
+
+
+                            <div class="hidden-xs col-sm-2">
+                                {{ acknowledgement.entry_time * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                Date:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                {{ acknowledgement.entry_time * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                            </div>
+
+                            <div class="hidden-xs col-sm-1">
+                                {{ acknowledgement.is_sticky | yesOrNo }}
+
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                Sticky:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                {{ acknowledgement.is_sticky | yesOrNo }}
+                            </div>
+
+                            <div class="hidden-xs col-sm-2">
+                                {{ acknowledgement.author_name }}
+
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                Author:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                {{ acknowledgement.author_name }}
+                            </div>
+
+
+                            <div class="hidden-xs col-sm-5">
+                                {{ acknowledgement.comment_data }}
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                Output:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                {{ acknowledgement.comment_data }}
+                            </div>
+
+
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                &nbsp;
+                            </div>
+
+
+                        </div>
+                    </div> <!-- end foreach -->
+
+                    <div class="col-xs-12 text-yellow text-center text-bold" ng-show="loading">
+                        <i class="fa fa-refresh fa-spin"></i> Loading more records, standby...
+                    </div>
+
+                    <div class="col-xs-12 text-info text-center text-bold" ng-show="!moreDataAvailable">
+                        <i class="fa fa-info-circle"></i> No more records available
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

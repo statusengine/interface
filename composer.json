@@ -1,0 +1,33 @@
+{
+  "name": "Statusengine RESTful JSON API",
+  "description": "A RESTful JSON API for the Statusengine data and frontend",
+  "version": "2",
+  "homepage": "https://statusengine.org/",
+  "license": "GPLv3",
+  "authors": [
+    {
+      "name": "Daniel Ziegler (nook24)",
+      "role": "Developer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/statusengine/interface/issues",
+    "source": "https://github.com/statusengine/interface"
+  },
+
+  "require": {
+    "php": ">=5.5.9",
+    "ext-ldap": "*",
+    "slim/slim": "^3.7",
+    "symfony/yaml": "2.8",
+    "symfony/console": "2.8",
+    "crate/crate-dbal":"*",
+    "crate/crate-pdo":">=0.6.0",
+    "slim/csrf": "^0.8.1",
+    "guzzlehttp/guzzle": "~6.0"
+  },
+
+  "autoload": {
+    "classmap": ["src/"]
+  }
+}

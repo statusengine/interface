@@ -1,0 +1,396 @@
+<div class="row">
+    <div class="col-xs-12">
+        <div class="box box-primary">
+
+            <div class="box-header">
+                <div class="row">
+                    <div class="col-xs-12 col-md-9">
+                        <h3>
+                            <i class="fa fa-cog"></i> {{data.servicestatus.service_description}}'s details on node
+                            <a ui-sref="nodedetails({'nodename': '{{nodename|encodeURI}}' })">
+                                {{data.servicestatus.hostname}}
+                            </a>
+                        </h3>
+                    </div>
+
+                    <div class="col-xs-12 col-md-3 text-right">
+                        <span class="text-info">
+                            Cluster node: {{data.servicestatus.node_name}}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="box-body">
+
+                <div class="row">
+                    <div class="col-xs-12 col-sm-7 col-md-8">
+                        <div class="shield">
+                            <div class="shield-label">Service</div>
+                            <div class="shield-status shield-service-{{data.servicestatus.current_state}}">
+                                {{ data.servicestatus.current_state |serviceStatusNameByStatusCode}}
+                            </div>
+                            <div class="clear"></div>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12 col-sm-5 col-md-4">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
+                                    aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-history"></i>
+                                History
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a ng-if="data.servicestatus.service_description"
+                                       ui-sref="servicechecks({'nodename': '{{ data.servicestatus.hostname | encodeURI}}', 'servicedescription': '{{ data.servicestatus.service_description | encodeURI }}'})">
+                                        <i class="fa fa-ellipsis-h"></i> Executed checks
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a ng-if="data.servicestatus.service_description"
+                                       ui-sref="servicestatechanges({'nodename': '{{ data.servicestatus.hostname | encodeURI }}', 'servicedescription': '{{ data.servicestatus.service_description | encodeURI }}'})">
+                                        <i class="fa fa-retweet"></i> State changes
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a ng-if="data.servicestatus.service_description"
+                                       ui-sref="servicenotifications({'nodename': '{{ data.servicestatus.hostname | encodeURI }}', 'servicedescription': '{{ data.servicestatus.service_description | encodeURI }}'})">
+                                        <i class="fa fa-envelope-o"></i> Sent notifications
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a ng-if="data.servicestatus.service_description"
+                                       ui-sref="serviceacknowledgements({'nodename': '{{ data.servicestatus.hostname | encodeURI }}', 'servicedescription': '{{ data.servicestatus.service_description | encodeURI }}'})">
+                                        <i class="fa fa-commenting-o"></i> Acknowledgements
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </div>
+
+                        <div class="btn-group" role="group" ng-if="isAllowedToSubmitCommand">
+                            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
+                                    aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-terminal"></i>
+                                Commands
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li ng-click="sendCommand('reschedule')">
+                                    <label class="pointer"><i class="fa fa-refresh"></i> Reschedule service</label>
+                                </li>
+
+                                <li class="divider"></li>
+                                <li ng-click="submitPassiveCheckResult()"><label><i class="fa fa-arrow-down"></i> Submit
+                                    passive check result</label></li>
+                                <li ng-click="sendCustomServiceNotification()"><label><i class="fa fa-envelope"></i>
+                                    Send
+                                    custom notification</label></li>
+                                <li ng-click="submitServiceDowntime()">
+                                    <label><i class="fa fa-plug"></i> Schedule downtime</label>
+                                </li>
+                                <li ng-click="submitServiceAcknowledgement()"
+                                    ng-if="data.servicestatus.current_state > 0"><label><i
+                                        class="fa fa-commenting-o"></i>
+                                    Acknowledge issue</label></li>
+
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12">
+                        <hr/>
+                    </div>
+
+                    <div class=" col-xs-12" ng-show="data.servicestatus.is_flapping">
+                        <div class="callout callout-{{ data.servicestatus.current_state | bootstrapClassStatusCodeService }}">
+                            <h4><i class="fa fa-adjust"></i> State is flapping</h4>
+                            <p>
+                                The state of this service is flapping. This means that the service changed
+                                it's hard
+                                state to often in a particular time.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12"
+                         ng-show="data.servicestatus.problem_has_been_acknowledged && acknowledgementData">
+                        <div
+                                class="callout callout-{{ data.servicestatus.current_state | bootstrapClassStatusCodeService }}">
+                            <h4><i class="fa fa-commenting-o"></i> Issue acknowledged</h4>
+                            <p>This issue was acknowledged by <b>{{ acknowledgementData.author_name }}</b> at <b>{{
+                                acknowledgementData.entry_time * 1000 | date:'HH:mm dd.MM.yyyy' }}</b></p>
+                            <div class="well well-sm text-navy">
+                                {{ acknowledgementData.comment_data }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12"
+                         ng-show="data.servicestatus.scheduled_downtime_depth > 0 && downtimeData">
+                        <div class="callout callout-{{ data.servicestatus.current_state | bootstrapClassStatusCodeService }}">
+                            <h4><i class="fa fa-plug"></i> Service is in a scheduled downtime</h4>
+                            <p>
+                                The downtime is scheduled from
+                                <b>{{ downtimeData.scheduled_start_time * 1000 | date:'HH:mm dd.MM.yyyy' }}</b>
+                                to
+                                <b>{{ downtimeData.scheduled_end_time * 1000 | date:'HH:mm dd.MM.yyyy' }}</b>
+                                by
+                                <b>{{ downtimeData.author_name }}</b>
+                            </p>
+                            <div class="well well-sm text-navy">
+                                {{ downtimeData.comment_data }}
+                            </div>
+                            <div class="row" ng-if="isAllowedToSubmitCommand">
+                                <div class="hidden-xs hidden-sm col-md-8 col-lg-10 "></div>
+                                <div class="col-xs-12 col-sm-12 col-md-4 col-lg-2">
+                                    <button type="button"
+                                            class="btn btn-block btn-{{ data.servicestatus.current_state | bootstrapClassStatusCodeService }}"
+                                            ng-click="submitDeleteDowntime(downtimeData.internal_downtime_id)">
+                                        Cancel downtime
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12 col-md-6">
+                        <div class="box box-{{ data.servicestatus.current_state | bootstrapClassStatusCodeService }}">
+                            <div class="box-header">
+                                <h3 class="box-title">Status information</h3>
+                            </div>
+                            <div class="box-body">
+                                <dl class="dl-horizontal">
+                                    <dt>Current state</dt>
+                                    <dd>{{ data.servicestatus.current_state |
+                                        serviceStatusNameByStatusCode}}
+                                    </dd>
+                                    <dt>State type</dt>
+                                    <dd>{{ data.servicestatus.is_hardstate | stateType }}
+                                        ({{data.servicestatus.current_check_attempt}}/{{data.servicestatus.max_check_attempts}})
+                                    </dd>
+                                    <dt>Last status update</dt>
+                                    <dd>{{ data.servicestatus.status_update_time * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                                    </dd>
+                                    <dt>Last state change</dt>
+                                    <dd>{{ data.servicestatus.last_state_change * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                                    </dd>
+                                    <dt>Output</dt>
+                                    <dd><samp>{{data.servicestatus.output}}</samp></dd>
+                                    <dt>Performance data</dt>
+                                    <dd><samp>{{data.servicestatus.perfdata}}</samp></dd>
+                                    <dt>Last check</dt>
+                                    <dd>{{ data.servicestatus.last_check * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                                    </dd>
+                                    <dt>Next check</dt>
+                                    <dd>{{ data.servicestatus.next_check * 1000 | date:'HH:mm dd.MM.yyyy' }}
+                                    </dd>
+                                    <dt>Check interval</dt>
+                                    <dd>{{data.servicestatus.normal_check_interval}}</dd>
+                                    <dt>Check period</dt>
+                                    <dd>{{data.servicestatus.check_timeperiod}}</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12 col-md-6">
+                        <div class="box box-{{ data.servicestatus.current_state | bootstrapClassStatusCodeService }}">
+                            <div class="box-header">
+                                <h3 class="box-title">Configuration information</h3>
+                            </div>
+                            <div class="box-body">
+                                <dl class="dl-horizontal">
+                                    <dt>Notifications</dt>
+                                    <dd><span class="label label-danger pointer"
+                                              ng-click="sendCommand('notifications')"
+                                              ng-class="{'label-success':data.servicestatus.notifications_enabled}">{{ data.servicestatus.notifications_enabled | configEnabled }}</span>
+                                    </dd>
+                                    <dt>Active checks</dt>
+                                    <dd><span class="label label-danger pointer"
+                                              ng-click="sendCommand('activeChecks')"
+                                              ng-class="{'label-success':data.servicestatus.active_checks_enabled}">{{ data.servicestatus.active_checks_enabled | configEnabled }}</span>
+                                    </dd>
+                                    <dt>Passive checks</dt>
+                                    <dd><span class="label label-danger pointer"
+                                              ng-click="sendCommand('passiveChecks')"
+                                              ng-class="{'label-success':data.servicestatus.passive_checks_enabled}">{{ data.servicestatus.passive_checks_enabled | configEnabled }}</span>
+                                    </dd>
+                                    <dt>Flap detection</dt>
+                                    <dd><span class="label label-danger pointer"
+                                              ng-click="sendCommand('flappDetection')"
+                                              ng-class="{'label-success':data.servicestatus.flap_detection_enabled}">{{ data.servicestatus.flap_detection_enabled | configEnabled }}</span>
+                                    </dd>
+                                    <dt>Event handler</dt>
+                                    <dd><span class="label label-danger pointer"
+                                              ng-click="sendCommand('eventHandler')"
+                                              ng-class="{'label-success':data.servicestatus.event_handler_enabled}">{{ data.servicestatus.event_handler_enabled | configEnabled }}</span>
+                                    </dd>
+                                </dl>
+                                <div class="well-sm">
+                                    <div class="text-info" ng-show="isAllowedToSubmitCommand">
+                                        <i class="fa fa-info-circle"></i> Click on the <span
+                                            class="label label-info">label</span>
+                                        to trigger a temporary configuration change.
+                                        <br/>
+                                        Due to clustering it can take up to 30 seconds until you see the
+                                        result, don't
+                                        panic :)
+                                    </div>
+                                    <div class="text-info" ng-hide="isAllowedToSubmitCommand">
+                                        <i class="fa fa-info-circle"></i>
+                                        Sending commands is disabled for anonymous users
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="row" ng-show="data.servicestatus.long_output">
+                    <div class="col-xs-12">
+                        <div class="box box-{{ data.servicestatus.current_state | bootstrapClassStatusCodeService }}">
+                            <div class="box-header">
+                                <h3 class="box-title">Long service output</h3>
+                            </div>
+                            <div class="box-body">
+                                <div class="well">
+                                    {{ data.servicestatus.long_output }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="row" ng-show="data.display_perfdata && (data.perfdata | isNotEmpty)">
+                    <div class="col-xs-12">
+                        <div class="box box-primary">
+                            <div class="box-header">
+                                <h3 class="box-title"><i class="fa fa-area-chart"></i> Performance Graphs
+                                </h3>
+                            </div>
+
+                            <div class="box-body">
+                                <div class="row">
+                                    <div class="col-xs-12 text-right">
+                                        Graph timespan
+                                        <div class="btn-group" role="group">
+                                            <button type="button"
+                                                    class="selectGraphTimespan btn btn-default"
+                                                    ng-click="timespan=9000"
+                                                    ng-class="{active:timespan==9000}">2.5h
+                                            </button>
+                                            <button type="button"
+                                                    class="selectGraphTimespan btn btn-default"
+                                                    ng-click="timespan=28800"
+                                                    ng-class="{active:timespan==28800}">8h
+                                            </button>
+                                            <button type="button"
+                                                    class="selectGraphTimespan btn btn-default"
+                                                    ng-click="timespan=86400"
+                                                    ng-class="{active:timespan==86400}">24h
+                                            </button>
+                                            <button type="button"
+                                                    class="selectGraphTimespan btn btn-default"
+                                                    ng-click="timespan=432000"
+                                                    ng-class="{active:timespan==432000}">1w
+                                            </button>
+                                            <button type="button"
+                                                    class="selectGraphTimespan btn btn-default"
+                                                    ng-click="timespan=2592000"
+                                                    ng-class="{active:timespan==2592000}">1m
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12"></div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 text-right">
+                                        Compression algorithm
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-default"
+                                                    ng-click="algorithm='min'"
+                                                    ng-class="{active:algorithm=='min'}">Min
+                                            </button>
+                                            <button type="button" class="btn btn-default"
+                                                    ng-click="algorithm='avg'"
+                                                    ng-class="{active:algorithm=='avg'}">Avg
+                                            </button>
+                                            <button type="button" class="btn btn-default"
+                                                    ng-click="algorithm='max'"
+                                                    ng-class="{active:algorithm=='max'}">Max
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div ng-repeat="(name, gauge) in data.perfdata">
+                                        <div class="col-xs-12 col-md-6">
+                                            <div class="text-right">
+                                                <i class="fa fa-refresh fa-spin text-muted"
+                                                   ng-class="{'visibility-hidden':!loading}"></i>
+                                            </div>
+                                            <div graph perfdataname="name" perfdatagauge="gauge"
+                                                 servicestatus="data.servicestatus" timespan="timespan"
+                                                 algorithm="algorithm" displayperfdata="data.display_perfdata"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal modal-warning" id="service-not-found-modal">
+    <div class="modal-dialog" id="service-not-found-modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span></button>
+                <h4 class="modal-title text-center">
+                    <i class="fa fa-exclamation-triangle"></i> Service status not found in database :(
+                </h4>
+            </div>
+            <div class="modal-body">
+                <p>Unfortunately there are no status information in the database for this service.</p>
+                <p>Typically this is due to one of the following reasons:</p>
+                <p>
+                <ul>
+                    <li>The service was not checked by the monitoring engine so far</li>
+                    <li>The service was deleted</li>
+                    <li>The service is not deployed on given node name</li>
+                    <li>You have made a typo in browser's address bar</li>
+                    <li>The Statusengine Worker node was restarted</li>
+                    <li>The Statusengine Worker node is down</li>
+                    <li>You're Sysadmin is playing around</li>
+                </ul>
+                </p>
+                <p>This message will disappear automatically as soon as the services was found in the
+                    database</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+

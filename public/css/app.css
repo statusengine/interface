@@ -1,0 +1,236 @@
+/**
+ * Licensed under the MIT license - http://opensource.org/licenses/MIT
+ */
+
+.pointer {
+    cursor: pointer;
+}
+
+.refreshcontroll {
+    height: 70px;
+    padding: 10px;
+    text-align: center;
+}
+
+.small-box:hover .icon {
+    font-size: 90px;
+}
+
+.a-no-hover:hover {
+    color: #3c8dbc;
+    text-decoration: none;
+}
+
+.shield {
+    /*width: 128px;*/
+    height: 20px;
+    font-size: 11px;
+    font-family: DejaVu Sans, Verdana, Geneva, sans-serif;
+    color: #FFF;
+}
+
+.shield-label {
+    background: #555;
+    float: left;
+    padding: 4px 6px;
+}
+
+.shield-label-mobile {
+    background-color: #555;
+    font-size: 11px;
+    font-family: DejaVu Sans, Verdana, Geneva, sans-serif;
+    color: #FFF;
+    padding: 4px 6px;
+}
+
+.shield-status {
+    float: left;
+    background-color: #97CA00;
+    padding: 4px 6px;
+    min-width: 81px;
+}
+
+.shield-mobile {
+    font-size: 11px;
+    font-family: DejaVu Sans, Verdana, Geneva, sans-serif;
+    color: #FFF;
+    padding: 4px 6px;
+}
+
+.shield-mobile a {
+    color: #FFF;
+}
+
+.shield-mobile a:active {
+    color: #FFF;
+}
+
+.shield-mobile a:visited {
+    color: #FFF;
+}
+
+.shield-host-0 {
+    /*background-color: #97CA00;*/
+    background-color: #00a65a;
+}
+
+.shield-host-1 {
+    /*background-color: #e05d44;*/
+    background-color: #dd4b39;
+}
+
+.shield-host-2 {
+    /*background-color: #9f9f9f;*/
+    background-color: #3c8dbc;
+}
+
+.shield-service-0 {
+    /*background-color: #97CA00;*/
+    background-color: #00a65a;
+}
+
+.shield-service-1 {
+    /*background-color: #dfb317;*/
+    background-color: #f39c12;
+}
+
+.shield-service-2 {
+    /*background-color: #e05d44;*/
+    background-color: #dd4b39;
+}
+
+.shield-service-3 {
+    /*background-color: #9f9f9f;*/
+    background-color: #3c8dbc;
+}
+
+.shield-info {
+    /*background-color: #007ec6;*/
+    background-color: #00c0ef;
+}
+
+.clear {
+    clear: both;
+}
+
+.label-type {
+    padding: .3em .6em .3em;
+    display: inline-block;
+    background-color: #555;
+    color: #FFF;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.label-state-host {
+    padding: .3em .6em .3em;
+    display: inline-block;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    width: 77px;
+}
+
+.state-addition {
+    display: inline-block;
+}
+
+.fix-downtime-icon {
+    margin-left: 2px;
+}
+
+.row-even {
+    background-color: #f9f9f9;
+}
+
+.row-hover:hover {
+    background-color: #f5f5f5
+}
+
+.dropdown-menu > li > label {
+    color: #777;
+    padding: 3px 20px;
+    white-space: nowrap;
+    font-weight: 400;
+}
+
+.margin-left-15 {
+    margin-left: 15px;
+}
+
+.visibility-hidden {
+    visibility: hidden
+}
+
+.truncate-text {
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.form-container {
+    padding: 15px;
+}
+
+.search-result {
+    border-left-color: #605ca8 !important;
+}
+
+.login-box, .register-box {
+    width: 100%;
+    margin: 0 auto;
+    position: absolute;
+    background: rgba(0, 0, 0, 0.5) !important;
+}
+
+@media (max-width: 768px) {
+    .login-box, .register-box {
+        width: 90%;
+        margin: 0 auto;
+        margin-top: 20px;
+        position: relative;
+        background: rgba(0, 0, 0, 0.5);
+    }
+}
+
+.login-headline {
+    margin-bottom: 0px;
+    color: #B8B8B8;
+}
+
+.login-bg {
+    color: #fff;
+    background: transparent;
+}
+
+.login-bg {
+    width: 360px;
+    color: #fff;
+    margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+    .login-bg {
+        color: #fff;
+        width: 90%;
+        margin: 0 auto;
+    }
+}
+
+.login-anonymous {
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .login-submit {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+}
+
+.callout.callout-primary {
+    border-color: #31749b;
+    color: #fff !important;
+    background-color: #3c8dbc !important;
+}

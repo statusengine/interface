@@ -1,0 +1,28 @@
+<a class="dropdown-toggle" data-toggle="dropdown">
+    <span><i class="fa fa-cog"></i> Settings</span>
+</a>
+
+<ul class="dropdown-menu">
+    <li class="refreshcontroll">
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" ng-model="do_auto_reload"> Auto refresh
+                    </label>
+                </div>
+            </div>
+        </div>
+
+    </li>
+    <li class="user-footer">
+        <div class="pull-right">
+            <a href="javascript:void(0)" ng-click="logout()" class="btn btn-default btn-flat" ng-if="isLoggedIn">
+                <i class="fa fa-sign-out"></i> Sign out
+            </a>
+            <a href="javascript:void(0)" ng-click="login()" class="btn btn-default btn-flat" ng-if="!isLoggedIn">
+                <i class="fa fa-sign-in"></i> Sign in
+            </a>
+        </div>
+    </li>
+</ul>

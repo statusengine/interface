@@ -1,0 +1,169 @@
+############
+# Statusengine UI Configuration
+############
+#
+# This is the configuration file for the Statusengine UI
+#
+
+############
+# AUTHENTICATION SETTINGS
+############
+
+# Determine if a login is required to view Statusengine UI or not
+allow_anonymous: 0
+
+# If enabled, also anonymous user are able to submit commands to
+# to the monitoring backend. If 0 only logged in users can submit commands
+# If you change this value, you need to reload Statusengine UI using the browser refresh button to enable the new value!
+anonymous_can_submit_commands: 1
+
+# Which URLs should be reachable, without a login?
+# Do not touch, if you don't know what you are doing :)
+urls_without_login:
+  - login #looks like /login in the browser's address bar
+  - loginstate
+
+# Enable one of the following auth types:
+# basic
+# ldap
+#
+# With auth type basic, Statusengine will store user names and passwords (hashed)
+# in a own table and handle the whole authentication thing itself.
+#
+# If you prefer SSO you can use ldap as auth type, so Statusengine will pass the given user names and passwords
+# to your ldap server. If the given credentials are valid you'll be logged in
+auth_type: basic
+#auth_type: ldap
+
+
+# If you have no idea of the values you need to configure for your LDAP environment
+# now is a good time to consult your LDAP admin
+# For self-signed SSL certificate you need to add "TLS_REQCERT never" (without ") to the file
+# /etc/ldap/ldap.conf on Debian/Ubuntu systems.
+# For other distributions you may be need to do some research on the internet
+
+# IP address or host name of your LDAP server
+ldap_server: ldap.example.com
+
+# Should the connection be encrypted with SSL
+ldap_use_ssl: 0
+
+# LDAP port for normal unencrypted connections
+# Depending on your LDAP Server you can may be also create an encrypted connection on port 398
+ldap_port: 389
+
+# LDAP port for SSL
+#ldap_port: 636
+
+# Statusengine require a valid user that can do an ldap search
+# Statusengine will use this user to search for a given username inside of your LDAP
+# to get the full DN of the given username
+#
+# Example for Active Directory
+ldap_bind_dn: ldapsearch@example.com
+
+# Example for OpenLDAP
+#ldap_bind_dn: cn=ldapsearch,dc=example,dc=com
+
+# The password of your ldapsearch user set as ldap_bind_dn
+ldap_bind_password: password
+
+# Path in LDAP that is used by ldap_search() to find the given username
+# that tries to login to Statusengine
+ldap_base_dn: dc=example,dc=com
+
+# Define the field which contains the user name in your LDAP
+# %s will be replaced with the given user name
+#
+# Example for Active Directory
+ldap_filter: (sAMAccountName=%s)
+
+# Example for OpenLDAP filter
+#ldap_filter: (uid=%s)
+
+# An array of the required attributes in the ldap_search result
+# For Example: sn, mail, memberof, cn, etc...
+ldap_attribute:
+  - memberof
+
+############
+# DATA SOURCE CONFIGURATION
+############
+
+# If Statusengine Ui should load status data from CrateDB
+# WARNING: Do not set use_crate and use_mysql to 1 at the same time!
+use_crate: 1
+
+# Configuration of your CrateDB Cluster
+# This is an array of cluster nodes.
+#
+# It is recommended to you a load balancer in front of your CrateDB cluster!
+# So you will have a single ip address where Statusengine is going to connect to
+crate:
+  nodes:
+    - 172.0.0.1:4200
+#    - 192.168.56.101:4200
+#    - 192.168.56.102:4200
+
+
+# If Statusengine Ui should load status data from MySQL
+# WARNING: Do not set use_mysql and use_crate to 1 at the same time!
+use_mysql: 0
+
+# Configuration of your MySQL server
+mysql:
+    host: 127.0.0.1
+    port: 3306
+    username: statusengine
+    password: password
+    database: statusengine
+
+
+############
+# PERFDATA DATA CONFIGURATION
+############
+
+# Determine if the Statusengine Ui should use on of the following
+# perfdata_backend's to load and display performance data
+# 0 disable, 1 enable
+display_perfdata: 0
+
+# Uncomment to enable
+# CrateDB as Performance Data Backend
+# CrateDB is the default at the moment
+perfdata_backend: crate
+
+# Graphite as Performance Data Backend
+#perfdata_backend: graphite
+
+# MySQL as Performance Data Backend
+#perfdata_backend: mysql
+
+############
+# GRAPHITE CONFIGURATION
+############
+
+# Every record in Graphite will be prefixed with the given key
+# so multiple systems are able to read/write to the same system
+graphite_prefix: statusengine
+
+# Set the complete URL to your Graphite system
+# Statusengine UI use the Graphite HTTP API to get stored data
+graphite_url: http://localhost:8080
+
+# Do you require a login to reach http://localhost:8080/render ?
+graphite_use_basic_auth: 0
+
+# The username of the basic auth
+graphite_user: graphite
+
+# Password for basic auth
+graphite_password: password
+
+# If your Graphite API is reachable via HTTPS
+# you can allow self signed certificates here
+graphite_allow_self_signed_certificates: 0
+
+# Every characters in the key which not match the given regex
+# will be replace with an underscore _
+graphite_illegal_characters: /[^a-zA-Z^0-9\-\.]/

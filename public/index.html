@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="Statusengine">
+<head>
+    <meta charset="UTF-8">
+
+    <!--
+
+      ____  _        _                              _
+     / ___|| |_ __ _| |_ _   _ ___  ___ _ __   __ _(_)_ __   ___
+     \___ \| __/ _` | __| | | / __|/ _ \ '_ \ / _` | | '_ \ / _ \
+      ___) | || (_| | |_| |_| \__ \  __/ | | | (_| | | | | |  __/
+     |____/ \__\__,_|\__|\__,_|___/\___|_| |_|\__, |_|_| |_|\___|
+                                              |___/
+                     the missing event broker
+                    https://www.statusengine.org
+                  https://github.com/statusengine
+
+Statusengine UI
+Copyright (C) 2016-2017  Daniel Ziegler
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    -->
+
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <title>Statusengine UI</title>
+
+    <link rel="shortcut icon" href="img/favicons/favicon.ico" type="image/x-icon"/>
+    <link rel="apple-touch-icon" sizes="57x57" href="img/favicons/apple-touch-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="img/favicons/apple-touch-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="img/favicons/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="img/favicons/apple-touch-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="img/favicons/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="img/favicons/apple-touch-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="img/favicons/apple-touch-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="img/favicons/apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="img/favicons/apple-touch-icon-180x180.png">
+    <link rel="icon" type="image/png" href="img/favicons/favicon-16x16.png" sizes="16x16">
+    <link rel="icon" type="image/png" href="img/favicons/favicon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="img/favicons/favicon-96x96.png" sizes="96x96">
+    <link rel="icon" type="image/png" href="img/favicons/android-chrome-192x192.png" sizes="192x192">
+    <meta name="msapplication-square70x70logo" content="img/favicons/smalltile.png"/>
+    <meta name="msapplication-square150x150logo" content="img/favicons/mediumtile.png"/>
+    <meta name="msapplication-wide310x150logo" content="img/favicons/widetile.png"/>
+    <meta name="msapplication-square310x310logo" content="img/favicons/largetile.png"/>
+
+    <script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="bower_components/angular/angular.min.js"></script>
+    <script type="text/javascript" src="bower_components/angular-ui-router/release/angular-ui-router.min.js"></script>
+    <script type="text/javascript" src="bower_components/ngInfiniteScroll/build/ng-infinite-scroll.min.js"></script>
+    <script type="text/javascript" src="bower_components/angular-scroll/angular-scroll.min.js"></script>
+    <script type="text/javascript" src="bower_components/angular-bootstrap/ui-bootstrap.min.js"></script>
+    <script type="text/javascript" src="bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+
+
+    <script type="text/javascript" src="js/scripts/ng.app.js"></script>
+    <script type="text/javascript" src="js/AdminLTE/AdminLTE.js"></script>
+
+
+    <script type="text/javascript" src="js/scripts/services/ReloadService.js"></script>
+
+    <script type="text/javascript" src="js/scripts/controllers/IndexController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/DashboardController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/LogentryController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/NodeController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/ServiceController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/NodeDetailsController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/ClusterController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/ServiceDetailsController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/ProblemController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/NodeChecksController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/NodeStateChangesController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/NodeNotificationsController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/NodeAcknowledgementsController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/ServiceChecksController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/ServiceStateChangesController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/ServiceAcknowledgementsController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/ServiceNotificationsController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/ScheduledDowntimesController.js"></script>
+
+
+    <!-- Model Controllers -->
+    <script type="text/javascript" src="js/scripts/controllers/SubmitPassiveHostCheckController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/SubmitCustomHostNotificationController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/SubmitHostDowntimeController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/SubmitHostAcknowledgementController.js"></script>
+
+    <script type="text/javascript" src="js/scripts/controllers/SubmitPassiveServiceCheckController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/SubmitCustomServiceNotificationController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/SubmitServiceDowntimeController.js"></script>
+    <script type="text/javascript" src="js/scripts/controllers/SubmitServiceAcknowledgementController.js"></script>
+
+    <script type="text/javascript" src="js/scripts/directives/NodesearchDirective.js"></script>
+    <script type="text/javascript" src="js/scripts/directives/GlobalproblemDirective.js"></script>
+    <script type="text/javascript" src="js/scripts/directives/HoststatusPillDirective.js"></script>
+    <script type="text/javascript" src="js/scripts/directives/ServicestatusPillDirective.js"></script>
+    <script type="text/javascript" src="js/scripts/directives/ReloadConfigDirective.js"></script>
+    <script type="text/javascript" src="js/scripts/directives/GraphDirective.js"></script>
+
+
+    <script type="text/javascript" src="bower_components/chart.js/dist/Chart.min.js"></script>
+    <script type="text/javascript" src="bower_components/noty/js/noty/packaged/jquery.noty.packaged.min.js"></script>
+
+    <script type="text/javascript" src="js/collaps.js"></script>
+
+    <link rel="stylesheet" href="bower_components/angular/angular-csp.css"/>
+    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css"/>
+
+    <link rel="stylesheet" href="css/AdminLTE/AdminLTE.min.css"/>
+    <link rel="stylesheet" href="css/AdminLTE/skin-blue.min.css"/>
+
+    <link rel="stylesheet" href="bower_components/font-awesome/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="bower_components/animate.css/animate.min.css"/>
+    <link rel="stylesheet" href="css/app.css"/>
+
+</head>
+<body class="skin-blue sidebar-mini">
+
+<div class="wrapper" ng-controller="IndexController">
+
+    <header class="main-header">
+        <!-- Logo -->
+        <a ui-sref="dashboard" class="logo">
+            <!-- mini logo for sidebar mini 50x50 pixels -->
+            <span class="logo-mini">SE</span>
+            <!-- logo for regular state and mobile devices -->
+            <span class="logo-lg">Statusengine</span>
+        </a>
+        <!-- Header Navbar: style can be found in header.less -->
+        <nav class="navbar navbar-static-top">
+            <!-- Sidebar toggle button-->
+            <a href="javascript:void(0);" class="sidebar-toggle" data-toggle="offcanvas" role="button">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </a>
+
+            <div class="navbar-custom-menu">
+                <ul class="nav navbar-nav">
+
+                    <li class="dropdown notifications-menu" globalproblem></li>
+
+                    <li class="dropdown tasks-menu">
+                        <a ng-click="reload()" class="pointer">
+                            <i class="fa fa-refresh"
+                               ng-class="{'fa-spin':loading, 'text-aqua':!isAutoReloadEnabled}"></i>
+                        </a>
+                    </li>
+
+                    <li class="dropdown user user-menu" reload-config></li>
+
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- =============================================== -->
+
+    <!-- Left side column. contains the sidebar -->
+    <aside class="main-sidebar">
+        <!-- sidebar: style can be found in sidebar.less -->
+        <section class="sidebar">
+
+            <div nodesearch></div>
+
+
+            <!-- sidebar menu: : style can be found in sidebar.less -->
+            <ul class="sidebar-menu">
+                <li class="header">Navigation</li>
+                <li class="treeview" ui-sref-active="active">
+                    <a ui-sref="dashboard">
+                        <i class="fa fa-dashboard text-primary"></i> <span>Dashboard</span>
+                    </a>
+                </li>
+
+                <li class="treeview" ui-sref-active="active">
+                    <a ui-sref="nodes">
+                        <i class="fa fa-hdd-o text-primary"></i> <span> Nodes</span>
+                    </a>
+                </li>
+
+
+                <li class="treeview" ui-sref-active="active">
+                    <a ui-sref="services">
+                        <i class="fa fa-cog text-primary"></i> <span> Services</span>
+                    </a>
+                </li>
+
+                <li class="treeview" ui-sref-active="active">
+                    <a ui-sref="problems">
+                        <i class="fa fa-exclamation-triangle text-primary"></i> <span> Issues</span>
+                    </a>
+                </li>
+
+                <li class="treeview" ui-sref-active="active">
+                    <a ui-sref="scheduleddowntimes">
+                        <i class="fa fa-plug text-primary"></i> <span> Upcoming downtimes</span>
+                    </a>
+                </li>
+
+                <li class="treeview" ui-sref-active="active">
+                    <a ui-sref="logentries">
+                        <i class="fa fa-align-left text-primary"></i> <span> Logentries</span>
+                    </a>
+                </li>
+
+                <li class="treeview" ui-sref-active="active">
+                    <a ui-sref="cluster">
+                        <i class="fa fa-server text-primary"></i> <span> Cluster</span>
+                    </a>
+                </li>
+
+
+            </ul>
+        </section>
+        <!-- /.sidebar -->
+    </aside>
+
+    <!-- =============================================== -->
+
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+
+
+        <!-- Main content -->
+        <section class="content">
+
+            <noscript>
+                <div class="callout callout-danger lead">
+                    <h4>JavaScript disabled!</h4>
+                    <p>This page requires JavaScript. Please enable JavaScript in your browser and reload this page.</p>
+                </div>
+            </noscript>
+
+            <div class="modal modal-danger" id="ajax-modal">
+                <div class="modal-dialog" id="ajax-modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">×</span></button>
+                            <h4 class="modal-title text-center">
+                                <i class="fa fa-exclamation-triangle"></i> Oh no! There have been errors!
+                            </h4>
+                        </div>
+                        <div class="modal-body">
+                            <p>Lost connection to API...</p>
+                            <p>Typically this is due to one of the following reasons:</p>
+                            <p>
+                                <ul>
+                                    <li>Your device lost network connection</li>
+                                    <li>You're disconnected from the internet</li>
+                                    <li>Statusengine API backend is not running</li>
+                                    <li>You're Sysadmin is playing around</li>
+                                </ul>
+                            </p>
+                            <p>Please try to reload the page to solve the issue.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                    <!-- /.modal-content -->
+                </div>
+                <!-- /.modal-dialog -->
+            </div>
+
+            <div class="modal modal-danger" id="server-error-modal">
+                <div class="modal-dialog modal-lg" id="server-error-modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">×</span></button>
+                            <h4 class="modal-title text-center">
+                                <i class="fa fa-exclamation-triangle"></i> {{ ajax_server_error }}
+                            </h4>
+                        </div>
+                        <div class="modal-body">
+<pre>
+{{ ajax_server_error_message }}
+</pre>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                    <!-- /.modal-content -->
+                </div>
+                <!-- /.modal-dialog -->
+            </div>
+
+            <div ui-view></div>
+
+        </section>
+        <!-- /.content -->
+    </div>
+    <!-- /.content-wrapper -->
+
+    <footer class="main-footer">
+        <a href="https://github.com/statusengine" target="_blank" class="text-muted">
+            <i class="fa fa-github"></i>
+            Contribute to Statusengine
+        </a>
+    </footer>
+
+
+</div>
+
+
+</body>
+</html>
+

@@ -69,6 +69,7 @@
                         </div>
                         <div class="box-body">
                             <a ui-sref="nodes({'show_state':'up'})"
+                               ng-show="data.hoststatus_overview.up > 0"
                                class="a-no-hover">
                                 <div class="info-box bg-green">
                                     <span class="info-box-icon"><i class="fa fa-check"></i></span>
@@ -89,6 +90,7 @@
                             </a>
 
                             <a ui-sref="nodes({'show_state':'down'})"
+                               ng-show="data.hoststatus_overview.down > 0"
                                class="a-no-hover">
                                 <div class="info-box bg-red">
                                     <span class="info-box-icon"><i class="fa fa-exclamation-triangle"></i></span>
@@ -109,6 +111,7 @@
                             </a>
 
                             <a ui-sref="nodes({'show_state':'unreachable'})"
+                               ng-show="data.hoststatus_overview.unreachable > 0"
                                class="a-no-hover">
                                 <div class="info-box bg-blue">
                                     <span class="info-box-icon"><i class="fa fa-question-circle"></i></span>
@@ -138,6 +141,7 @@
                         </div>
                         <div class="box-body">
                             <a ui-sref="services({'show_state':'ok'})"
+                               ng-show="data.servicestatus_overview.ok > 0"
                                class="a-no-hover">
                                 <div class="info-box bg-green">
                                     <span class="info-box-icon"><i class="fa fa-check"></i></span>
@@ -158,6 +162,7 @@
                             </a>
 
                             <a ui-sref="services({'show_state':'warning'})"
+                               ng-show="data.servicestatus_overview.warning > 0"
                                class="a-no-hover">
                                 <div class="info-box bg-yellow">
                                     <span class="info-box-icon"><i class="fa fa-bell"></i></span>
@@ -178,6 +183,7 @@
                             </a>
 
                             <a ui-sref="services({'show_state':'critical'})"
+                               ng-show="data.servicestatus_overview.critical > 0"
                                class="a-no-hover">
                                 <div class="info-box bg-red">
                                     <span class="info-box-icon"><i class="fa fa-exclamation-triangle"></i></span>
@@ -198,6 +204,7 @@
                             </a>
 
                             <a ui-sref="services({'show_state':'unknown'})"
+                               ng-show="data.servicestatus_overview.unknown > 0"
                                class="a-no-hover">
                                 <div class="info-box bg-blue">
                                     <span class="info-box-icon"><i class="fa fa-check"></i></span>

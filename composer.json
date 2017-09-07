@@ -24,7 +24,8 @@
     "crate/crate-dbal":"*",
     "crate/crate-pdo":">=0.6.0",
     "slim/csrf": "^0.8.1",
-    "guzzlehttp/guzzle": "~6.0"
+    "guzzlehttp/guzzle": "~6.0",
+    "elasticsearch/elasticsearch": "~5.0"
   },
 
   "autoload": {

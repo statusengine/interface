@@ -353,9 +353,42 @@ class Config {
     /**
      * @return string
      */
+    public function getElasticsearchIndex() {
+        $default = 'statusengine-metric';
+        if (isset($this->config['elasticsearch_index'])) {
+            return (string)$this->config['elasticsearch_index'];
+        }
+        return $default;
+    }
+
+    /**
+     * @return string
+     */
+    public function getElasticsearchAddress() {
+        $default = '127.0.0.1';
+        if (isset($this->config['elasticsearch_address'])) {
+            return (string)$this->config['elasticsearch_address'];
+        }
+        return $default;
+    }
+
+    /**
+     * @return int
+     */
+    public function getElasticsearchPort() {
+        $default = 9200;
+        if (isset($this->config['elasticsearch_port'])) {
+            return (int)$this->config['elasticsearch_port'];
+        }
+        return $default;
+    }
+
+    /**
+     * @return string
+     */
     public function getPerfdataBackend() {
         $default = 'crate';
-        $availableBackend = ['crate', 'graphite', 'mysql'];
+        $availableBackend = ['crate', 'graphite', 'mysql', 'elasticsearch'];
         if (isset($this->config['perfdata_backend'])) {
             $value = (string)$this->config['perfdata_backend'];
             if (in_array($value, $availableBackend, true)) {

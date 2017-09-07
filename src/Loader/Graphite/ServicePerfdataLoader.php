@@ -119,7 +119,6 @@ class ServicePerfdataLoader implements ServicePerfdataLoaderInterfaceByConfig {
         if(!empty($result)) {
             $endKey = sizeof($result) - 1;
             $result[$endKey]['timestamp'] += 20;
-
         }
 
         return $result;

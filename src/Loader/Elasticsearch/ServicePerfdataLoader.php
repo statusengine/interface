@@ -48,7 +48,7 @@ class ServicePerfdataLoader implements ServicePerfdataLoaderInterfaceByConfig {
             'body' => [
                 'size' => 10000,
                 'sort' => [
-                    'timestamp' => 'asc'
+                    '@timestamp' => 'asc'
                 ],
                 'query' => [
                     'bool' => [
@@ -64,7 +64,7 @@ class ServicePerfdataLoader implements ServicePerfdataLoaderInterfaceByConfig {
                             ],
                             [
                                 'range' => [
-                                    'timestamp' => [
+                                    '@timestamp' => [
                                         'gt' => $ServicePerfdataQueryOptions->getEnd() * 1000, // >
                                         'lt' => $ServicePerfdataQueryOptions->getStart() * 1000 // <
                                     ]
@@ -114,17 +114,9 @@ class ServicePerfdataLoader implements ServicePerfdataLoaderInterfaceByConfig {
         $result = [];
         foreach($response['hits']['hits'] as $record){
             $result[] = [
-                'timestamp' => (int)$record['_source']['timestamp']/1000,
+                'timestamp' => (int)$record['_source']['@timestamp']/1000,
                 'value' => $record['_source']['value'],
             ];
-        }
-
-        //Add 20 seconds to the last timestamp
-        //so that the auto-refresh will not always
-        //reload the same value from ES
-        if(!empty($result)) {
-            $endKey = sizeof($result) - 1;
-            $result[$endKey]['timestamp'] += 20;
         }
 
         return $result;

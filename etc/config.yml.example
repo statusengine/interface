@@ -167,3 +167,30 @@ graphite_allow_self_signed_certificates: 0
 # Every characters in the key which not match the given regex
 # will be replace with an underscore _
 graphite_illegal_characters: /[^a-zA-Z^0-9\-\.]/
+
+############
+# ELASTICSEARCH CONFIGURATION
+############
+
+# Index that will be used to store data in Elasticsearch
+elasticsearch_index: statusengine-metric-
+
+# The value of elasticsearch_pattern will be added to the end of your
+# defiend elasticsearch_index. It is recommended to terminate
+# your elasticsearch_index with an dash, like the example
+# index: statusengine-metric-
+#
+# Available patterns:
+# - none     => All data in one index, this will also disable deletion of old records!
+# - daily    => statusengine-metric-YYYY.MM.DD
+# - weekly   => statusengine-metric-GGGG.WW
+# - monthly  => statusengine-metric-YYYY.MM
+# It is important, that you pick the same pattern, as you use for Statusengine Worker!
+elasticsearch_pattern: daily
+
+# Set the ip address or hostname for your Elasticsearch system or cluster
+# Statusengine will use the HTTP API
+elasticsearch_address: 127.0.0.1
+
+# Port where your Elasticsearch server is listening to
+elasticsearch_port: 9200

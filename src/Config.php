@@ -386,6 +386,25 @@ class Config {
     /**
      * @return string
      */
+    public function getElasticsearchPattern() {
+        $default = 'none';
+        $patterns = [
+            'none',
+            'daily',
+            'weekly',
+            'monthly'
+        ];
+        if (isset($this->config['elasticsearch_pattern'])) {
+            if (in_array($this->config['elasticsearch_pattern'], $patterns, true)) {
+                return $this->config['elasticsearch_pattern'];
+            }
+        }
+        return $default;
+    }
+
+    /**
+     * @return string
+     */
     public function getPerfdataBackend() {
         $default = 'crate';
         $availableBackend = ['crate', 'graphite', 'mysql', 'elasticsearch'];

@@ -19,6 +19,7 @@
 namespace Statusengine\Loader\Elasticsearch;
 
 use Elasticsearch\ClientBuilder;
+use Statusengine\Backend\Elasticsearch\Pattern;
 use Statusengine\Config;
 use Statusengine\Loader\ServicePerfdataLoaderInterfaceByConfig;
 use Statusengine\ValueObjects\ServicePerfdataQueryOptions;
@@ -30,8 +31,26 @@ class ServicePerfdataLoader implements ServicePerfdataLoaderInterfaceByConfig {
      */
     private $Config;
 
+    /**
+     * @var string
+     * Keeping the search context alive
+     */
+    private $scroll = '15s';
+
+    /**
+     * @var string
+     */
+    private $index;
+
+    /**
+     * @var int
+     * Number of results per shard
+     */
+    private $size = 500;
+
     public function __construct(Config $Config) {
         $this->Config = $Config;
+        $this->index = $this->Config->getElasticsearchIndex();
     }
 
 
@@ -42,11 +61,59 @@ class ServicePerfdataLoader implements ServicePerfdataLoaderInterfaceByConfig {
     public function getServicePerfdata(ServicePerfdataQueryOptions $ServicePerfdataQueryOptions) {
         $Client = ClientBuilder::create()->setHosts($this->getHosts())->build();
 
+        $Pattern = new Pattern($this->Config);
+        $result = [];
+        foreach ($Pattern->getPossibleIndices($ServicePerfdataQueryOptions) as $index) {
+            $indexExists = $Client->indices()->exists(['index' => $index]);
+            if ($indexExists) {
+                $params = $this->getParams($ServicePerfdataQueryOptions, $index);
+                $response = $Client->search($params);
+                while (isset($response['hits']['hits']) && sizeof($response['hits']['hits']) > 0) {
+                    foreach ($response['hits']['hits'] as $record) {
+                        $result[] = [
+                            'timestamp' => (int)$record['_source']['@timestamp'] / 1000,
+                            'value' => $record['_source']['value'],
+                        ];
+                    }
+
+                    //Fetch rest of data - if any
+                    $response = $Client->scroll([
+                            "scroll_id" => $response['_scroll_id'],
+                            "scroll" => $this->scroll
+                        ]
+                    );
+                }
+                unset($response);
+            }
+        }
+        return $result;
+    }
+
+
+    /**
+     * @return array
+     */
+    private function getHosts() {
+        return [
+            sprintf('%s:%s',
+                $this->Config->getElasticsearchAddress(),
+                $this->Config->getElasticsearchPort()
+            )
+        ];
+    }
+
+    /**
+     * @param ServicePerfdataQueryOptions $ServicePerfdataQueryOptions
+     * @param string $index
+     * @return array
+     */
+    private function getParams(ServicePerfdataQueryOptions $ServicePerfdataQueryOptions, $index) {
         $params = [
-            'index' => $this->Config->getElasticsearchIndex(),
+            'scroll' => $this->scroll,
+            'size' => $this->size,
+            'index' => $index,
             'type' => 'metric',
             'body' => [
-                'size' => 10000,
                 'sort' => [
                     '@timestamp' => 'asc'
                 ],
@@ -76,50 +143,7 @@ class ServicePerfdataLoader implements ServicePerfdataLoaderInterfaceByConfig {
 
             ]
         ];
-
-        /*
-        echo PHP_EOL;
-        var_dump(sprintf('gt > %s', date('d-m-y H:i:s', $ServicePerfdataQueryOptions->getEnd())));
-        var_dump(sprintf('lt < %s', date('d-m-y H:i:s', $ServicePerfdataQueryOptions->getStart())));
-
-        echo PHP_EOL;
-        print_r($params);*/
-
-        $response = $Client->search($params);
-        return $this->parseResponse($response);
-    }
-
-
-    /**
-     * @return array
-     */
-    private function getHosts() {
-        return [
-            sprintf('%s:%s',
-                $this->Config->getElasticsearchAddress(),
-                $this->Config->getElasticsearchPort()
-            )
-        ];
-    }
-
-    /**
-     * @param array $response
-     * @return array
-     */
-    private function parseResponse($response){
-        if(empty($response['hits']['hits'])){
-            return [];
-        }
-
-        $result = [];
-        foreach($response['hits']['hits'] as $record){
-            $result[] = [
-                'timestamp' => (int)$record['_source']['@timestamp']/1000,
-                'value' => $record['_source']['value'],
-            ];
-        }
-
-        return $result;
+        return $params;
     }
 
 }

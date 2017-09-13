@@ -300,11 +300,16 @@ angular.module('Statusengine', ['ui.router', 'infinite-scroll', 'duScroll', 'ui.
                 controller: "ServiceNotificationsController"
             })
 
-
             .state('scheduleddowntimes', {
                 url: '/scheduleddowntimes',
                 templateUrl: "templates/views/scheduleddowntimes.html",
                 controller: "ScheduleddowntimesController"
+            })
+
+            .state('acknowledgements', {
+                url: '/acknowledgements',
+                templateUrl: "templates/views/acknowledgements.html",
+                controller: "AcknowledgementsController"
             });
 
     });

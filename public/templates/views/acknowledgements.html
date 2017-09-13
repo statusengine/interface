@@ -1,0 +1,179 @@
+<div infinite-scroll="loadMoreAcknowledgementsOnScroll()" infinite-scroll-disabled="apiIsBusyOrNoDataAnymore"
+     infinite-scroll-distance="0">
+
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="box box-primary">
+
+                <div class="box-header">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <h3 class="pull-left">
+                                <i class="fa fa-commenting-o"></i> Current Acknowledgements
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xs-12"
+                     ng-class="{ 'col-md-6': object_type=='host', 'col-md-6': object_type=='service' }">
+                    <div class="input-group input-group">
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
+                                    aria-expanded="false">Node/Service
+                                <span class="fa fa-caret-down"></span></button>
+                            <ul class="dropdown-menu">
+
+
+                                <li>
+
+                                    <label>
+                                        <input type="radio" ng-model="object_type"
+                                               name="object_type"
+                                               value="host"
+                                               ng-model-options="{debounce: 500}"/>
+                                        Nodes
+                                    </label>
+                                </li>
+                                <li>
+                                    <label>
+                                        <input type="radio" ng-model="object_type"
+                                               name="object_type"
+                                               value="service"
+                                               ng-model-options="{debounce: 500}"/>
+                                        Services
+                                    </label>
+                                </li>
+
+                                <li class="divider"></li>
+                                <li ng-repeat="nodeName in clusterNodes track by $index">
+                                    <label><input type="checkbox" ng-model="cluster_filter[$index]"
+                                                  ng-false-value="''" ng-true-value="'{{ nodeName.node_name }}'"
+                                                  ng-model-options="{debounce: 500}"/>
+                                        {{ nodeName.node_name }}</label>
+                                </li>
+                            </ul>
+                        </div>
+                        <input type="text" class="form-control" ng-model="hostname__like"
+                               ng-model-options="{debounce: 500}"
+                               placeholder="Type to search by node name...">
+                    </div>
+                </div>
+
+                <div class="col-xs-12 col-md-6" ng-show="object_type=='service'">
+                    <input type="text" class="form-control" ng-model="servicedescription__like"
+                           ng-model-options="{debounce: 500}" placeholder="Type to search by service description..."/>
+                </div>
+
+                <hr/>
+
+                <div class="box-body">
+
+                    <div class="row">
+                        <div class="col-sm-3 hidden-xs text-bold">Node / Service</div>
+                        <div class="col-sm-2 hidden-xs text-bold">Entry time</div>
+                        <div class="col-sm-1 hidden-xs text-bold">Sticky</div>
+                        <div class="col-sm-2 hidden-xs text-bold">Author</div>
+                        <div class="col-sm-3 hidden-xs text-bold">Comment</div>
+                    </div>
+
+                    <div class="col-xs-12 no-padding" ng-repeat="acknowledgement in data">
+                        <div class="col-xs-12 no-padding row-hover" ng-class="{ 'row-even':$even }">
+
+                            <div class="col-sm-3 hidden-xs">
+                                <hoststatuspill hoststatus="acknowledgement" ng-if="object_type=='host'"></hoststatuspill>
+                                <servicestatuspill servicestatus="acknowledgement" ng-if="object_type=='service'"></servicestatuspill>
+                                <a ui-sref="nodedetails({'nodename':'{{ acknowledgement.hostname | encodeURI }}'})">
+                                    {{ acknowledgement.hostname }}
+                                </a>
+                                <span ng-if="object_type=='service'">
+                                    /
+                                    <a ui-sref="servicedetails({'nodename':'{{ acknowledgement.hostname | encodeURI }}', 'servicedescription':'{{ acknowledgement.service_description | encodeURI }}'})">
+                                        {{ acknowledgement.service_description }}
+                                    </a>
+                                </span>
+                            </div>
+
+                            <div class="col-sm-2 hidden-xs">
+                                {{acknowledgement.entry_time * 1000 | date:'HH:mm dd.MM.yyyy'}}
+                            </div>
+
+                            <div class="col-sm-1 hidden-xs">
+                                {{ acknowledgement.is_sticky | yesOrNo }}
+                            </div>
+
+                            <div class="col-sm-2 hidden-xs">
+                                {{ acknowledgement.author_name }}
+                            </div>
+
+                            <div class="col-sm-3 hidden-xs">
+                                {{ acknowledgement.comment_data }}
+                            </div>
+
+
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg shield-mobile shield-host-{{ acknowledgement.state }}">
+                                <a ui-sref="nodedetails({'nodename':'{{ acknowledgement.hostname | encodeURI }}'})">
+                                    {{ acknowledgement.hostname }}
+                                </a>
+                                <span ng-if="object_type=='service'">
+                                    /
+                                    <a ui-sref="servicedetails({'nodename':'{{ acknowledgement.hostname | encodeURI }}', 'servicedescription':'{{ acknowledgement.service_description | encodeURI }}'})">
+                                        {{ acknowledgement.service_description }}
+                                    </a>
+                                </span>
+                            </div>
+
+
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                Date:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                {{ acknowledgement.entry_time * 1000 | date:'HH:mm dd.MM.yyyy'}}
+                            </div>
+
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                Sticky:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                {{ acknowledgement.is_sticky | yesOrNo }}
+                            </div>
+
+
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                Author:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                <i class="fa fa-user"></i>
+                                {{ acknowledgement.author_name }}
+                            </div>
+
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                Comment:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                <i class="fa fa-commenting-o"></i>
+                                {{ acknowledgement.comment_data }}
+                            </div>
+
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                &nbsp;
+                            </div>
+
+
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12 text-yellow text-center text-bold" ng-show="loading">
+                        <i class="fa fa-refresh fa-spin"></i> Loading more records, standby...
+                    </div>
+
+                    <div class="col-xs-12 text-info text-center text-bold" ng-show="!moreDataAvailable">
+                        <i class="fa fa-info-circle"></i> No more records available
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

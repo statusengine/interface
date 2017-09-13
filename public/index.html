@@ -88,7 +88,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <script type="text/javascript" src="js/scripts/controllers/ServiceAcknowledgementsController.js"></script>
     <script type="text/javascript" src="js/scripts/controllers/ServiceNotificationsController.js"></script>
     <script type="text/javascript" src="js/scripts/controllers/ScheduledDowntimesController.js"></script>
-
+    <script type="text/javascript" src="js/scripts/controllers/AcknowledgementsController.js"></script>
 
     <!-- Model Controllers -->
     <script type="text/javascript" src="js/scripts/controllers/SubmitPassiveHostCheckController.js"></script>
@@ -100,6 +100,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <script type="text/javascript" src="js/scripts/controllers/SubmitCustomServiceNotificationController.js"></script>
     <script type="text/javascript" src="js/scripts/controllers/SubmitServiceDowntimeController.js"></script>
     <script type="text/javascript" src="js/scripts/controllers/SubmitServiceAcknowledgementController.js"></script>
+
 
     <script type="text/javascript" src="js/scripts/directives/NodesearchDirective.js"></script>
     <script type="text/javascript" src="js/scripts/directives/GlobalproblemDirective.js"></script>
@@ -207,6 +208,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <li class="treeview" ui-sref-active="active">
                     <a ui-sref="scheduleddowntimes">
                         <i class="fa fa-plug text-primary"></i> <span> Upcoming downtimes</span>
+                    </a>
+                </li>
+
+                <li class="treeview" ui-sref-active="active">
+                    <a ui-sref="acknowledgements">
+                        <i class="fa fa-commenting-o text-primary"></i> <span> Acknowledgements</span>
                     </a>
                 </li>
 

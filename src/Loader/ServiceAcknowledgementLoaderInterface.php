@@ -37,4 +37,10 @@ interface ServiceAcknowledgementLoaderInterface {
      */
     public function getAcknowledgements(ServiceAcknowledgementQueryOptions $ServiceAcknowledgementQueryOptions);
 
+    /**
+     * @param ServiceAcknowledgementQueryOptions $ServiceAcknowledgementQueryOptions
+     * @return array
+     */
+    public function getCurrentServiceAcknowledgements(ServiceAcknowledgementQueryOptions $ServiceAcknowledgementQueryOptions);
+
 }

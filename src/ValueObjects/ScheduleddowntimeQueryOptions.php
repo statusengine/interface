@@ -2,7 +2,6 @@
 /**
  * Statusengine UI
  * Copyright (C) 2016-2017  Daniel Ziegler
-
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -61,8 +60,8 @@ class ScheduleddowntimeQueryOptions extends QueryOptions {
         }
 
         $this->is_host_request = true;
-        if(isset($this->params['object_type'])){
-            if($this->params['object_type'] == 'service'){
+        if (isset($this->params['object_type'])) {
+            if ($this->params['object_type'] == 'service') {
                 $this->is_host_request = false;
             }
         }
@@ -100,7 +99,7 @@ class ScheduleddowntimeQueryOptions extends QueryOptions {
     /**
      * @return bool
      */
-    public function isHostRequest(){
+    public function isHostRequest() {
         return $this->is_host_request;
     }
 

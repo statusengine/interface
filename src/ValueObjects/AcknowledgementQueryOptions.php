@@ -2,7 +2,6 @@
 /**
  * Statusengine UI
  * Copyright (C) 2016-2017  Daniel Ziegler
-
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -17,30 +16,39 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace Statusengine\Loader;
+namespace Statusengine\ValueObjects;
 
 
-use Statusengine\Backend\StorageBackend;
-use Statusengine\ValueObjects\HostAcknowledgementQueryOptions;
-
-interface HostAcknowledgementLoaderInterface {
+class AcknowledgementQueryOptions extends QueryOptions {
 
     /**
-     * HostAcknowledgementLoaderInterface constructor.
-     * @param StorageBackend $StorageBackend
+     * @var bool
      */
-    public function __construct(StorageBackend $StorageBackend);
+    private $isHostRequest = true;
 
     /**
-     * @param HostAcknowledgementQueryOptions $HostAcknowledgementQueryOptions
-     * @return array
+     * AcknowledgementQueryOptions constructor.
+     * @param $params
+     * @throws \Exception
      */
-    public function getAcknowledgements(HostAcknowledgementQueryOptions $HostAcknowledgementQueryOptions);
+    public function __construct($params) {
+        parent::__construct($params);
+
+        $this->isHostRequest = true;
+        if (isset($this->params['object_type'])) {
+            if ($this->params['object_type'] == 'service') {
+                $this->isHostRequest = false;
+            }
+        }
+
+    }
 
     /**
-     * @param HostAcknowledgementQueryOptions $HostAcknowledgementQueryOptions
-     * @return array
+     * @return bool
      */
-    public function getCurrentHostAcknowledgements(HostAcknowledgementQueryOptions $HostAcknowledgementQueryOptions);
+    public function isHostRequest() {
+        return $this->isHostRequest;
+    }
 
 }
+

@@ -47,4 +47,12 @@ class HostAcknowledgement extends Controller {
         return $this->HostAcknowledgementLoader->getAcknowledgements($queryOptions);
     }
 
+    /**
+     * @param HostAcknowledgementQueryOptions $queryOptions
+     * @return array
+     */
+    public function getCurrentAcknowledgements(HostAcknowledgementQueryOptions $queryOptions){
+        return $this->HostAcknowledgementLoader->getCurrentHostAcknowledgements($queryOptions);
+    }
+
 }

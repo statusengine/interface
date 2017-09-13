@@ -69,6 +69,8 @@ class ScheduleddowntimeHostLoader implements ScheduleddowntimeHostLoaderInterfac
             $baseQuery = sprintf('%s AND hostname LIKE ?', $baseQuery);
         }
 
+        $baseQuery .= $this->getClusterNameQuery($QueryOptions);
+
         $baseQuery = sprintf(
             '%s ORDER BY %s %s LIMIT ? OFFSET ?',
             $baseQuery,
@@ -84,6 +86,9 @@ class ScheduleddowntimeHostLoader implements ScheduleddowntimeHostLoaderInterfac
             $query->bindValue($i++, $like);
         }
 
+        foreach ($QueryOptions->getClusterName() as $clusterName) {
+            $query->bindValue($i++, $clusterName);
+        }
 
         $query->bindValue($i++, $QueryOptions->getLimit(), \PDO::PARAM_INT);
         $query->bindValue($i++, $QueryOptions->getOffset(), \PDO::PARAM_INT);
@@ -98,6 +103,21 @@ class ScheduleddowntimeHostLoader implements ScheduleddowntimeHostLoaderInterfac
 
         return $results;
 
+    }
+
+    /**
+     * @param ScheduleddowntimeQueryOptions $QueryOptions
+     * @return string
+     */
+    private function getClusterNameQuery(ScheduleddowntimeQueryOptions $QueryOptions) {
+        $placeholders = [];
+        foreach ($QueryOptions->getClusterName() as $clusterName) {
+            $placeholders[] = '?';
+        }
+        if (!empty($placeholders)) {
+            return sprintf(' AND node_name IN(%s)', implode(',', $placeholders));
+        }
+        return '';
     }
 
 }

@@ -45,4 +45,12 @@ class ServiceAcknowledgement extends Controller {
         return $this->ServiceAcknowledgementLoader->getAcknowledgements($queryOptions);
     }
 
+    /**
+     * @param ServiceAcknowledgementQueryOptions $queryOptions
+     * @return array
+     */
+    public function getCurrentAcknowledgements(ServiceAcknowledgementQueryOptions $queryOptions) {
+        return $this->ServiceAcknowledgementLoader->getCurrentServiceAcknowledgements($queryOptions);
+    }
+
 }

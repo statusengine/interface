@@ -684,4 +684,42 @@ $app->get('/scheduleddowntimes', function (Request $request, Response $response)
 
 });
 
+/**
+ * Parameters:
+ * object_type string (host/service)
+ * hostname__like string
+ * servicedescription__like string
+ * limit int
+ * offset int
+ * entry_time__lt < timestamp
+ * entry_time__gt > timestamp
+ */
+$app->get('/acknowledgements', function (Request $request, Response $response) {
+    $StorageBackend = $this->get('StorageBackend');
+    $params = $request->getQueryParams();
+
+    $QueryOptions = new \Statusengine\ValueObjects\AcknowledgementQueryOptions($params);
+
+    if ($QueryOptions->isHostRequest()) {
+        $AcknowledgementController = new \Statusengine\Controller\HostAcknowledgement(
+            $StorageBackend->getHostAcknowledgementLoader()
+        );
+
+        $data = $AcknowledgementController->getCurrentAcknowledgements(
+            new \Statusengine\ValueObjects\HostAcknowledgementQueryOptions($params)
+        );
+        return $response->withJson($data);
+
+    }
+
+    $AcknowledgementController = new \Statusengine\Controller\ServiceAcknowledgement(
+        $StorageBackend->getServiceAcknowledgementLoader()
+    );
+
+    $data = $AcknowledgementController->getCurrentAcknowledgements(
+        new \Statusengine\ValueObjects\ServiceAcknowledgementQueryOptions($params)
+    );
+    return $response->withJson($data);
+});
+
 $app->run();

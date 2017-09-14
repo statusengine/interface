@@ -2,7 +2,6 @@
 /**
  * Statusengine UI
  * Copyright (C) 2016-2017  Daniel Ziegler
-
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -46,6 +45,31 @@ class Dashboard extends Controller {
             $this->DashboardLoader->getServiceOverview()
         );
         $data['number_of_service_problems'] = $this->DashboardLoader->getNumberOfServiceProblems();
+
+        return $data;
+    }
+
+    /**
+     * @return array
+     */
+    public function menuStats() {
+        $data = [];
+        $data['hoststatus_overview'] = $this->getHostStateDescription(
+            $this->DashboardLoader->getHostOverview([1, 2])
+        );
+        $data['servicestatus_overview'] = $this->getServiceStateDescription(
+            $this->DashboardLoader->getServiceOverview([1, 2, 3])
+        );
+
+        $data['number_of_service_problems'] = $this->DashboardLoader->getNumberOfServiceProblems();
+
+        $data['number_of_host_acknowledgements'] = $this->DashboardLoader->getNumberOfHostAcknowledgements();
+
+        $data['number_of_service_acknowledgements'] = $this->DashboardLoader->getNumberOfServiceAcknowledgements();
+
+        $data['number_of_scheduled_host_downtimes'] = $this->DashboardLoader->getNummerOfScheduledHostDowntimes();
+
+        $data['number_of_scheduled_service_downtimes'] = $this->DashboardLoader->getNummerOfScheduledServiceDowntimes();
 
         return $data;
     }

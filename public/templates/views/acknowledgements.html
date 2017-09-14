@@ -23,8 +23,6 @@
                                     aria-expanded="false">Node/Service
                                 <span class="fa fa-caret-down"></span></button>
                             <ul class="dropdown-menu">
-
-
                                 <li>
 
                                     <label>
@@ -111,7 +109,7 @@
                             </div>
 
 
-                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg shield-mobile shield-host-{{ acknowledgement.state }}">
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg shield-mobile shield-{{object_type}}-{{ acknowledgement.state }}">
                                 <a ui-sref="nodedetails({'nodename':'{{ acknowledgement.hostname | encodeURI }}'})">
                                     {{ acknowledgement.hostname }}
                                 </a>

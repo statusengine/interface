@@ -42,18 +42,40 @@ interface DashboardLoaderInterface {
     public function getNumberOfMonitoredServices();
 
     /**
+     * @param array $states
      * @return array
      */
-    public function getHostOverview();
+    public function getHostOverview($states = [0, 1, 2]);
 
     /**
+     * @param array $states
      * @return array
      */
-    public function getServiceOverview();
+    public function getServiceOverview($states = [0, 1, 2, 3]);
 
     /**
      * @return int
      */
     public function getNumberOfServiceProblems();
+
+    /**
+     * @return int
+     */
+    public function getNumberOfHostAcknowledgements();
+
+    /**
+     * @return int
+     */
+    public function getNumberOfServiceAcknowledgements();
+
+    /**
+     * @return int
+     */
+    public function getNummerOfScheduledHostDowntimes();
+
+    /**
+     * @return int
+     */
+    public function getNummerOfScheduledServiceDowntimes();
 
 }

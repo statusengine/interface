@@ -722,4 +722,17 @@ $app->get('/acknowledgements', function (Request $request, Response $response) {
     return $response->withJson($data);
 });
 
+/**
+ * will always return 0 for hosts up and services ok!
+ */
+$app->get('/menustats', function (Request $request, Response $response) {
+    $StorageBackend = $this->get('StorageBackend');
+    $DashboardController = new \Statusengine\Controller\Dashboard(
+        $StorageBackend->getDashboardLoader()
+    );
+    $data = $DashboardController->menuStats();
+
+    return $response->withJson($data);
+});
+
 $app->run();

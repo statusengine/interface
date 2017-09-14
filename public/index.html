@@ -179,7 +179,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
             <!-- sidebar menu: : style can be found in sidebar.less -->
             <ul class="sidebar-menu">
-                <li class="header">Navigation</li>
+                <li class="header">
+                    Navigation
+                    <span class="pull-right">
+                        <i class="fa fa-refresh fa-spin" id="menustatsRefresh" style="display:none;"></i>
+                    </span>
+                </li>
                 <li class="treeview" ui-sref-active="active">
                     <a ui-sref="dashboard">
                         <i class="fa fa-dashboard text-primary"></i> <span>Dashboard</span>

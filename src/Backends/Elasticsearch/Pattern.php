@@ -55,6 +55,11 @@ class Pattern {
         $end = $ServicePerfdataQueryOptions->getEnd(); //right side of graph
         $start = $ServicePerfdataQueryOptions->getStart(); //left side of graph
 
+        if ($end > $start) {
+            $end = time() - 60 * 60 * 2.5;
+            $start = time();
+        }
+
         if ($this->pattern === 'none') {
             return [$this->index];
         }
@@ -95,6 +100,19 @@ class Pattern {
             return array_unique($days);
         }
 
+        if (date('Y.m.d', $end) !== date('Y.m.d', $start)) {
+            return [
+                sprintf(
+                    '%s%s',
+                    $this->index, date('Y.m.d', $end)
+                ),
+                sprintf(
+                    '%s%s',
+                    $this->index, date('Y.m.d', $start)
+                )
+            ];
+        }
+
         return [
             sprintf(
                 '%s%s',
@@ -108,7 +126,7 @@ class Pattern {
      * @param int $end
      * @return array
      */
-    private function getIndicesForWeekPattern($start, $end){
+    private function getIndicesForWeekPattern($start, $end) {
         if (($start - $end) > self::ONE_WEEK) {
             $period = new \DatePeriod(
                 new \DateTime(date('Y-m-d', $end)),
@@ -127,6 +145,19 @@ class Pattern {
             return array_unique($weeks);
         }
 
+        if (date('o.W', $end) !== date('o.W', $start)) {
+            return [
+                sprintf(
+                    '%s%s',
+                    $this->index, date('o.W', $end)
+                ),
+                sprintf(
+                    '%s%s',
+                    $this->index, date('o.W', $start)
+                )
+            ];
+        }
+
         return [
             sprintf(
                 '%s%s',
@@ -140,7 +171,7 @@ class Pattern {
      * @param int $end
      * @return array
      */
-    private function getIndicesForMonthPattern($start, $end){
+    private function getIndicesForMonthPattern($start, $end) {
         if (($start - $end) > self::ONE_MONTH) {
             $period = new \DatePeriod(
                 new \DateTime(date('Y-m-d', $end)),
@@ -157,6 +188,19 @@ class Pattern {
             }
             $months[] = sprintf('%s%s', $this->index, date('Y.m'));
             return array_unique($months);
+        }
+
+        if (date('Y.m', $end) !== date('Y.m', $start)) {
+            return [
+                sprintf(
+                    '%s%s',
+                    $this->index, date('Y.m', $end)
+                ),
+                sprintf(
+                    '%s%s',
+                    $this->index, date('Y.m', $start)
+                )
+            ];
         }
 
         return [

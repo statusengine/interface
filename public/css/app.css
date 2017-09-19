@@ -12,6 +12,10 @@
     text-align: center;
 }
 
+.padding-top-10 {
+    padding-top: 10px;
+}
+
 .small-box:hover .icon {
     font-size: 90px;
 }
@@ -235,15 +239,9 @@
     background-color: #3c8dbc !important;
 }
 
-.margin-bottom-5{
+.margin-bottom-5 {
     margin-bottom: 5px;
 }
-
-
-
-
-
-
 
 /* Overwrite AdminLTE styles */
 
@@ -253,6 +251,7 @@
     width: 180px;
     left: 50px;
 }
+
 .sidebar-mini.sidebar-collapse:not(.sidebar-mini-expand-feature) .sidebar-menu > li:hover > a > .pull-right-container {
     position: relative !important;
     float: right;
@@ -261,15 +260,18 @@
     top: -25px !important;
     z-index: 900;
 }
+
 .sidebar-mini.sidebar-collapse:not(.sidebar-mini-expand-feature) .sidebar-menu > li:hover > a > span {
     top: 0;
     margin-left: -3px;
     padding: 12px 5px 12px 20px;
     background-color: inherit;
 }
+
 .sidebar-mini.sidebar-collapse .sidebar-menu > li:not(.treeview) > a > span {
     border-bottom-right-radius: 4px;
 }
+
 .sidebar-mini.sidebar-collapse .main-sidebar .user-panel > .info, .sidebar-mini.sidebar-collapse .sidebar-form, .sidebar-mini.sidebar-collapse .sidebar-menu > li > a > span, .sidebar-mini.sidebar-collapse .sidebar-menu > li > .treeview-menu, .sidebar-mini.sidebar-collapse .sidebar-menu > li > a > .pull-right, .sidebar-mini.sidebar-collapse .sidebar-menu li.header {
     display: none !important;
     -webkit-transform: translateZ(0);
@@ -281,6 +283,7 @@
     top: 50%;
     margin-top: -7px;
 }
+
 .sidebar-mini.sidebar-collapse:not(.sidebar-mini-expand-feature) .sidebar-menu > li:hover > a > .pull-right-container > .label:not(:first-of-type) {
     display: none;
 }

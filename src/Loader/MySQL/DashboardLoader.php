@@ -22,6 +22,7 @@ namespace Statusengine\Loader\Mysql;
 use Statusengine\Backend\Mysql\MySQL;
 use Statusengine\Backend\StorageBackend;
 use Statusengine\Loader\DashboardLoaderInterface;
+use Statusengine\ValueObjects\DashboardQueryOptions;
 
 class DashboardLoader implements DashboardLoaderInterface {
 
@@ -63,25 +64,39 @@ class DashboardLoader implements DashboardLoaderInterface {
     }
 
     /**
-     * @param array $states
+     * @param DashboardQueryOptions $DashboardQueryOptions
      * @return array
      */
-    public function getHostOverview($states = [0, 1, 2]) {
+    public function getHostOverview(DashboardQueryOptions $DashboardQueryOptions) {
         $result = [
             0 => 0, //up
             1 => 0, //down
             2 => 0, //unreachable
         ];
 
-        $baseQuery = 'SELECT current_state, COUNT(current_state) AS count FROM statusengine_hoststatus %s GROUP BY current_state';
-        if (sizeof($states) < 3) {
+        $baseQuery = 'SELECT current_state, COUNT(current_state) AS count FROM statusengine_hoststatus';
+        $where = 'WHERE';
+        if ($DashboardQueryOptions->hasHostStateFilter()) {
             $baseQuery = sprintf(
+                ' %s %s current_state IN (%s)',
                 $baseQuery,
-                sprintf('WHERE current_state IN (%s)', implode(',', $states))
+                $where,
+                implode(',', $DashboardQueryOptions->getHostStates())
             );
-        } else {
-            $baseQuery = sprintf($baseQuery, '');
+            $where = 'AND';
         }
+
+        if ($DashboardQueryOptions->isExcludeInDowntime()) {
+            $baseQuery = sprintf(' %s %s scheduled_downtime_depth=0', $baseQuery, $where);
+            $where = 'AND';
+        }
+
+        if ($DashboardQueryOptions->isExcludeAcknowledge()) {
+            $baseQuery = sprintf(' %s %s problem_has_been_acknowledged=0', $baseQuery, $where);
+            $where = 'AND';
+        }
+
+        $baseQuery = sprintf('%s GROUP BY current_state', $baseQuery);
 
         $query = $this->Backend->prepare($baseQuery);
         foreach ($this->Backend->fetchAll($query) as $currentState) {
@@ -92,10 +107,10 @@ class DashboardLoader implements DashboardLoaderInterface {
     }
 
     /**
-     * @param array $states
+     * @param DashboardQueryOptions $DashboardQueryOptions
      * @return array
      */
-    public function getServiceOverview($states = [0, 1, 2, 3]) {
+    public function getServiceOverview(DashboardQueryOptions $DashboardQueryOptions) {
         $result = [
             0 => 0, //ok
             1 => 0, //warning
@@ -103,15 +118,29 @@ class DashboardLoader implements DashboardLoaderInterface {
             3 => 0, //unknown
         ];
 
-        $baseQuery = 'SELECT current_state, COUNT(current_state) AS count FROM statusengine_servicestatus %s GROUP BY current_state';
-        if (sizeof($states) < 4) {
+        $baseQuery = 'SELECT current_state, COUNT(current_state) AS count FROM statusengine_servicestatus';
+        $where = 'WHERE';
+        if ($DashboardQueryOptions->hasServiceStateFilter()) {
             $baseQuery = sprintf(
+                ' %s %s current_state IN (%s)',
                 $baseQuery,
-                sprintf('WHERE current_state IN (%s)', implode(',', $states))
+                $where,
+                implode(',', $DashboardQueryOptions->getServiceStates())
             );
-        } else {
-            $baseQuery = sprintf($baseQuery, '');
+            $where = 'AND';
         }
+
+        if ($DashboardQueryOptions->isExcludeInDowntime()) {
+            $baseQuery = sprintf(' %s %s scheduled_downtime_depth=0', $baseQuery, $where);
+            $where = 'AND';
+        }
+
+        if ($DashboardQueryOptions->isExcludeAcknowledge()) {
+            $baseQuery = sprintf(' %s %s problem_has_been_acknowledged=0', $baseQuery, $where);
+            $where = 'AND';
+        }
+
+        $baseQuery = sprintf('%s GROUP BY current_state', $baseQuery);
 
         $query = $this->Backend->prepare($baseQuery);
         foreach ($this->Backend->fetchAll($query) as $currentState) {
@@ -138,12 +167,12 @@ class DashboardLoader implements DashboardLoaderInterface {
     /**
      * @return int
      */
-    public function getNumberOfHostAcknowledgements(){
+    public function getNumberOfHostAcknowledgements() {
         $baseQuery = 'SELECT COUNT(*) AS count FROM statusengine_hoststatus WHERE problem_has_been_acknowledged=1';
         $query = $this->Backend->prepare($baseQuery);
         $result = $this->Backend->fetchAll($query);
 
-        if(isset($result[0]['count'])){
+        if (isset($result[0]['count'])) {
             return (int)$result[0]['count'];
         }
 
@@ -153,12 +182,12 @@ class DashboardLoader implements DashboardLoaderInterface {
     /**
      * @return int
      */
-    public function getNumberOfServiceAcknowledgements(){
+    public function getNumberOfServiceAcknowledgements() {
         $baseQuery = 'SELECT COUNT(*) AS count FROM statusengine_servicestatus WHERE problem_has_been_acknowledged=1';
         $query = $this->Backend->prepare($baseQuery);
         $result = $this->Backend->fetchAll($query);
 
-        if(isset($result[0]['count'])){
+        if (isset($result[0]['count'])) {
             return (int)$result[0]['count'];
         }
 
@@ -168,12 +197,12 @@ class DashboardLoader implements DashboardLoaderInterface {
     /**
      * @return int
      */
-    public function getNummerOfScheduledHostDowntimes(){
+    public function getNummerOfScheduledHostDowntimes() {
         $baseQuery = 'SELECT COUNT(*) AS count FROM statusengine_hoststatus WHERE scheduled_downtime_depth > 0';
         $query = $this->Backend->prepare($baseQuery);
         $result = $this->Backend->fetchAll($query);
 
-        if(isset($result[0]['count'])){
+        if (isset($result[0]['count'])) {
             return (int)$result[0]['count'];
         }
 
@@ -183,12 +212,12 @@ class DashboardLoader implements DashboardLoaderInterface {
     /**
      * @return int
      */
-    public function getNummerOfScheduledServiceDowntimes(){
+    public function getNummerOfScheduledServiceDowntimes() {
         $baseQuery = 'SELECT COUNT(*) AS count FROM statusengine_servicestatus WHERE scheduled_downtime_depth > 0';
         $query = $this->Backend->prepare($baseQuery);
         $result = $this->Backend->fetchAll($query);
 
-        if(isset($result[0]['count'])){
+        if (isset($result[0]['count'])) {
             return (int)$result[0]['count'];
         }
 

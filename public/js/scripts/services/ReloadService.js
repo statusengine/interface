@@ -2,12 +2,17 @@ angular.module('Statusengine')
     .service('ReloadService', function ($interval, $rootScope) {
         var _callback = null;
         var autoReloadEnabled = true;
+        var ackAndDowntimeIsOk = false;
         var autoreloadTimer = null;
 
         var isDisabledTemporary = false;
 
         if (window.localStorage.getItem('autoReloadEnabled') == 'false') {
             autoReloadEnabled = false;
+        }
+
+        if (window.localStorage.getItem('ackAndDowntimeIsOk') == 'true') {
+            ackAndDowntimeIsOk = true;
         }
 
         var callCallback = function () {
@@ -18,7 +23,7 @@ angular.module('Statusengine')
 
         var handleTimer = function (disableTemporary) {
             if (autoReloadEnabled === true) {
-                if(!disableTemporary){
+                if (!disableTemporary) {
                     window.localStorage.removeItem('autoReloadEnabled');
                 }
                 if (autoreloadTimer === null) {
@@ -27,7 +32,7 @@ angular.module('Statusengine')
             } else {
                 $interval.cancel(autoreloadTimer);
                 autoreloadTimer = null;
-                if(!disableTemporary) {
+                if (!disableTemporary) {
                     window.localStorage.setItem('autoReloadEnabled', false);
                 }
             }
@@ -45,7 +50,7 @@ angular.module('Statusengine')
                 $rootScope.isAutoReloadEnabled = autoReloadEnabled;
                 handleTimer(false);
             },
-            setAutoReloadEnabledTemporary: function(value){
+            setAutoReloadEnabledTemporary: function (value) {
                 autoReloadEnabled = value;
                 isDisabledTemporary = !value;
                 $rootScope.isAutoReloadEnabled = autoReloadEnabled;
@@ -54,11 +59,22 @@ angular.module('Statusengine')
             getAutoReloadEnabled: function () {
                 return autoReloadEnabled;
             },
-            enableAutoloadIfRequired: function(){
-                if(isDisabledTemporary){
+            enableAutoloadIfRequired: function () {
+                if (isDisabledTemporary) {
                     autoReloadEnabled = true;
                     handleTimer(false);
                 }
+            },
+            setAckAndDowntimeIsOk: function (value) {
+                if(value === true){
+                    window.localStorage.setItem('ackAndDowntimeIsOk', true);
+                }else{
+                    window.localStorage.removeItem('ackAndDowntimeIsOk');
+                }
+                ackAndDowntimeIsOk = value;
+            },
+            getAckAndDowntimeIsOk: function () {
+                return ackAndDowntimeIsOk;
             }
         }
     });

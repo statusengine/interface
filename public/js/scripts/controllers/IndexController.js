@@ -8,7 +8,13 @@ angular.module('Statusengine')
 
         $scope.loadMenustats = function () {
             $('#menustatsRefresh').show();
-            $http.get("/api/index.php/menustats").then(function (result) {
+
+
+            $http.get("/api/index.php/menustats", {
+                params: {
+                    hide_ack_and_downtime: ReloadService.getAckAndDowntimeIsOk()
+                }
+            }).then(function (result) {
                     $scope.data = result.data;
                     $scope.acknowledgements = $scope.data.number_of_host_acknowledgements;
                     $scope.acknowledgements += $scope.data.number_of_service_acknowledgements;
@@ -19,6 +25,7 @@ angular.module('Statusengine')
                         //Let the weel spin for one seconds
                         $('#menustatsRefresh').hide();
                     }, 1000);
+
                 }
             );
         };

@@ -2,7 +2,6 @@
 /**
  * Statusengine UI
  * Copyright (C) 2016-2017  Daniel Ziegler
-
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -21,6 +20,7 @@ namespace Statusengine\Loader;
 
 
 use Statusengine\Backend\StorageBackend;
+use Statusengine\ValueObjects\DashboardQueryOptions;
 
 interface DashboardLoaderInterface {
 
@@ -42,16 +42,16 @@ interface DashboardLoaderInterface {
     public function getNumberOfMonitoredServices();
 
     /**
-     * @param array $states
-     * @return array
+     * @param DashboardQueryOptions $
+     * @return mixed
      */
-    public function getHostOverview($states = [0, 1, 2]);
+    public function getHostOverview(DashboardQueryOptions $DashboardQueryOptions);
 
     /**
-     * @param array $states
-     * @return array
+     * @param DashboardQueryOptions $
+     * @return mixed
      */
-    public function getServiceOverview($states = [0, 1, 2, 3]);
+    public function getServiceOverview(DashboardQueryOptions $DashboardQueryOptions);
 
     /**
      * @return int

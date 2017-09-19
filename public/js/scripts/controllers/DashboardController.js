@@ -21,7 +21,12 @@ angular.module('Statusengine')
         };
 
         $scope.reload = function () {
-            $http.get("/api/index.php").then(function (result) {
+
+            $http.get("/api/index.php", {
+                params: {
+                    hide_ack_and_downtime: ReloadService.getAckAndDowntimeIsOk()
+                }
+            }).then(function (result) {
                     $scope.data = result.data;
                     if ($scope.oldData) {
                         $scope.notifyNodeStateChange();
@@ -30,6 +35,7 @@ angular.module('Statusengine')
                         $scope.initializing = false;
                     }
                     $scope.oldData = result.data;
+
                 }
             );
         };

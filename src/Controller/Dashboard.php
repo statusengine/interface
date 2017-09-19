@@ -20,6 +20,7 @@ namespace Statusengine\Controller;
 
 use Statusengine\Loader\Crate\DashboardLoader;
 use Statusengine\Loader\DashboardLoaderInterface;
+use Statusengine\ValueObjects\DashboardQueryOptions;
 
 class Dashboard extends Controller {
 
@@ -34,15 +35,15 @@ class Dashboard extends Controller {
     /**
      * @return array
      */
-    public function index() {
+    public function index(DashboardQueryOptions $DashboardQueryOptions) {
         $data = [];
         $data['number_of_monitored_hosts'] = $this->DashboardLoader->getNumberOfMonitoredHosts();
         $data['number_of_monitored_services'] = $this->DashboardLoader->getNumberOfMonitoredServices();
         $data['hoststatus_overview'] = $this->getHostStateDescription(
-            $this->DashboardLoader->getHostOverview()
+            $this->DashboardLoader->getHostOverview($DashboardQueryOptions)
         );
         $data['servicestatus_overview'] = $this->getServiceStateDescription(
-            $this->DashboardLoader->getServiceOverview()
+            $this->DashboardLoader->getServiceOverview($DashboardQueryOptions)
         );
         $data['number_of_service_problems'] = $this->DashboardLoader->getNumberOfServiceProblems();
 
@@ -52,13 +53,13 @@ class Dashboard extends Controller {
     /**
      * @return array
      */
-    public function menuStats() {
+    public function menuStats(DashboardQueryOptions $DashboardQueryOptions) {
         $data = [];
         $data['hoststatus_overview'] = $this->getHostStateDescription(
-            $this->DashboardLoader->getHostOverview([1, 2])
+            $this->DashboardLoader->getHostOverview($DashboardQueryOptions)
         );
         $data['servicestatus_overview'] = $this->getServiceStateDescription(
-            $this->DashboardLoader->getServiceOverview([1, 2, 3])
+            $this->DashboardLoader->getServiceOverview($DashboardQueryOptions)
         );
 
         $data['number_of_service_problems'] = $this->DashboardLoader->getNumberOfServiceProblems();

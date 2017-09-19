@@ -44,11 +44,11 @@ angular.module('Statusengine')
             var number;
             if ($scope.data.hoststatus_overview.down > $scope.oldData.hoststatus_overview.down) {
                 number = $scope.data.hoststatus_overview.down - $scope.oldData.hoststatus_overview.down;
-                notify(number, 'Nodes', 'Down', 'error');
+                notify(number, 'nodes', 'Down', 'error');
             }
             if ($scope.data.hoststatus_overview.unreachable > $scope.oldData.hoststatus_overview.unreachable) {
                 number = $scope.data.hoststatus_overview.unreachable - $scope.oldData.hoststatus_overview.unreachable;
-                notify(number, 'Nodes', 'Unreachable', 'information');
+                notify(number, 'nodes', 'Unreachable', 'information');
             }
         };
 
@@ -56,15 +56,15 @@ angular.module('Statusengine')
             var number;
             if ($scope.data.servicestatus_overview.warning > $scope.oldData.servicestatus_overview.warning) {
                 number = $scope.data.servicestatus_overview.warning - $scope.oldData.servicestatus_overview.warning;
-                notify(number, 'Services', 'Warning', 'warning');
+                notify(number, 'services', 'Warning', 'warning');
             }
             if ($scope.data.servicestatus_overview.critical > $scope.oldData.servicestatus_overview.critical) {
                 number = $scope.data.servicestatus_overview.critical - $scope.oldData.servicestatus_overview.critical;
-                notify(number, 'Services', 'Critical', 'error');
+                notify(number, 'services', 'Critical', 'error');
             }
             if ($scope.data.servicestatus_overview.unknown > $scope.oldData.servicestatus_overview.unknown) {
                 number = $scope.data.servicestatus_overview.unknown - $scope.oldData.servicestatus_overview.unknown;
-                notify(number, 'Services', 'Unknown', 'information');
+                notify(number, 'services', 'Unknown', 'information');
             }
         };
 

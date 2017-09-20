@@ -6,6 +6,7 @@ angular.module('Statusengine')
         var autoreloadTimer = null;
 
         var isDisabledTemporary = false;
+        var autoreloadFrequency = 10000;
 
         if (window.localStorage.getItem('autoReloadEnabled') == 'false') {
             autoReloadEnabled = false;
@@ -13,6 +14,13 @@ angular.module('Statusengine')
 
         if (window.localStorage.getItem('ackAndDowntimeIsOk') == 'true') {
             ackAndDowntimeIsOk = true;
+        }
+
+        if(window.localStorage.getItem('autoReloadFrequency')){
+            var value = parseInt(window.localStorage.getItem('autoReloadFrequency'), 10);
+            if(value > 1000){
+                autoreloadFrequency = value;
+            }
         }
 
         var callCallback = function () {
@@ -27,7 +35,7 @@ angular.module('Statusengine')
                     window.localStorage.removeItem('autoReloadEnabled');
                 }
                 if (autoreloadTimer === null) {
-                    autoreloadTimer = $interval(callCallback, 10000);
+                    autoreloadTimer = $interval(callCallback, autoreloadFrequency);
                 }
             } else {
                 $interval.cancel(autoreloadTimer);
@@ -35,6 +43,13 @@ angular.module('Statusengine')
                 if (!disableTemporary) {
                     window.localStorage.setItem('autoReloadEnabled', false);
                 }
+            }
+        };
+
+        var updateTimerFrequency = function(){
+            if (autoreloadTimer !== null) {
+                $interval.cancel(autoreloadTimer);
+                autoreloadTimer = $interval(callCallback, autoreloadFrequency);
             }
         };
 
@@ -75,6 +90,17 @@ angular.module('Statusengine')
             },
             getAckAndDowntimeIsOk: function () {
                 return ackAndDowntimeIsOk;
+            },
+            setAutoReloadFrequency: function(value){
+                value = parseInt(value, 10);
+                if(value > 0) {
+                    autoreloadFrequency = value;
+                    window.localStorage.setItem('autoReloadFrequency', value);
+                    updateTimerFrequency();
+                }
+            },
+            getAutoReloadFrequency: function(){
+                return autoreloadFrequency;
             }
         }
     });

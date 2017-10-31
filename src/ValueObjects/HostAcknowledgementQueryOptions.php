@@ -72,6 +72,11 @@ class HostAcknowledgementQueryOptions extends QueryOptions {
     /**
      * @var string
      */
+    private $hostname__like = '';
+
+    /**
+     * @var string
+     */
     private $hostname;
 
     /**
@@ -120,6 +125,10 @@ class HostAcknowledgementQueryOptions extends QueryOptions {
 
         if (isset($this->params['comment_data__like'])) {
             $this->comment_data__like = $this->params['comment_data__like'];
+        }
+
+        if (isset($this->params['hostname__like'])) {
+            $this->hostname__like = $this->params['hostname__like'];
         }
 
 
@@ -179,6 +188,13 @@ class HostAcknowledgementQueryOptions extends QueryOptions {
      */
     public function getHostname() {
         return $this->hostname;
+    }
+
+    /**
+     * @return string
+     */
+    public function getHostnameLike() {
+        return $this->hostname__like;
     }
 
 }

@@ -1,6 +1,6 @@
 angular.module('Statusengine')
 
-    .controller("ScheduleddowntimesController", function ($http, $interval, $scope, ReloadService, $document, $state) {
+    .controller("AcknowledgementsController", function ($http, $interval, $scope, ReloadService, $document, $state) {
 
         ReloadService.enableAutoloadIfRequired();
         var hasUserAutoReloadEnabled = ReloadService.getAutoReloadEnabled();
@@ -14,7 +14,7 @@ angular.module('Statusengine')
 
         $scope.isAllowedToSubmitCommand = false;
         $scope.object_type = 'host';
-        if (window.localStorage.getItem('scheduleddowntimes_object_type') == 'service') {
+        if (window.localStorage.getItem('acknowledgements_object_type') == 'service') {
             $scope.object_type = 'service';
         }
 
@@ -25,13 +25,13 @@ angular.module('Statusengine')
         $scope.reload = function () {
             offset = 0;
 
-            if ($scope.object_type == 'host'){
-                window.localStorage.removeItem('scheduleddowntimes_object_type');
-            }else{
-                window.localStorage.setItem('scheduleddowntimes_object_type', 'service');
-                }
+            if ($scope.object_type == 'host') {
+                window.localStorage.removeItem('acknowledgements_object_type');
+            } else {
+                window.localStorage.setItem('acknowledgements_object_type', 'service');
+            }
 
-            $http.get("/api/index.php/scheduleddowntimes", {
+            $http.get("/api/index.php/acknowledgements", {
                 params: {
                     object_type: $scope.object_type,
                     hostname__like: $scope.hostname__like,
@@ -49,18 +49,13 @@ angular.module('Statusengine')
                     }
                 }
             );
-
-            $http.get("/api/index.php/cluster").then(function (result) {
-                    $scope.clusterNodes = result.data;
-                }
-            );
         };
 
-        $scope.loadMoreDowntimes = function () {
+        $scope.loadMoreAcknowledgements = function () {
             $scope.apiIsBusyOrNoDataAnymore = true;
             offset += limit;
 
-            $http.get("/api/index.php/scheduleddowntimes", {
+            $http.get("/api/index.php/acknowledgements", {
                 params: {
                     object_type: $scope.object_type,
                     hostname__like: $scope.hostname__like,
@@ -84,7 +79,7 @@ angular.module('Statusengine')
         };
 
         $document.on('scroll', function () {
-            if (!$state.is('scheduleddowntimes')) {
+            if (!$state.is('acknowledgements')) {
                 return;
             }
             //Disable or enable auto reload - so you can read the logs
@@ -97,66 +92,25 @@ angular.module('Statusengine')
             }
         });
 
-        $scope.submitDeleteDowntime = function (internal_downtime_id, node_name) {
-            if ($scope.isAllowedToSubmitCommand === false) {
-                return;
+        $http.get("/api/index.php/cluster").then(function (result) {
+                $scope.clusterNodes = result.data;
             }
-
-            var command = 'DEL_HOST_DOWNTIME';
-            if($scope.object_type == 'service'){
-                command = 'DEL_SVC_DOWNTIME';
-            }
-
-            var data = {};
-            data['command_name'] = command;
-            data['downtime_id'] = internal_downtime_id;
-            data['node_name'] = node_name;
-
-            $http.get("/api/index.php/externalcommand_args", {
-                params: data
-            }).then(function (result) {
-                noty({
-                    theme: 'metrouiAdminLTE',
-                    progressBar: true,
-                    layout: 'bottomRight',
-                    type: 'success',
-                    text: 'Command was sent to Statusengine task queue',
-                    timeout: 2500,
-                    animation: {
-                        open: 'animated flipInX',
-                        close: 'animated flipOutX'
-                    }
-
-                });
-            });
-        };
-
-        $scope.getLoginState = function () {
-            $http.get("/api/index.php/loginstate", {
-                params: {}
-            }).then(function (result) {
-                $scope.isAllowedToSubmitCommand = false;
-                if (result.data.canAnonymousSubmitCommand === true || result.data.isLoggedIn === true) {
-                    $scope.isAllowedToSubmitCommand = true;
-                }
-            });
-        };
+        );
 
 
         ReloadService.setCallback($scope.reload);
 
         //triggers $scope.reload() on load and on search
-        $scope.$watch('[hostname__like, servicedescription__like, cluster_filter, object_type]', function(){
+        $scope.$watch('[hostname__like, servicedescription__like, object_type, cluster_filter]', function () {
             $scope.reload();
         }, true);
 
 
         $scope.loadMoreScheduledDowntimesOnScroll = function () {
             if ($scope.apiIsBusyOrNoDataAnymore === false) {
-                $scope.loadMoreDowntimes();
+                $scope.loadMoreAcknowledgements();
             }
         };
 
-        $scope.getLoginState();
 
     });

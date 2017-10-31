@@ -2,7 +2,6 @@
 /**
  * Statusengine UI
  * Copyright (C) 2016-2017  Daniel Ziegler
-
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -23,6 +22,7 @@ namespace Statusengine\Loader\Mysql;
 use Statusengine\Backend\Mysql\MySQL;
 use Statusengine\Backend\StorageBackend;
 use Statusengine\Loader\DashboardLoaderInterface;
+use Statusengine\ValueObjects\DashboardQueryOptions;
 
 class DashboardLoader implements DashboardLoaderInterface {
 
@@ -64,35 +64,87 @@ class DashboardLoader implements DashboardLoaderInterface {
     }
 
     /**
+     * @param DashboardQueryOptions $DashboardQueryOptions
      * @return array
      */
-    public function getHostOverview() {
+    public function getHostOverview(DashboardQueryOptions $DashboardQueryOptions) {
         $result = [
             0 => 0, //up
             1 => 0, //down
             2 => 0, //unreachable
         ];
-        $query = $this->Backend->prepare('SELECT current_state, COUNT(current_state) AS count FROM statusengine_hoststatus GROUP BY current_state');
-        foreach ($this->Backend->fetchAll($query) as $currentState) {
-            $result[$currentState['current_state']] = $currentState['count'];
+
+        $baseQuery = 'SELECT current_state, COUNT(current_state) AS count FROM statusengine_hoststatus';
+        $where = 'WHERE';
+        if ($DashboardQueryOptions->hasHostStateFilter()) {
+            $baseQuery = sprintf(
+                ' %s %s current_state IN (%s)',
+                $baseQuery,
+                $where,
+                implode(',', $DashboardQueryOptions->getHostStates())
+            );
+            $where = 'AND';
         }
-        
+
+        if ($DashboardQueryOptions->isExcludeInDowntime()) {
+            $baseQuery = sprintf(' %s %s scheduled_downtime_depth=0', $baseQuery, $where);
+            $where = 'AND';
+        }
+
+        if ($DashboardQueryOptions->isExcludeAcknowledge()) {
+            $baseQuery = sprintf(' %s %s problem_has_been_acknowledged=0', $baseQuery, $where);
+            $where = 'AND';
+        }
+
+        $baseQuery = sprintf('%s GROUP BY current_state', $baseQuery);
+
+        $query = $this->Backend->prepare($baseQuery);
+        foreach ($this->Backend->fetchAll($query) as $currentState) {
+            $result[$currentState['current_state']] = (int)$currentState['count'];
+        }
+
         return $result;
     }
 
     /**
+     * @param DashboardQueryOptions $DashboardQueryOptions
      * @return array
      */
-    public function getServiceOverview() {
+    public function getServiceOverview(DashboardQueryOptions $DashboardQueryOptions) {
         $result = [
             0 => 0, //ok
             1 => 0, //warning
             2 => 0, //critical
             3 => 0, //unknown
         ];
-        $query = $this->Backend->prepare('SELECT current_state, COUNT(current_state) AS count FROM statusengine_servicestatus GROUP BY current_state');
+
+        $baseQuery = 'SELECT current_state, COUNT(current_state) AS count FROM statusengine_servicestatus';
+        $where = 'WHERE';
+        if ($DashboardQueryOptions->hasServiceStateFilter()) {
+            $baseQuery = sprintf(
+                ' %s %s current_state IN (%s)',
+                $baseQuery,
+                $where,
+                implode(',', $DashboardQueryOptions->getServiceStates())
+            );
+            $where = 'AND';
+        }
+
+        if ($DashboardQueryOptions->isExcludeInDowntime()) {
+            $baseQuery = sprintf(' %s %s scheduled_downtime_depth=0', $baseQuery, $where);
+            $where = 'AND';
+        }
+
+        if ($DashboardQueryOptions->isExcludeAcknowledge()) {
+            $baseQuery = sprintf(' %s %s problem_has_been_acknowledged=0', $baseQuery, $where);
+            $where = 'AND';
+        }
+
+        $baseQuery = sprintf('%s GROUP BY current_state', $baseQuery);
+
+        $query = $this->Backend->prepare($baseQuery);
         foreach ($this->Backend->fetchAll($query) as $currentState) {
-            $result[$currentState['current_state']] = $currentState['count'];
+            $result[$currentState['current_state']] = (int)$currentState['count'];
         }
 
         return $result;
@@ -110,6 +162,66 @@ class DashboardLoader implements DashboardLoaderInterface {
         ');
         $result = $this->Backend->fetchAll($query);
         return (int)$result[0]['count'];
+    }
+
+    /**
+     * @return int
+     */
+    public function getNumberOfHostAcknowledgements() {
+        $baseQuery = 'SELECT COUNT(*) AS count FROM statusengine_hoststatus WHERE problem_has_been_acknowledged=1';
+        $query = $this->Backend->prepare($baseQuery);
+        $result = $this->Backend->fetchAll($query);
+
+        if (isset($result[0]['count'])) {
+            return (int)$result[0]['count'];
+        }
+
+        return 0;
+    }
+
+    /**
+     * @return int
+     */
+    public function getNumberOfServiceAcknowledgements() {
+        $baseQuery = 'SELECT COUNT(*) AS count FROM statusengine_servicestatus WHERE problem_has_been_acknowledged=1';
+        $query = $this->Backend->prepare($baseQuery);
+        $result = $this->Backend->fetchAll($query);
+
+        if (isset($result[0]['count'])) {
+            return (int)$result[0]['count'];
+        }
+
+        return 0;
+    }
+
+    /**
+     * @return int
+     */
+    public function getNummerOfScheduledHostDowntimes() {
+        $baseQuery = 'SELECT COUNT(*) AS count FROM statusengine_hoststatus WHERE scheduled_downtime_depth > 0';
+        $query = $this->Backend->prepare($baseQuery);
+        $result = $this->Backend->fetchAll($query);
+
+        if (isset($result[0]['count'])) {
+            return (int)$result[0]['count'];
+        }
+
+        return 0;
+    }
+
+    /**
+     * @return int
+     */
+    public function getNummerOfScheduledServiceDowntimes() {
+        $baseQuery = 'SELECT COUNT(*) AS count FROM statusengine_servicestatus WHERE scheduled_downtime_depth > 0';
+        $query = $this->Backend->prepare($baseQuery);
+        $result = $this->Backend->fetchAll($query);
+
+        if (isset($result[0]['count'])) {
+            return (int)$result[0]['count'];
+        }
+
+        return 0;
     }
 
 }

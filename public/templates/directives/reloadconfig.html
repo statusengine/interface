@@ -2,19 +2,50 @@
     <span><i class="fa fa-cog"></i> Settings</span>
 </a>
 
-<ul class="dropdown-menu">
-    <li class="refreshcontroll">
-        <div class="form-group">
-            <div class="col-sm-offset-2 col-sm-10">
-                <div class="checkbox">
-                    <label>
-                        <input type="checkbox" ng-model="do_auto_reload"> Auto refresh
-                    </label>
+<ul class="dropdown-menu" id="pageSettings">
+    <li>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xs-12 padding-top-10"></div>
+
+                <div class="col-xs-12 text-center">
+                    <div class="form-group">
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" ng-model="do_auto_reload"> Auto refresh
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 text-center">
+                    <div class="form-group">
+                        <label>Auto Refresh frequency</label>
+                        <select class="form-control" ng-model="autoreload_frequency">
+                            <option value="5000">5 seconds</option>
+                            <option value="10000">10 seconds</option>
+                            <option value="30000">30 seconds</option>
+                            <option value="60000">1 minute</option>
+                            <option value="300000">5 minutes</option>
+                            <option value="600000">10 minutes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xs-12 text-center">
+                <div class="form-group">
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" ng-model="ack_and_downtime_is_ok">
+                            Acknowledge and in Downtime hidden in Menu and Dashboard
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
-
+        </div>
     </li>
+
     <li class="user-footer">
         <div class="pull-right">
             <a href="javascript:void(0)" ng-click="logout()" class="btn btn-default btn-flat" ng-if="isLoggedIn">

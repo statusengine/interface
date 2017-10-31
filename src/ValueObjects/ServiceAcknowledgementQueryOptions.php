@@ -82,6 +82,16 @@ class ServiceAcknowledgementQueryOptions extends QueryOptions {
     private $service_description;
 
     /**
+     * @var string
+     */
+    private $hostname__like = '';
+
+    /**
+     * @var string
+     */
+    private $servicedescription__like = '';
+
+    /**
      * ServiceAcknowledgementQueryOptions constructor.
      * @param $params
      * @throws \Exception
@@ -131,6 +141,14 @@ class ServiceAcknowledgementQueryOptions extends QueryOptions {
 
         if (isset($this->params['comment_data__like'])) {
             $this->comment_data__like = $this->params['comment_data__like'];
+        }
+
+        if (isset($this->params['hostname__like'])) {
+            $this->hostname__like = $this->params['hostname__like'];
+        }
+
+        if (isset($this->params['servicedescription__like'])) {
+            $this->servicedescription__like = $this->params['servicedescription__like'];
         }
 
 
@@ -197,6 +215,20 @@ class ServiceAcknowledgementQueryOptions extends QueryOptions {
      */
     public function getServiceDescription() {
         return $this->service_description;
+    }
+
+    /**
+     * @return string
+     */
+    public function getHostnameLike() {
+        return $this->hostname__like;
+    }
+
+    /**
+     * @return string
+     */
+    public function getServicedescriptionLike() {
+        return $this->servicedescription__like;
     }
 
 }

@@ -88,7 +88,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <script type="text/javascript" src="js/scripts/controllers/ServiceAcknowledgementsController.js"></script>
     <script type="text/javascript" src="js/scripts/controllers/ServiceNotificationsController.js"></script>
     <script type="text/javascript" src="js/scripts/controllers/ScheduledDowntimesController.js"></script>
-
+    <script type="text/javascript" src="js/scripts/controllers/AcknowledgementsController.js"></script>
 
     <!-- Model Controllers -->
     <script type="text/javascript" src="js/scripts/controllers/SubmitPassiveHostCheckController.js"></script>
@@ -101,6 +101,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <script type="text/javascript" src="js/scripts/controllers/SubmitServiceDowntimeController.js"></script>
     <script type="text/javascript" src="js/scripts/controllers/SubmitServiceAcknowledgementController.js"></script>
 
+
     <script type="text/javascript" src="js/scripts/directives/NodesearchDirective.js"></script>
     <script type="text/javascript" src="js/scripts/directives/GlobalproblemDirective.js"></script>
     <script type="text/javascript" src="js/scripts/directives/HoststatusPillDirective.js"></script>
@@ -111,6 +112,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     <script type="text/javascript" src="bower_components/chart.js/dist/Chart.min.js"></script>
     <script type="text/javascript" src="bower_components/noty/js/noty/packaged/jquery.noty.packaged.min.js"></script>
+    <script type="text/javascript" src="js/noty_themes/metroui_adminlte.js"></script>
 
     <script type="text/javascript" src="js/collaps.js"></script>
 
@@ -178,7 +180,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
             <!-- sidebar menu: : style can be found in sidebar.less -->
             <ul class="sidebar-menu">
-                <li class="header">Navigation</li>
+                <li class="header">
+                    Navigation
+                    <span class="pull-right">
+                        <i class="fa fa-refresh fa-spin" id="menustatsRefresh" style="display:none;"></i>
+                    </span>
+                </li>
                 <li class="treeview" ui-sref-active="active">
                     <a ui-sref="dashboard">
                         <i class="fa fa-dashboard text-primary"></i> <span>Dashboard</span>
@@ -188,6 +195,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <li class="treeview" ui-sref-active="active">
                     <a ui-sref="nodes">
                         <i class="fa fa-hdd-o text-primary"></i> <span> Nodes</span>
+                        <span class="pull-right-container">
+                            <small class="label pull-right bg-primary"
+                                   ng-show="data.hoststatus_overview.unreachable > 0">
+                                {{ data.hoststatus_overview.unreachable }}
+                            </small>
+                            <small class="label pull-right bg-red" ng-show="data.hoststatus_overview.down > 0">
+                                {{ data.hoststatus_overview.down }}
+                            </small>
+                        </span>
                     </a>
                 </li>
 
@@ -195,18 +211,47 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <li class="treeview" ui-sref-active="active">
                     <a ui-sref="services">
                         <i class="fa fa-cog text-primary"></i> <span> Services</span>
+                        <span class="pull-right-container">
+                            <small class="label pull-right bg-primary"
+                                   ng-show="data.servicestatus_overview.unknown > 0">
+                                {{ data.servicestatus_overview.unknown }}
+                            </small>
+                            <small class="label pull-right bg-red" ng-show="data.servicestatus_overview.critical > 0">
+                                {{ data.servicestatus_overview.critical }}
+                            </small>
+                            <small class="label pull-right bg-yellow" ng-show="data.servicestatus_overview.warning > 0">
+                                {{ data.servicestatus_overview.warning }}
+                            </small>
+                        </span>
                     </a>
                 </li>
 
                 <li class="treeview" ui-sref-active="active">
                     <a ui-sref="problems">
                         <i class="fa fa-exclamation-triangle text-primary"></i> <span> Issues</span>
+                        <span class="pull-right-container">
+                            <small class="label pull-right bg-purple" ng-show="data.number_of_service_problems > 0">
+                                {{ data.number_of_service_problems }}
+                            </small>
+                        </span>
                     </a>
                 </li>
 
                 <li class="treeview" ui-sref-active="active">
                     <a ui-sref="scheduleddowntimes">
                         <i class="fa fa-plug text-primary"></i> <span> Upcoming downtimes</span>
+                        <small class="label pull-right bg-purple" ng-show="downtimes > 0">
+                            {{ downtimes }}
+                        </small>
+                    </a>
+                </li>
+
+                <li class="treeview" ui-sref-active="active">
+                    <a ui-sref="acknowledgements">
+                        <i class="fa fa-commenting-o text-primary"></i> <span> Acknowledgements</span>
+                        <small class="label pull-right bg-purple" ng-show="acknowledgements > 0">
+                            {{ acknowledgements }}
+                        </small>
                     </a>
                 </li>
 
@@ -258,14 +303,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <div class="modal-body">
                             <p>Lost connection to API...</p>
                             <p>Typically this is due to one of the following reasons:</p>
-                            <p>
+                            <div>
                                 <ul>
                                     <li>Your device lost network connection</li>
                                     <li>You're disconnected from the internet</li>
                                     <li>Statusengine API backend is not running</li>
                                     <li>You're Sysadmin is playing around</li>
                                 </ul>
-                            </p>
+                            </div>
                             <p>Please try to reload the page to solve the issue.</p>
                         </div>
                         <div class="modal-footer">

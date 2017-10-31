@@ -44,6 +44,8 @@ class ServiceAcknowledgementLoader implements ServiceAcknowledgementLoaderInterf
      */
     public function getAcknowledgements(ServiceAcknowledgementQueryOptions $ServiceAcknowledgementQueryOptions) {
         $fields = [
+            'hostname',
+            'service_description',
             'acknowledgement_type',
             'author_name',
             'comment_data',
@@ -54,9 +56,21 @@ class ServiceAcknowledgementLoader implements ServiceAcknowledgementLoaderInterf
             'state'
         ];
         $baseQuery = sprintf(
-            'SELECT %s FROM statusengine_service_acknowledgements WHERE hostname=? AND service_description=?'
+            'SELECT %s FROM statusengine_service_acknowledgements'
             , implode(',', $fields)
         );
+
+        if ($ServiceAcknowledgementQueryOptions->getHostname()) {
+            $baseQuery = sprintf(' %s WHERE hostname=?', $baseQuery);
+        }
+
+        if ($ServiceAcknowledgementQueryOptions->getServiceDescription()) {
+            if ($ServiceAcknowledgementQueryOptions->getHostname()) {
+                $baseQuery = sprintf('%s AND service_description=?', $baseQuery);
+            } else {
+                $baseQuery = sprintf('%s WHERE service_description=?', $baseQuery);
+            }
+        }
 
         if ($ServiceAcknowledgementQueryOptions->sizeOfStateFilter() > 0 && $ServiceAcknowledgementQueryOptions->sizeOfStateFilter() < 4) {
             $baseQuery = sprintf('%s AND state IN(%s)', $baseQuery, implode(',', $ServiceAcknowledgementQueryOptions->getStateFilter()));
@@ -85,8 +99,13 @@ class ServiceAcknowledgementLoader implements ServiceAcknowledgementLoaderInterf
         $query = $this->Backend->prepare($baseQuery);
 
         $i = 1;
-        $query->bindValue($i++, $ServiceAcknowledgementQueryOptions->getHostname());
-        $query->bindValue($i++, $ServiceAcknowledgementQueryOptions->getServiceDescription());
+        if ($ServiceAcknowledgementQueryOptions->getHostname()) {
+            $query->bindValue($i++, $ServiceAcknowledgementQueryOptions->getHostname());
+        }
+
+        if ($ServiceAcknowledgementQueryOptions->getServiceDescription()) {
+            $query->bindValue($i++, $ServiceAcknowledgementQueryOptions->getServiceDescription());
+        }
 
 
         if ($ServiceAcknowledgementQueryOptions->getCommentDataLike() != '') {
@@ -107,6 +126,74 @@ class ServiceAcknowledgementLoader implements ServiceAcknowledgementLoaderInterf
 
         return $this->Backend->fetchAll($query);
 
+    }
+
+    /**
+     * @param ServiceAcknowledgementQueryOptions $ServiceAcknowledgementQueryOptions
+     * @return array
+     */
+    public function getCurrentServiceAcknowledgements(ServiceAcknowledgementQueryOptions $ServiceAcknowledgementQueryOptions) {
+        $baseQuery = sprintf('SELECT hostname, service_description, node_name from statusengine_servicestatus WHERE problem_has_been_acknowledged=true');
+        if($ServiceAcknowledgementQueryOptions->getHostnameLike() != ''){
+            $baseQuery = sprintf('%s AND hostname ~* ?', $baseQuery);
+        }
+
+        if($ServiceAcknowledgementQueryOptions->getServicedescriptionLike() != ''){
+            $baseQuery = sprintf('%s AND service_description ~* ?', $baseQuery);
+        }
+        $baseQuery .= $this->getClusterNameQuery($ServiceAcknowledgementQueryOptions);
+
+        $baseQuery = sprintf(' %s LIMIT ? OFFSET ?', $baseQuery);
+
+
+        $query = $this->Backend->prepare($baseQuery);
+        $i = 1;
+        if ($ServiceAcknowledgementQueryOptions->getHostnameLike() != '') {
+            $like = sprintf('.*%s.*', $ServiceAcknowledgementQueryOptions->getHostnameLike());
+            $query->bindValue($i++, $like);
+        }
+        if ($ServiceAcknowledgementQueryOptions->getServicedescriptionLike() != '') {
+            $like = sprintf('.*%s.*', $ServiceAcknowledgementQueryOptions->getServicedescriptionLike());
+            $query->bindValue($i++, $like);
+        }
+
+        foreach ($ServiceAcknowledgementQueryOptions->getClusterName() as $clusterName) {
+            $query->bindValue($i++, $clusterName);
+        }
+
+        $query->bindValue($i++, $ServiceAcknowledgementQueryOptions->getLimit(), PDO::PARAM_INT);
+        $query->bindValue($i++, $ServiceAcknowledgementQueryOptions->getOffset(), PDO::PARAM_INT);
+
+        $result = $this->Backend->fetchAll($query);
+
+        $mergedResult = [];
+        foreach($result as $row){
+            $baseQuery = 'SELECT * FROM statusengine_service_acknowledgements WHERE hostname=? AND service_description=? ORDER BY entry_time DESC LIMIT 1';
+            $ackQuery = $this->Backend->prepare($baseQuery);
+            $ackQuery->bindParam(1, $row['hostname']);
+            $ackQuery->bindParam(2, $row['service_description']);
+            $ackResult = $this->Backend->fetchAll($ackQuery);
+            foreach($ackResult as $record){
+                $mergedResult[] = array_merge($record, $row);
+            }
+        }
+
+        return $mergedResult;
+    }
+
+    /**
+     * @param ServiceAcknowledgementQueryOptions $QueryOptions
+     * @return string
+     */
+    private function getClusterNameQuery(ServiceAcknowledgementQueryOptions $QueryOptions) {
+        $placeholders = [];
+        foreach ($QueryOptions->getClusterName() as $clusterName) {
+            $placeholders[] = '?';
+        }
+        if (!empty($placeholders)) {
+            return sprintf(' AND node_name IN(%s)', implode(',', $placeholders));
+        }
+        return '';
     }
 
 }

@@ -130,10 +130,12 @@ $app->get('/logout', function (Request $request, Response $response) {
  */
 $app->get('/', function (Request $request, Response $response) {
     $StorageBackend = $this->get('StorageBackend');
+    $params = $request->getQueryParams();
+    $DashboardQueryOptions = new \Statusengine\ValueObjects\DashboardQueryOptions($params);
     $DashboardController = new \Statusengine\Controller\Dashboard(
         $StorageBackend->getDashboardLoader()
     );
-    $data = $DashboardController->index();
+    $data = $DashboardController->index($DashboardQueryOptions);
 
     return $response->withJson($data);
 });
@@ -682,6 +684,63 @@ $app->get('/scheduleddowntimes', function (Request $request, Response $response)
         return $response->withJson($data);
     }
 
+});
+
+/**
+ * Parameters:
+ * object_type string (host/service)
+ * hostname__like string
+ * servicedescription__like string
+ * limit int
+ * offset int
+ * entry_time__lt < timestamp
+ * entry_time__gt > timestamp
+ */
+$app->get('/acknowledgements', function (Request $request, Response $response) {
+    $StorageBackend = $this->get('StorageBackend');
+    $params = $request->getQueryParams();
+
+    $QueryOptions = new \Statusengine\ValueObjects\AcknowledgementQueryOptions($params);
+
+    if ($QueryOptions->isHostRequest()) {
+        $AcknowledgementController = new \Statusengine\Controller\HostAcknowledgement(
+            $StorageBackend->getHostAcknowledgementLoader()
+        );
+
+        $data = $AcknowledgementController->getCurrentAcknowledgements(
+            new \Statusengine\ValueObjects\HostAcknowledgementQueryOptions($params)
+        );
+        return $response->withJson($data);
+
+    }
+
+    $AcknowledgementController = new \Statusengine\Controller\ServiceAcknowledgement(
+        $StorageBackend->getServiceAcknowledgementLoader()
+    );
+
+    $data = $AcknowledgementController->getCurrentAcknowledgements(
+        new \Statusengine\ValueObjects\ServiceAcknowledgementQueryOptions($params)
+    );
+    return $response->withJson($data);
+});
+
+/**
+ * will always return 0 for hosts up and services ok!
+ * Parameters:
+ * hide_ack_and_downtime (string true/false)
+ */
+$app->get('/menustats', function (Request $request, Response $response) {
+    $StorageBackend = $this->get('StorageBackend');
+    $params = $request->getQueryParams();
+    $DashboardQueryOptions = new \Statusengine\ValueObjects\DashboardQueryOptions($params);
+    $DashboardQueryOptions->setHostStates([1,2]); //DO NET PASS ARGUMENTS FROM $_GET OR $_POST!!!
+    $DashboardQueryOptions->setServiceStates([1,2,3]);//DO NET PASS ARGUMENTS FROM $_GET OR $_POST!!!
+    $DashboardController = new \Statusengine\Controller\Dashboard(
+        $StorageBackend->getDashboardLoader()
+    );
+    $data = $DashboardController->menuStats($DashboardQueryOptions);
+
+    return $response->withJson($data);
 });
 
 $app->run();

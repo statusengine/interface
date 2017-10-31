@@ -1,4 +1,4 @@
-<div infinite-scroll="loadMoreScheduledDowntimesOnScroll()" infinite-scroll-disabled="apiIsBusyOrNoDataAnymore"
+<div infinite-scroll="loadMoreAcknowledgementsOnScroll()" infinite-scroll-disabled="apiIsBusyOrNoDataAnymore"
      infinite-scroll-distance="0">
 
     <div class="row">
@@ -9,7 +9,7 @@
                     <div class="row">
                         <div class="col-xs-12">
                             <h3 class="pull-left">
-                                <i class="fa fa-plug"></i> Upcoming downtimes
+                                <i class="fa fa-commenting-o"></i> Current Acknowledgements
                             </h3>
                         </div>
                     </div>
@@ -23,8 +23,6 @@
                                     aria-expanded="false">Node/Service
                                 <span class="fa fa-caret-down"></span></button>
                             <ul class="dropdown-menu">
-
-
                                 <li>
 
                                     <label>
@@ -44,7 +42,6 @@
                                         Services
                                     </label>
                                 </li>
-
 
                                 <li class="divider"></li>
                                 <li ng-repeat="nodeName in clusterNodes track by $index">
@@ -72,83 +69,71 @@
 
                     <div class="row">
                         <div class="col-sm-3 hidden-xs text-bold">Node / Service</div>
-                        <div class="col-sm-2 hidden-xs text-bold">Start time</div>
-                        <div class="col-sm-2 hidden-xs text-bold">End time</div>
-                        <div class="col-sm-1 hidden-xs text-bold">Author</div>
+                        <div class="col-sm-2 hidden-xs text-bold">Entry time</div>
+                        <div class="col-sm-1 hidden-xs text-bold">Sticky</div>
+                        <div class="col-sm-2 hidden-xs text-bold">Author</div>
                         <div class="col-sm-3 hidden-xs text-bold">Comment</div>
-                        <div class="col-sm-1 hidden-xs text-bold">Cancel</div>
                     </div>
 
-                    <div class="col-xs-12 no-padding" ng-repeat="scheduleddowntime in data">
+                    <div class="col-xs-12 no-padding" ng-repeat="acknowledgement in data">
                         <div class="col-xs-12 no-padding row-hover" ng-class="{ 'row-even':$even }">
 
                             <div class="col-sm-3 hidden-xs">
-                                <i class="fa fa-circle text-green" ng-show="scheduleddowntime.was_started"
-                                   title="Downtime currently running"></i>
-                                <i class="fa fa-circle-o text-red" title="Downtime not started yet"
-                                   ng-show="!scheduleddowntime.was_started"></i>
-
-                                <a ui-sref="nodedetails({'nodename':'{{ scheduleddowntime.hostname | encodeURI }}'})">
-                                    {{ scheduleddowntime.hostname }}
+                                <hoststatuspill hoststatus="acknowledgement" ng-if="object_type=='host'"></hoststatuspill>
+                                <servicestatuspill servicestatus="acknowledgement" ng-if="object_type=='service'"></servicestatuspill>
+                                <a ui-sref="nodedetails({'nodename':'{{ acknowledgement.hostname | encodeURI }}'})">
+                                    {{ acknowledgement.hostname }}
                                 </a>
                                 <span ng-if="object_type=='service'">
                                     /
-                                    <a ui-sref="servicedetails({'nodename':'{{ scheduleddowntime.hostname | encodeURI }}', 'servicedescription':'{{ scheduleddowntime.service_description | encodeURI }}'})">
-                                        {{ scheduleddowntime.service_description }}
+                                    <a ui-sref="servicedetails({'nodename':'{{ acknowledgement.hostname | encodeURI }}', 'servicedescription':'{{ acknowledgement.service_description | encodeURI }}'})">
+                                        {{ acknowledgement.service_description }}
                                     </a>
                                 </span>
                             </div>
 
                             <div class="col-sm-2 hidden-xs">
-                                {{scheduleddowntime.scheduled_start_time * 1000 | date:'HH:mm dd.MM.yyyy'}}
+                                {{acknowledgement.entry_time * 1000 | date:'HH:mm dd.MM.yyyy'}}
+                            </div>
+
+                            <div class="col-sm-1 hidden-xs">
+                                {{ acknowledgement.is_sticky | yesOrNo }}
                             </div>
 
                             <div class="col-sm-2 hidden-xs">
-                                {{scheduleddowntime.scheduled_end_time * 1000 | date:'HH:mm dd.MM.yyyy'}}
-                            </div>
-
-                            <div class="col-sm-1 hidden-xs">
-                                {{scheduleddowntime.author_name }}
+                                {{ acknowledgement.author_name }}
                             </div>
 
                             <div class="col-sm-3 hidden-xs">
-                                {{scheduleddowntime.comment_data }}
+                                {{ acknowledgement.comment_data }}
                             </div>
 
-                            <div class="col-sm-1 hidden-xs">
-                                <button class="btn btn-block btn-xs btn-default"
-                                        ng-show="isAllowedToSubmitCommand"
-                                        ng-class="{ 'btn-danger':scheduleddowntime.was_started }"
-                                        ng-click="submitDeleteDowntime(scheduleddowntime.internal_downtime_id, scheduleddowntime.node_name)">
-                                    Cancel
-                                </button>
-                            </div>
 
-                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg shield-mobile shield-info">
-                                <i class="fa fa-plug"></i>&nbsp
-                                <i class="fa fa-circle text-green" ng-show="scheduleddowntime.was_started"
-                                   title="Downtime currently running"></i>
-                                <i class="fa fa-circle-o text-red" title="Downtime not started yet"
-                                   ng-show="!scheduleddowntime.was_started"></i>
-                                <a ui-sref="nodedetails({'nodename':'{{ scheduleddowntime.hostname | encodeURI }}'})">
-                                    {{ scheduleddowntime.hostname }}
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg shield-mobile shield-{{object_type}}-{{ acknowledgement.state }}">
+                                <a ui-sref="nodedetails({'nodename':'{{ acknowledgement.hostname | encodeURI }}'})">
+                                    {{ acknowledgement.hostname }}
                                 </a>
                                 <span ng-if="object_type=='service'">
                                     /
-                                    <a ui-sref="servicedetails({'nodename':'{{ scheduleddowntime.hostname | encodeURI }}', 'servicedescription':'{{ scheduleddowntime.service_description | encodeURI }}'})">
-                                        {{ scheduleddowntime.service_description }}
+                                    <a ui-sref="servicedetails({'nodename':'{{ acknowledgement.hostname | encodeURI }}', 'servicedescription':'{{ acknowledgement.service_description | encodeURI }}'})">
+                                        {{ acknowledgement.service_description }}
                                     </a>
                                 </span>
                             </div>
 
 
                             <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
-                                Time span:
+                                Date:
                             </div>
                             <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
-                                {{scheduleddowntime.scheduled_start_time * 1000 | date:'HH:mm dd.MM.yyyy'}}
-                                <i class="fa fa-arrow-right"></i>
-                                {{scheduleddowntime.scheduled_end_time * 1000 | date:'HH:mm dd.MM.yyyy'}}
+                                {{ acknowledgement.entry_time * 1000 | date:'HH:mm dd.MM.yyyy'}}
+                            </div>
+
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
+                                Sticky:
+                            </div>
+                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                                {{ acknowledgement.is_sticky | yesOrNo }}
                             </div>
 
 
@@ -156,25 +141,17 @@
                                 Author:
                             </div>
                             <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
-                                {{scheduleddowntime.author_name }}
+                                <i class="fa fa-user"></i>
+                                {{ acknowledgement.author_name }}
                             </div>
 
                             <div class="col-xs-12 hidden-sm hidden-md hidden-lg text-bold">
                                 Comment:
                             </div>
                             <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
-                                {{scheduleddowntime.comment_data }}
+                                <i class="fa fa-commenting-o"></i>
+                                {{ acknowledgement.comment_data }}
                             </div>
-
-                            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
-                                <button class="btn btn-block btn-xs btn-default"
-                                        ng-show="isAllowedToSubmitCommand"
-                                        ng-class="{ 'btn-danger':scheduleddowntime.was_started }"
-                                        ng-click="submitDeleteDowntime(scheduleddowntime.internal_downtime_id, scheduleddowntime.node_name)">
-                                    Cancel
-                                </button>
-                            </div>
-
 
                             <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
                                 &nbsp;

@@ -106,6 +106,8 @@ angular.module('Statusengine')
                 params: data
             }).then(function (result) {
                 noty({
+                    theme: 'metrouiAdminLTE',
+                    progressBar: true,
                     layout: 'bottomRight',
                     type: 'success',
                     text: 'Command was sent to Statusengine task queue',
@@ -175,6 +177,8 @@ angular.module('Statusengine')
                 params: data
             }).then(function (result) {
                 noty({
+                    theme: 'metrouiAdminLTE',
+                    progressBar: true,
                     layout: 'bottomRight',
                     type: 'success',
                     text: 'Command was sent to Statusengine task queue',
@@ -252,6 +256,8 @@ angular.module('Statusengine')
                 }
             }).then(function (result) {
                 noty({
+                    theme: 'metrouiAdminLTE',
+                    progressBar: true,
                     layout: 'bottomRight',
                     type: 'success',
                     text: 'Command was sent to Statusengine task queue',

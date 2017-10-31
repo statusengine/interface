@@ -3,3 +3,4 @@
 vendor/
 etc/config.yml
 .idea/
+composer.lock

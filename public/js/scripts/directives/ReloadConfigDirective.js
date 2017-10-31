@@ -4,12 +4,26 @@ angular.module('Statusengine').directive('reloadConfig', function (ReloadService
         templateUrl: 'templates/directives/reloadconfig.html',
         scope: {},
         controller: function ($scope, $http) {
+
+            $('#pageSettings').click(function (event) {
+                event.stopPropagation();
+            });
+
             $scope.do_auto_reload = ReloadService.getAutoReloadEnabled();
+            $scope.ack_and_downtime_is_ok = ReloadService.getAckAndDowntimeIsOk();
+            $scope.autoreload_frequency = String(ReloadService.getAutoReloadFrequency()); //String() cast fixe selected
             $scope.isLoggedIn = false;
 
             $scope.$watch('do_auto_reload', function () {
                 ReloadService.setAutoReloadEnabled($scope.do_auto_reload);
+            });
 
+            $scope.$watch('ack_and_downtime_is_ok', function () {
+                ReloadService.setAckAndDowntimeIsOk($scope.ack_and_downtime_is_ok);
+            });
+
+            $scope.$watch('autoreload_frequency', function(){
+                ReloadService.setAutoReloadFrequency($scope.autoreload_frequency);
             });
 
             $scope.checkLoginState = function(){

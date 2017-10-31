@@ -152,7 +152,7 @@ class StorageBackend {
     }
 
     /**
-     * @return ServicePerfdataLoader|\Statusengine\Loader\Graphite\ServicePerfdataLoader|\Statusengine\Loader\Mysql\ServicePerfdataLoader
+     * @return ServicePerfdataLoader|\Statusengine\Loader\Elasticsearch\ServicePerfdataLoader|\Statusengine\Loader\Graphite\ServicePerfdataLoader|\Statusengine\Loader\Mysql\ServicePerfdataLoader
      * @throws UnknownBackendException
      */
     public function getServicePerfdataLoader() {
@@ -168,6 +168,10 @@ class StorageBackend {
         if ($this->Config->getPerfdataBackend() === 'mysql') {
             $StorageBackend = new StorageBackend(new MySQL($this->Config), $this->Config);
             return new \Statusengine\Loader\Mysql\ServicePerfdataLoader($StorageBackend);
+        }
+
+        if ($this->Config->getPerfdataBackend() === 'elasticsearch') {
+            return new \Statusengine\Loader\Elasticsearch\ServicePerfdataLoader($this->Config);
         }
 
         throw new UnknownBackendException(sprintf('Storage Backend \'%s\' is unknown', $this->backendClassName));

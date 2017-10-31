@@ -139,6 +139,9 @@ perfdata_backend: crate
 # MySQL as Performance Data Backend
 #perfdata_backend: mysql
 
+# Elasticsearch as Performance Data Backend
+#perfdata_backend: elasticsearch
+
 ############
 # GRAPHITE CONFIGURATION
 ############
@@ -194,3 +197,4 @@ elasticsearch_address: 127.0.0.1
 
 # Port where your Elasticsearch server is listening to
 elasticsearch_port: 9200
+

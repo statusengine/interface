@@ -12,7 +12,7 @@ angular.module('Statusengine')
                 layout: 'topRight',
                 type: type, // success, error, warning, information, notification
                 text: String(number) + ' ' + objectType + ' changed to state ' + state,
-                timeout: 2500,
+                timeout: 7500,
                 animation: {
                     open: 'animated flipInX',
                     close: 'animated flipOutX'

@@ -11,17 +11,25 @@ angular.module('Statusengine')
 
         $scope.isAllowedToSubmitCommand = false;
 
-
         $scope.apiIsBusyOrNoDataAnymore = true;
+
+        //default filter - show all service states
+        $scope.state_filter = ['ok', 'warning', 'critical', 'unknown'];
+        $scope.servicedescription__like = '';
+
+        $scope.init = true;
 
         $scope.reload = function () {
             offset = 0;
             $http.get("/api/index.php/hostdetails", {
                 params: {
-                    hostname: $scope.nodename
+                    hostname: $scope.nodename,
+                    servicedescription__like: $scope.servicedescription__like,
+                    "service_state[]": $scope.state_filter
                 }
             }).then(function (result) {
                     $scope.data = result.data;
+                    $scope.init = false;
 
                     if (!result.data.hoststatus.hasOwnProperty('hostname')) {
                         $scope.hostNotFound = true;
@@ -276,6 +284,14 @@ angular.module('Statusengine')
                 }
             });
         };
+
+        //triggers reload on load and on search
+        $scope.$watch('[state_filter, servicedescription__like]', function () {
+            if($scope.init === true){
+                return;
+            }
+            $scope.reload();
+        }, true);
 
         ReloadService.setCallback($scope.reload);
 

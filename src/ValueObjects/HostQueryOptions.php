@@ -55,9 +55,29 @@ class HostQueryOptions extends QueryOptions {
     ];
 
     /**
+     * @var array
+     */
+    private $serviceState = [];
+
+    /**
+     * @var array
+     */
+    private $serviceStateMatch = [
+        'ok' => 0,
+        'warning' => 1,
+        'critical' => 2,
+        'unknown' => 3
+    ];
+
+    /**
      * @var string
      */
     private $hostname__like = '';
+
+    /**
+     * @var string
+     */
+    private $servicedescription__like = '';
 
     /**
      * @var string
@@ -104,6 +124,20 @@ class HostQueryOptions extends QueryOptions {
             $this->hostname = $params['hostname'];
         }
 
+        if (isset($this->params['servicedescription__like'])) {
+            $this->servicedescription__like = $this->params['servicedescription__like'];
+        }
+
+        if (isset($this->params['service_state']) && is_array($this->params['service_state'])) {
+            $_state = [];
+            foreach ($this->params['service_state'] as $state) {
+                if (isset($this->serviceStateMatch[$state])) {
+                    $_state[] = $this->serviceStateMatch[$state];
+                }
+            }
+            $this->serviceState = $_state;
+        }
+
     }
 
     /**
@@ -140,6 +174,27 @@ class HostQueryOptions extends QueryOptions {
      */
     public function getHostname() {
         return $this->hostname;
+    }
+
+    /**
+     * @return string
+     */
+    public function getServiceDescriptionLike() {
+        return $this->servicedescription__like;
+    }
+
+    /**
+     * @return array
+     */
+    public function getServiceStateFilter() {
+        return $this->serviceState;
+    }
+
+    /**
+     * @return int
+     */
+    public function sizeOfServiceStateFilter() {
+        return sizeof($this->serviceState);
     }
 
 }

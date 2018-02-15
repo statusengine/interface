@@ -144,7 +144,7 @@ class HostLoader implements HostLoaderInterface {
         if (isset($hostResult[0])) {
             $result['hoststatus'] = $hostResult[0];
         }
-        $result['servicestatus'] = $this->getServicesByHostName($HostQueryOptions->getHostname());
+        $result['servicestatus'] = $this->getServicesByHost($HostQueryOptions);
         return $result;
     }
 
@@ -243,10 +243,10 @@ class HostLoader implements HostLoaderInterface {
 
 
     /**
-     * @param string $hostname
+     * @param HostQueryOptions $HostQueryOptions
      * @return array
      */
-    private function getServicesByHostName($hostname) {
+    private function getServicesByHost(HostQueryOptions $HostQueryOptions) {
         $fields = [
             'notifications_enabled',
             'active_checks_enabled',
@@ -274,8 +274,25 @@ class HostLoader implements HostLoaderInterface {
             'problem_has_been_acknowledged'
         ];
 
-        $query = $this->Backend->prepare(sprintf('SELECT %s FROM statusengine_servicestatus WHERE hostname=? ORDER BY current_state DESC, service_description ASC', implode(',', $fields)));
-        $query->bindValue(1, $hostname);
+        $baseQuery = sprintf('SELECT %s FROM statusengine_servicestatus WHERE hostname=? ', implode(',', $fields));
+        if ($HostQueryOptions->sizeOfServiceStateFilter() > 0 && $HostQueryOptions->sizeOfServiceStateFilter() < 4) {
+            $baseQuery = sprintf('%s AND current_state IN(%s)', $baseQuery, implode(',', $HostQueryOptions->getServiceStateFilter()));
+        }
+
+        if ($HostQueryOptions->getServiceDescriptionLike() != '') {
+            $baseQuery = sprintf('%s AND service_description ~* ? ', $baseQuery);
+        }
+
+        $baseQuery = sprintf('%s ORDER BY current_state DESC, service_description ASC', $baseQuery);
+
+        $query = $this->Backend->prepare($baseQuery);
+        $query->bindValue(1, $HostQueryOptions->getHostname());
+
+        if ($HostQueryOptions->getServiceDescriptionLike() != '') {
+            $query->bindValue(2, sprintf('.*%s.*', $HostQueryOptions->getServiceDescriptionLike()));
+        }
+
+        $query->bindValue(1, $HostQueryOptions->getHostname());
         return $this->Backend->fetchAll($query);
     }
 

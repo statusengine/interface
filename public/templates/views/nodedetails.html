@@ -262,6 +262,30 @@
                                 <h3 class="box-title"><i class="fa fa-cogs"></i> Services</h3>
                             </div>
                             <div class="box-body">
+                                <div class="row">
+                                    <div class="col-xs-12">
+                                        <div class="input-group input-group">
+                                            <div class="input-group-btn">
+                                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
+                                                        aria-expanded="false">By state
+                                                    <span class="fa fa-caret-down"></span></button>
+                                                <ul class="dropdown-menu">
+                                                    <li><label><input type="checkbox" ng-model="state_filter[0]" ng-true-value="'ok'"/>
+                                                        Ok</label></li>
+                                                    <li><label><input type="checkbox" ng-model="state_filter[1]" ng-true-value="'warning'"/>
+                                                        Warning</label></li>
+                                                    <li><label><input type="checkbox" ng-model="state_filter[2]"
+                                                                      ng-true-value="'critical'"/> Critical</label></li>
+                                                    <li><label><input type="checkbox" ng-model="state_filter[3]"
+                                                                      ng-true-value="'unknown'"/> Unknown</label></li>
+                                                </ul>
+                                            </div>
+                                            <input type="text" class="form-control" ng-model="servicedescription__like"
+                                                   ng-model-options="{debounce: 500}"
+                                                   placeholder="Type to search by service description...">
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <div class="row">
                                     <div class="col-sm-4 hidden-xs text-bold">Service description</div>

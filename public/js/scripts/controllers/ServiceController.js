@@ -12,7 +12,7 @@ angular.module('Statusengine')
         $scope.moreDataAvailable = true;
         $scope.apiIsBusyOrNoDataAnymore = true;
 
-        //default filter - show all host states
+        //default filter - show all service states
         $scope.state_filter = ['ok', 'warning', 'critical', 'unknown'];
 
         //chek url params

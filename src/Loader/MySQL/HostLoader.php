@@ -257,15 +257,15 @@ class HostLoader implements HostLoaderInterface {
             }
             $result['hoststatus'] = $hostResult[0];
         }
-        $result['servicestatus'] = $this->getServicesByHostName($HostQueryOptions->getHostname());
+        $result['servicestatus'] = $this->getServicesByHost($HostQueryOptions);
         return $result;
     }
 
     /**
-     * @param string $hostname
+     * @param HostQueryOptions $HostQueryOptions
      * @return array
      */
-    private function getServicesByHostName($hostname) {
+    private function getServicesByHost(HostQueryOptions $HostQueryOptions) {
         $fields = [
             'booleans' => [
                 'notifications_enabled',
@@ -305,8 +305,24 @@ class HostLoader implements HostLoaderInterface {
             $sql[] = $field;
         }
 
-        $query = $this->Backend->prepare(sprintf('SELECT %s FROM statusengine_servicestatus WHERE hostname=? ORDER BY current_state DESC, service_description ASC', implode(',', $sql)));
-        $query->bindValue(1, $hostname);
+        $baseQuery = sprintf('SELECT %s FROM statusengine_servicestatus WHERE hostname=? ', implode(',', $sql));
+        if ($HostQueryOptions->sizeOfServiceStateFilter() > 0 && $HostQueryOptions->sizeOfServiceStateFilter() < 4) {
+            $baseQuery = sprintf('%s AND current_state IN(%s)', $baseQuery, implode(',', $HostQueryOptions->getServiceStateFilter()));
+        }
+
+        if ($HostQueryOptions->getServiceDescriptionLike() != '') {
+            $baseQuery = sprintf('%s AND service_description LIKE ? ', $baseQuery);
+        }
+
+        $baseQuery = sprintf('%s ORDER BY current_state DESC, service_description ASC', $baseQuery);
+
+        $query = $this->Backend->prepare($baseQuery);
+        $query->bindValue(1, $HostQueryOptions->getHostname());
+
+        if ($HostQueryOptions->getServiceDescriptionLike() != '') {
+            $query->bindValue(2, sprintf('%%%s%%', $HostQueryOptions->getServiceDescriptionLike()));
+        }
+
         $serviceResult = $this->Backend->fetchAll($query);
         foreach ($serviceResult as $key => $record) {
             foreach ($fields['booleans'] as $field) {

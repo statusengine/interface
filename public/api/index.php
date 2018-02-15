@@ -276,6 +276,8 @@ $app->get('/clusteroverview', function (Request $request, Response $response) {
 /**
  * Parameters:
  * hostname string
+ * servicedescription__like string
+ * service_state array [ok, warning, critical, unknown]
  */
 $app->get('/hostdetails', function (Request $request, Response $response) {
     $StorageBackend = $this->get('StorageBackend');

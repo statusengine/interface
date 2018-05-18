@@ -23,9 +23,6 @@ angular.module('Statusengine')
 
         $scope.reload = function () {
             offset = 0;
-            $scope.data = {
-                servicestatus: []
-            };
             $http.get("/api/index.php/hostdetails", {
                 params: {
                     hostname: $scope.nodename,
@@ -295,6 +292,9 @@ angular.module('Statusengine')
             if($scope.init === true){
                 return;
             }
+            $scope.data = {
+                servicestatus: []
+            };
             $scope.reload();
         }, true);
 

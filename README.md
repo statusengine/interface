@@ -62,6 +62,8 @@ Create a new user:
 docker exec statusengine_ui php /usr/share/statusengine-ui/bin/Console.php users add --username \"admin\" --password \"admin\"
 ```
 
+Browse to http://localhost:8080 to view the interface. Anonymous access is enabled by default.
+
 ## License
 GNU General Public License v3.0
 ````

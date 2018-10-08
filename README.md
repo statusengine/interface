@@ -43,6 +43,25 @@ Run `bin/Console.php users` to get a list of all users:
 +----------+--------------------------------------------------------------+
 ````
 
+## Docker Usage
+
+The configuration file used by docker-compose is located in `etc/config.yml.docker`.
+
+Spin up the containers and detach:
+```
+docker-compose up -d
+```
+
+Initialize the database with sample data:
+```
+docker exec statusengine_db bash /tmp/init_db.sh
+```
+
+Create a new user:
+```
+docker exec statusengine_ui php /usr/share/statusengine-ui/bin/Console.php users add --username \"admin\" --password \"admin\"
+```
+
 ## License
 GNU General Public License v3.0
 ````

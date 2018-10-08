@@ -1,0 +1,30 @@
+version: '3.3'
+
+services:
+  db:
+    container_name: statusengine_db
+    image: mysql:5.7
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker/create_db.sql:/docker-entrypoint-initdb.d/create_db.sql
+      - ./docker/init_db.sh:/tmp/init_db.sh
+      - ./docker/statusengine.sql:/tmp/statusengine.sql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpw
+      MYSQL_DATABASE: statusengine
+      MYSQL_USER: statusengine
+      MYSQL_PASSWORD: password
+
+  statusengine-ui:
+    container_name: statusengine_ui
+    depends_on:
+      - db
+    build: .
+    command: php -S 0.0.0.0:8080 -t /usr/share/statusengine-ui/public
+    ports:
+      - "8080:8080"
+    restart: always
+
+volumes:
+  db_data:

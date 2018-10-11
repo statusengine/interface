@@ -384,6 +384,15 @@
     margin-top: -7px;
 }
 
+.sidebar-menu>li .label,
+.sidebar-menu>li .badge {
+    margin-top: 0;
+    margin-right: 0;
+    position: absolute;
+    right: 5px;
+    line-height: 1.25;
+}
+
 @media (max-width: 768px) {
     .sidebar-mini:not(.sidebar-mini-expand-feature).sidebar-collapse .sidebar-menu > li:hover > a > span {
         top: 0;

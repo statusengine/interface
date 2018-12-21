@@ -1,11 +1,11 @@
-angular.module('Statusengine').directive('reloadConfig', function (ReloadService) {
+angular.module('Statusengine').directive('reloadConfig', function(ReloadService, NightModeService){
     return {
         restrict: 'A',
         templateUrl: 'templates/directives/reloadconfig.html',
         scope: {},
-        controller: function ($scope, $http) {
+        controller: function($scope, $http){
 
-            $('#pageSettings').click(function (event) {
+            $('#pageSettings').click(function(event){
                 event.stopPropagation();
             });
 
@@ -13,12 +13,29 @@ angular.module('Statusengine').directive('reloadConfig', function (ReloadService
             $scope.ack_and_downtime_is_ok = ReloadService.getAckAndDowntimeIsOk();
             $scope.autoreload_frequency = String(ReloadService.getAutoReloadFrequency()); //String() cast fixe selected
             $scope.isLoggedIn = false;
+            $scope.nightMode = NightModeService.isNightModeEnabled();
+            if($scope.nightMode){
+                $('body').addClass('night-mode');
+            }
 
-            $scope.$watch('do_auto_reload', function () {
+
+            $scope.$watch('nightMode', function(){
+                if($scope.nightMode === false){
+                    $('body').removeClass('night-mode');
+                    NightModeService.disableNightMode();
+                }
+
+                if($scope.nightMode === true){
+                    $('body').addClass('night-mode');
+                    NightModeService.enableNightMode();
+                }
+            });
+
+            $scope.$watch('do_auto_reload', function(){
                 ReloadService.setAutoReloadEnabled($scope.do_auto_reload);
             });
 
-            $scope.$watch('ack_and_downtime_is_ok', function () {
+            $scope.$watch('ack_and_downtime_is_ok', function(){
                 ReloadService.setAckAndDowntimeIsOk($scope.ack_and_downtime_is_ok);
             });
 
@@ -26,16 +43,17 @@ angular.module('Statusengine').directive('reloadConfig', function (ReloadService
                 ReloadService.setAutoReloadFrequency($scope.autoreload_frequency);
             });
 
+
             $scope.checkLoginState = function(){
                 $http.get("/api/index.php/loginstate", {}
-                ).then(function (result) {
+                ).then(function(result){
                     $scope.isLoggedIn = result.data.isLoggedIn;
                 });
             };
 
             $scope.logout = function(){
                 $http.get("/api/index.php/logout", {}
-                ).then(function (result) {
+                ).then(function(result){
                     $scope.isLoggedIn = false;
                     window.location = '/login.html';
                 });

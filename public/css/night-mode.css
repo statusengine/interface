@@ -1,0 +1,266 @@
+/*
+ * Licensed under MIT
+ * Night Mode for AdminLTE / Statusengine UI
+ *
+ * Based on:
+ *    AdminLTE v2.3.0
+ *    Author: Almsaeed Studio
+ *    Website: Almsaeed Studio <http://almsaeedstudio.com>
+ *    License: Licensed under MIT
+ *
+ * Colors from:
+ *    https://bootswatch.com/4/slate/bootstrap.min.css
+ *    Copyright 2012-2018 Thomas Park
+ *    Licensed under MIT
+ *    Based on Bootstrap
+ */
+
+/** Core Layout **/
+.night-mode body {
+    color: #aaa;
+    background-color: #272B30;
+}
+
+.night-mode hr {
+    border-top: 1px solid rgba(0, 0, 0, 0.6);
+}
+
+.night-mode .content-wrapper, .right-side {
+    background-color: #32383e;
+}
+
+.night-mode .main-footer {
+    background: #272B30;
+    color: #aaa;
+    border-top: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+/** Bootstrap Drop Downs **/
+
+.night-mode .dropdown-menu {
+    background-color: #32383e;
+    border: 1px solid rgba(0, 0, 0, 0.6);
+}
+
+.night-mode .dropdown-menu > .divider {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.night-mode .dropdown-menu > li > a:hover {
+    background-color: #272B30;
+    color: #FFF;
+}
+
+.night-mode .navbar-nav > .notifications-menu > .dropdown-menu > li.header, .navbar-nav > .messages-menu > .dropdown-menu > li.header, .navbar-nav > .tasks-menu > .dropdown-menu > li.header {
+    background-color: #32383e;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+    color: #aaa;
+}
+
+.night-mode .navbar-nav > .notifications-menu > .dropdown-menu > li .menu > li > a {
+    color: #aaa;
+}
+
+.night-mode .navbar-nav > .notifications-menu > .dropdown-menu > li .menu > li > a:hover, .navbar-nav > .messages-menu > .dropdown-menu > li .menu > li > a:hover, .navbar-nav > .tasks-menu > .dropdown-menu > li .menu > li > a:hover {
+    background: #1c1e22;
+    text-decoration: none;
+}
+
+.night-mode .navbar-nav > .notifications-menu > .dropdown-menu > li .menu > li > a, .navbar-nav > .messages-menu > .dropdown-menu > li .menu > li > a, .navbar-nav > .tasks-menu > .dropdown-menu > li .menu > li > a {
+    display: block;
+    white-space: nowrap;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+.night-mode .navbar-nav > .notifications-menu > .dropdown-menu > li.footer > a, .navbar-nav > .messages-menu > .dropdown-menu > li.footer > a, .navbar-nav > .tasks-menu > .dropdown-menu > li.footer > a {
+    background-color: #32383e;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+    color: #aaa !important;
+}
+
+.night-mode #pageSettings {
+    color: #aaa;
+}
+
+.night-mode .navbar-nav > .user-menu > .dropdown-menu > .user-footer {
+    background-color: #272B30;
+}
+
+/** row tables **/
+.night-mode .row-even {
+    background-color: #3A3F44;
+}
+
+.night-mode .row-hover:hover {
+    background-color: #2e3236;
+}
+
+/** AdminLTE menu search **/
+.skin-blue .sidebar-form input[type="text"]:focus, .skin-blue .sidebar-form input[type="text"]:focus + .input-group-btn .btn {
+    background-color: #272B30;
+    color: #aaa;
+}
+
+/** AdminLTE Box **/
+
+.night-mode .box {
+    position: relative;
+    border-radius: 3px;
+    background: #272B30;
+    margin-bottom: 20px;
+    width: 100%;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.night-mode .box-header {
+    color: #aaa;
+}
+
+.night-mode .box-header.with-border {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.6);
+}
+
+.night-mode .box-body {
+    color: #aaa;
+}
+
+/** Bootstrap Modal **/
+.night-mode .modal-header {
+    color: #aaa;
+    background-color: #32383e;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.night-mode .modal-body {
+    color: #aaa;
+    background-color: #32383e;
+}
+
+.night-mode .modal-footer {
+    color: #aaa;
+    background-color: #32383e;
+    border-top: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+/** Overwrite btn-default **/
+.night-mode .btn-default {
+    color: #ffffff;
+    background-color: #3A3F40;
+    border-color: #000000;
+}
+
+.night-mode .btn-default:hover,
+.night-mode .btn-default:focus,
+.night-mode .btn-default:active,
+.night-mode .btn-default.active,
+.open .dropdown-toggle.night-mode .btn-default {
+    color: #ffffff;
+    background-color: #282C2F;
+    border-color: #000000;
+}
+
+.night-mode .btn-default:active,
+.night-mode .btn-default.active,
+.open .dropdown-toggle.night-mode .btn-default {
+    background-image: none;
+}
+
+.night-mode .btn-default.disabled,
+.night-mode .btn-default[disabled],
+fieldset[disabled] .night-mode .btn-default,
+.night-mode .btn-default.disabled:hover,
+.night-mode .btn-default[disabled]:hover,
+fieldset[disabled] .night-mode .btn-default:hover,
+.night-mode .btn-default.disabled:focus,
+.night-mode .btn-default[disabled]:focus,
+fieldset[disabled] .night-mode .btn-default:focus,
+.night-mode .btn-default.disabled:active,
+.night-mode .btn-default[disabled]:active,
+fieldset[disabled] .night-mode .btn-default:active,
+.night-mode .btn-default.disabled.active,
+.night-mode .btn-default[disabled].active,
+fieldset[disabled] .night-mode .btn-default.active {
+    background-color: #3A3F40;
+    border-color: #000000;
+}
+
+.night-mode .btn-default .badge {
+    color: #3A3F40;
+    background-color: #ffffff;
+}
+
+.night-mode .open > .dropdown-toggle.btn-default {
+    color: #FFF;
+    background-color: #3A3F40;
+    border-color: #000000;
+}
+
+/** btn-app **/
+.night-mode .btn-app {
+    color: #FFFFFF;
+    background-color: #3A3F40;
+    border-color: #000000;
+}
+
+.night-mode .btn-app:hover,
+.night-mode .btn-app:focus,
+.night-mode .btn-app:active,
+.night-mode .btn-app.active,
+.open .dropdown-toggle.night-mode .btn-app {
+    color: #FFFFFF;
+    background-color: #282C2F;
+    border-color: #000000;
+}
+
+.night-mode .btn-app:active,
+.night-mode .btn-app.active,
+.open .dropdown-toggle.night-mode .btn-app {
+    background-image: none;
+}
+
+.night-mode .btn-app.disabled,
+.night-mode .btn-app[disabled],
+fieldset[disabled] .night-mode .btn-app,
+.night-mode .btn-app.disabled:hover,
+.night-mode .btn-app[disabled]:hover,
+fieldset[disabled] .night-mode .btn-app:hover,
+.night-mode .btn-app.disabled:focus,
+.night-mode .btn-app[disabled]:focus,
+fieldset[disabled] .night-mode .btn-app:focus,
+.night-mode .btn-app.disabled:active,
+.night-mode .btn-app[disabled]:active,
+fieldset[disabled] .night-mode .btn-app:active,
+.night-mode .btn-app.disabled.active,
+.night-mode .btn-app[disabled].active,
+fieldset[disabled] .night-mode .btn-app.active {
+    background-color: #3A3F40;
+    border-color: #000000;
+}
+
+.night-mode .btn-app .badge {
+    color: #3A3F40;
+    background-color: #FFFFFF;
+}
+
+/** Input fields **/
+.night-mode .form-control {
+    color: #FFF;
+    background-color: #3A3F40;
+    border-color: #000000;
+}
+
+/** code **/
+.night-mode code {
+    background: #272B30;
+}
+
+/** well **/
+.night-mode .well {
+    background-color: #3A3F44;
+    border: 1px solid rgba(0, 0, 0, 0.6);
+
+}
+
+.night-mode .text-navy {
+    color: #FFF !important;
+}

@@ -6,13 +6,29 @@ simple support to render performance data.
 
 Visit the [documentation](https://statusengine.org/) for more information about Statusengine UI
 
-## Install
+## Install (Ubuntu 18.04)
 ````
-apt-get install php-mysql php-ldap
-php5enmod ldap
-service apache2 restart
+apt-get install git php-cli php-zip php-mysql php-ldap php-json composer
+
+cd /usr/share/
+git clone https://github.com/statusengine/interface.git statusengine-ui
+cd /usr/share/statusengine-ui
+chmod +x bin/*
 composer install
 ````
+
+## Config
+````
+cp /usr/share/statusengine-ui/etc/config.yml.example /usr/share/statusengine-ui/etc/config.yml
+````
+
+#### Environment variables
+
+Statusengine UI could also read the configuration
+out of environment variables.
+This can be handy if you want to run Statusengine Ui inside of Docker.
+See the [list of environment variables](docs/Env.md) for more information.
+
 
 ## Web server
 Point the document root of your web server to the `public` folder

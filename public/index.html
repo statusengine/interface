@@ -205,8 +205,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
                 <li class="treeview" ui-sref-active="active">
                     <a ui-sref="services">
-                        <i class="fa fa-cog text-primary"></i> <span> Services</span>
-                        <span class="pull-right-container">
+                        <i class="fa fa-cog text-primary"></i>
+                        <span>
+                            <span> Services</span>
                             <small class="label pull-right bg-primary"
                                    ng-show="data.servicestatus_overview.unknown > 0">
                                 {{ data.servicestatus_overview.unknown }}
@@ -223,8 +224,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
                 <li class="treeview" ui-sref-active="active">
                     <a ui-sref="problems">
-                        <i class="fa fa-exclamation-triangle text-primary"></i> <span> Issues</span>
-                        <span class="pull-right-container">
+                        <i class="fa fa-exclamation-triangle text-primary"></i>
+                        <span>
+                            <span> Issues</span>
                             <small class="label pull-right bg-purple" ng-show="data.number_of_service_problems > 0">
                                 {{ data.number_of_service_problems }}
                             </small>

@@ -378,7 +378,7 @@
 }
 
 .sidebar-menu li > a > .pull-right-container {
-    position: absolute;
+    position: static;
     right: 10px;
     top: 50%;
     margin-top: -7px;
@@ -388,17 +388,21 @@
 .sidebar-menu>li .badge {
     margin-top: 0;
     margin-right: 0;
-    position: absolute;
+    position: static;
     right: 5px;
     line-height: 1.25;
+    margin:2px;
 }
 
 @media (max-width: 768px) {
     .sidebar-mini:not(.sidebar-mini-expand-feature).sidebar-collapse .sidebar-menu > li:hover > a > span {
+        /*
         top: 0;
         margin-left: -12px;
         padding: 12px 5px 12px 0px;
         background-color: inherit;
+
+         */
     }
 }
 

@@ -1,31 +1,31 @@
 angular.module('Statusengine', ['ui.router', 'infinite-scroll', 'duScroll', 'ui.bootstrap'])
 
 
-    .factory("httpInterceptor", function ($q, $rootScope, $timeout) {
+    .factory("httpInterceptor", function($q, $rootScope, $timeout){
         $rootScope.ajax_server_error = '';
         $rootScope.ajax_server_error_message = '';
         var hasAjaxServerError = false;
 
         return {
-            response: function (result) {
-                $timeout(function () {
+            response: function(result){
+                $timeout(function(){
                     //Let the weel spin for one seconds
                     $rootScope.loading = false;
                 }, 1000);
 
-                if ($rootScope.ajaxError === true) {
+                if($rootScope.ajaxError === true){
                     $rootScope.ajaxError = false;
                     $('#ajax-modal-dialog').addClass('animated hinge');
-                    $('#ajax-modal').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function () {
+                    $('#ajax-modal').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(){
                         $('#ajax-modal').modal('hide');
                         $('#ajax-modal-dialog').removeClass('animated hinge');
                     });
                 }
 
-                if (hasAjaxServerError === true) {
+                if(hasAjaxServerError === true){
                     hasAjaxServerError = false;
                     $('#server-error-modal-dialog').addClass('animated hinge');
-                    $('#server-error-modal').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function () {
+                    $('#server-error-modal').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(){
                         $('#server-error-modal').modal('hide');
                         $('#server-error-modal-dialog').removeClass('animated hinge');
                     });
@@ -34,23 +34,23 @@ angular.module('Statusengine', ['ui.router', 'infinite-scroll', 'duScroll', 'ui.
 
                 return result || $.then(result)
             },
-            request: function (response) {
+            request: function(response){
                 $rootScope.loading = true;
                 return response || $q.when(response);
             },
-            responseError: function (rejection) {
+            responseError: function(rejection){
                 console.log(rejection);
                 $rootScope.loading = false;
-                if (rejection.status === -1) {
+                if(rejection.status === -1){
                     $rootScope.ajaxError = true;
                     $('#ajax-modal').modal('show');
                 }
 
-                if (rejection.status == 401) {
+                if(rejection.status == 401){
                     window.location = '/login.html';
                 }
 
-                if (rejection.status >= 500) {
+                if(rejection.status >= 500){
                     hasAjaxServerError = true;
                     $('#server-error-modal').modal('show');
                     $rootScope.ajax_server_error = '[' + rejection.status + '] ' + rejection.statusText;
@@ -62,44 +62,44 @@ angular.module('Statusengine', ['ui.router', 'infinite-scroll', 'duScroll', 'ui.
         };
     })
 
-    .filter('isNotEmpty', function () {
-        return function (obj) {
-            if (typeof obj == 'undefined') {
+    .filter('isNotEmpty', function(){
+        return function(obj){
+            if(typeof obj == 'undefined'){
                 return false;
             }
             return !angular.equals(obj, {}) && !angular.equals(obj, []);
         }
     })
 
-    .filter('configEnabled', function () {
-        return function (value) {
-            if (value === true) {
+    .filter('configEnabled', function(){
+        return function(value){
+            if(value === true){
                 return 'Enabled';
             }
             return 'Disabled';
         }
     })
 
-    .filter('stateType', function () {
-        return function (stateType) {
-            if (stateType == true) {
+    .filter('stateType', function(){
+        return function(stateType){
+            if(stateType == true){
                 return 'Hard';
             }
             return 'Soft';
         }
     })
 
-    .filter('serviceStatusNameByStatusCode', function () {
-        return function (statuscode) {
-            if (statuscode == 0) {
+    .filter('serviceStatusNameByStatusCode', function(){
+        return function(statuscode){
+            if(statuscode == 0){
                 return "Ok";
             }
 
-            if (statuscode == 1) {
+            if(statuscode == 1){
                 return "Warning"
             }
 
-            if (statuscode == 2) {
+            if(statuscode == 2){
                 return "Critical"
             }
 
@@ -107,13 +107,13 @@ angular.module('Statusengine', ['ui.router', 'infinite-scroll', 'duScroll', 'ui.
         }
     })
 
-    .filter('bootstrapClassStatusCodeHost', function () {
-        return function (statuscode) {
-            if (statuscode == 0) {
+    .filter('bootstrapClassStatusCodeHost', function(){
+        return function(statuscode){
+            if(statuscode == 0){
                 return "success";
             }
 
-            if (statuscode == 1) {
+            if(statuscode == 1){
                 return "danger"
             }
 
@@ -121,17 +121,17 @@ angular.module('Statusengine', ['ui.router', 'infinite-scroll', 'duScroll', 'ui.
         }
     })
 
-    .filter('bootstrapClassStatusCodeService', function () {
-        return function (statuscode) {
-            if (statuscode == 0) {
+    .filter('bootstrapClassStatusCodeService', function(){
+        return function(statuscode){
+            if(statuscode == 0){
                 return "success";
             }
 
-            if (statuscode == 1) {
+            if(statuscode == 1){
                 return "warning"
             }
 
-            if (statuscode == 2) {
+            if(statuscode == 2){
                 return "danger"
             }
 
@@ -139,13 +139,13 @@ angular.module('Statusengine', ['ui.router', 'infinite-scroll', 'duScroll', 'ui.
         }
     })
 
-    .filter('statusNameByStatusCodeHost', function () {
-        return function (statuscode) {
-            if (statuscode == 0) {
+    .filter('statusNameByStatusCodeHost', function(){
+        return function(statuscode){
+            if(statuscode == 0){
                 return "Up";
             }
 
-            if (statuscode == 1) {
+            if(statuscode == 1){
                 return "Down"
             }
 
@@ -153,17 +153,17 @@ angular.module('Statusengine', ['ui.router', 'infinite-scroll', 'duScroll', 'ui.
         }
     })
 
-    .filter('statusBgByStatusCodeService', function () {
-        return function (statuscode) {
-            if (statuscode == 0) {
+    .filter('statusBgByStatusCodeService', function(){
+        return function(statuscode){
+            if(statuscode == 0){
                 return 'bg-green';
             }
 
-            if (statuscode == 1) {
+            if(statuscode == 1){
                 return 'bg-yellow';
             }
 
-            if (statuscode == 2) {
+            if(statuscode == 2){
                 return 'bg-red';
             }
 
@@ -171,26 +171,26 @@ angular.module('Statusengine', ['ui.router', 'infinite-scroll', 'duScroll', 'ui.
         }
     })
 
-    .filter('yesOrNo', function () {
-        return function (value) {
-            if (value === true || value === 1 || value === 'true') {
+    .filter('yesOrNo', function(){
+        return function(value){
+            if(value === true || value === 1 || value === 'true'){
                 return 'Yes';
             }
             return 'No';
         }
     })
 
-    .filter('iconByStatusCodeService', function () {
-        return function (statuscode) {
-            if (statuscode == 0) {
+    .filter('iconByStatusCodeService', function(){
+        return function(statuscode){
+            if(statuscode == 0){
                 return 'fa-check-circle-o';
             }
 
-            if (statuscode == 1) {
+            if(statuscode == 1){
                 return 'fa-exclamation-triangle';
             }
 
-            if (statuscode == 2) {
+            if(statuscode == 2){
                 return 'fa-times';
             }
 
@@ -198,24 +198,31 @@ angular.module('Statusengine', ['ui.router', 'infinite-scroll', 'duScroll', 'ui.
         }
     })
 
-    .filter('base64encode', function () {
-        return function (str) {
+    .filter('base64encode', function(){
+        return function(str){
             return btoa(str);
         }
     })
 
-    .filter('encodeURI', function () {
-        return function (str) {
+    .filter('encodeURI', function(){
+        return function(str){
             return encodeURI(str);
         }
     })
 
 
-    .config(function ($httpProvider) {
+    .config(function($httpProvider){
         $httpProvider.interceptors.push("httpInterceptor");
-    })
+        $httpProvider.defaults.cache = false;
+        if(!$httpProvider.defaults.headers.get){
+            $httpProvider.defaults.headers.get = {};
+        }
+        // disable IE ajax request caching
+        $httpProvider.defaults.headers.get['If-Modified-Since'] = '0';
 
-    .config(function ($urlRouterProvider, $stateProvider) {
+    })
+    
+    .config(function($urlRouterProvider, $stateProvider){
         $urlRouterProvider.otherwise("/dashboard");
 
         $stateProvider

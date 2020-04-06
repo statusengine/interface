@@ -21,6 +21,7 @@ Even if its possible, I don't recommend to use a mix of both.
 | SEI_MYSQL_USER                                | string | depends  | Required if `SEI_USE_MYSQL` is enabled                                                  |
 | SEI_MYSQL_PASSWORD                            | string | depends  | Required if `SEI_USE_MYSQL` is enabled                                                  |
 | SEI_MYSQL_DATABASE                            | string | depends  | Required if `SEI_USE_MYSQL` is enabled                                                  |
+| SEI_MYSQL_ENCODING                            | string | depends  | Required if `SEI_USE_MYSQL` is enabled Examples: `utf8` or `utf8mb4`                    |
 | SEI_CRATE_NODES                               | array  | depends  | `export SEI_CRATE_NODES="127.0.0.1:4200,192.168.1.1:4200,192.168.10.1:4200"`            |
 | SEI_ALLOW_ANONYMOUS                           | bool   | no       |                                                                                         |
 | SEI_ANONYMOUS_CAN_SUBMIT_COMMANDS             | bool   | no       |                                                                                         |

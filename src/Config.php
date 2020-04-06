@@ -115,7 +115,8 @@ class Config {
             'port'     => Env::get('SEI_MYSQL_PORT', 3306, Env::VALUE_INT),
             'username' => Env::get('SEI_MYSQL_USER', 'statusengine'),
             'password' => Env::get('SEI_MYSQL_PASSWORD', 'password'),
-            'database' => Env::get('SEI_MYSQL_DATABASE', 'statusengine_data')
+            'database' => Env::get('SEI_MYSQL_DATABASE', 'statusengine_data'),
+            'encoding' => Env::get('SEI_MYSQL_ENCODING', 'utf8')
         ];
 
         foreach ($config as $key => $value) {
@@ -190,7 +191,7 @@ class Config {
             return (string)$this->config['ldap_server'];
         }
 
-        if(strlen(Env::get('SEI_LDAP_SERVER', '')) > 0){
+        if (strlen(Env::get('SEI_LDAP_SERVER', '')) > 0) {
             return Env::get('SEI_LDAP_SERVER', '');
         }
 

@@ -68,8 +68,8 @@ class MySQL {
         //$this->Connection->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
         //$this->Connection->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
 
-        //Enable UTF-8
-        $query = $this->Connection->prepare('SET NAMES utf8');
+        //Enable UTF-8 / utf8 / encoding
+        $query = $this->Connection->prepare('SET NAMES '.$config['encoding']);
         $query->execute();
 
         return $this->Connection;

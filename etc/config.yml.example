@@ -117,6 +117,7 @@ mysql:
     username: statusengine
     password: password
     database: statusengine
+    encoding: utf8
 
 
 ############

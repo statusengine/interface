@@ -238,11 +238,23 @@ angular.module('Statusengine', ['ui.router', 'infinite-scroll', 'duScroll', 'ui.
             })
             .state('nodes', {
                 url: '/nodes/:show_state',
+                params: {
+                    show_state: {
+                        value: null,
+                        squash: true
+                    }
+                },
                 templateUrl: "templates/views/nodes.html",
                 controller: "NodeController"
             })
             .state('services', {
                 url: '/services/:show_state',
+                params: {
+                    show_state: {
+                        value: null,
+                        squash: true
+                    }
+                },
                 templateUrl: "templates/views/services.html",
                 controller: "ServiceController"
             })

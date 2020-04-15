@@ -404,7 +404,46 @@ $app->get('/externalcommand_args', function (Request $request, Response $respons
 
     $result = $ExternalCommandController->args(new \Statusengine\ValueObjects\ExternalCommandArgsQueryOptions($params));
     return $response->withJson(['result' => $result]);
+});
 
+/**
+ * Parameters:
+ * downtime_id int
+ * node_name string
+ */
+$app->get('/delete_host_and_service_downtimes', function (Request $request, Response $response) {
+    $Config = new \Statusengine\Config();
+    $Session = new \Statusengine\SessionHandler();
+    $isLoggedIn = false;
+    if ($Session->has('loginSuccessfully')) {
+        $isLoggedIn = $Session->get('loginSuccessfully');
+    }
+    if ($isLoggedIn === false && $Config->canAnonymousSubmitCommand() === false) {
+        return $response->withJson(['message' => 'External commands are disabled for anonymous users']);
+    }
+
+    /** @var \Statusengine\Backend\StorageBackend $StorageBackend */
+    $StorageBackend = $this->get('StorageBackend');
+    $params = $request->getQueryParams();
+
+    $SessionHandler = new \Statusengine\SessionHandler();
+    $authorName = 'Anonymous';
+    if ($SessionHandler->has('username')) {
+        $authorName = $SessionHandler->get('username');
+    }
+
+    $params['author_name'] = $authorName;
+
+    $ExternalCommandController = new \Statusengine\Controller\ExternalCommand(
+        $StorageBackend->getExternalCommandSaver()
+    );
+
+    $result = $ExternalCommandController->deleteHostIncludingServiceDowntimes(
+        new \Statusengine\ValueObjects\ExternalCommandArgsQueryOptions($params),
+        $StorageBackend->getScheduleddowntimeHostLoader(),
+        $StorageBackend->getScheduleddowntimeServiceLoader()
+    );
+    return $response->withJson(['result' => $result]);
 });
 
 /**

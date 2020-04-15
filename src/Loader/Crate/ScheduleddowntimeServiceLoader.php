@@ -115,4 +115,22 @@ class ScheduleddowntimeServiceLoader implements ScheduleddowntimeServiceLoaderIn
         }
         return '';
     }
+
+    /**
+     * @param $hostDowntime
+     * @return array
+     */
+    public function getScheduledServicedowntimesByHostdowntime($hostDowntime) {
+        $baseQuery = 'SELECT * FROM statusengine_service_scheduleddowntimes WHERE hostname=? AND scheduled_start_time=? AND scheduled_end_time=? AND node_name=?';
+
+
+        $query = $this->Backend->prepare($baseQuery);
+        $i = 1;
+        $query->bindParam($i++, $hostDowntime['hostname']);
+        $query->bindParam($i++, (int)$hostDowntime['scheduled_start_time'], \PDO::PARAM_INT);
+        $query->bindParam($i++, (int)$hostDowntime['scheduled_end_time'], \PDO::PARAM_INT);
+        $query->bindParam($i++, $hostDowntime['node_name']);
+
+        return $this->Backend->fetchAll($query);
+    }
 }

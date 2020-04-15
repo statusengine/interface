@@ -168,6 +168,40 @@ angular.module('Statusengine')
             });
         };
 
+        $scope.submitDeleteHostDowntime = function(downtime, cancelServiceDowntimes){
+            if($scope.isAllowedToSubmitCommand === false){
+                return;
+            }
+
+            if(cancelServiceDowntimes === false){
+                $scope.submitDeleteDowntime(downtime.internal_downtime_id);
+                return;
+            }
+
+            var data = {
+                downtime_id: downtime.internal_downtime_id,
+                node_name: $scope.data.hoststatus.node_name
+            };
+
+            $http.get("/api/index.php/delete_host_and_service_downtimes", {
+                params: data
+            }).then(function(result){
+                noty({
+                    theme: 'metrouiAdminLTE',
+                    progressBar: true,
+                    layout: 'bottomRight',
+                    type: 'success',
+                    text: 'Command was sent to Statusengine task queue',
+                    timeout: 2500,
+                    animation: {
+                        open: 'animated flipInX',
+                        close: 'animated flipOutX'
+                    }
+
+                });
+            });
+        };
+
         $scope.sendCommandWithArgs = function (data) {
             if ($scope.isAllowedToSubmitCommand === false) {
                 return;

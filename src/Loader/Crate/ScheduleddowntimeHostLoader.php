@@ -109,4 +109,16 @@ class ScheduleddowntimeHostLoader implements ScheduleddowntimeHostLoaderInterfac
         return '';
     }
 
+    /**
+     * @param int $id
+     * @return array
+     */
+    public function getScheduledHostdowntimeById($id) {
+        $baseQuery = 'SELECT * FROM statusengine_host_scheduleddowntimes WHERE  internal_downtime_id=?';
+        $query = $this->Backend->prepare($baseQuery);
+        $query->bindParam(1, $id);
+
+        return $this->Backend->fetchAll($query);
+    }
+
 }

@@ -148,7 +148,7 @@
                                 <div class="col-xs-12 col-sm-12 col-md-4 col-lg-2">
                                     <button type="button"
                                             class="btn btn-block btn-{{ data.hoststatus.current_state | bootstrapClassStatusCodeHost }}"
-                                            ng-click="submitDeleteDowntime(downtimeData.internal_downtime_id)">
+                                            ng-click="confirmDeleteHostDowntime(downtimeData)">
                                         Cancel downtime
                                     </button>
                                 </div>
@@ -424,7 +424,8 @@
     </div>
 </div>
 
-
+<!-- Add in modals -->
+<delete-host-downtime callback="submitDeleteHostDowntime"></delete-host-downtime>
 
 
 

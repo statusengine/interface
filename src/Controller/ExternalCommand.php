@@ -20,6 +20,10 @@
 namespace Statusengine\Controller;
 
 use Statusengine\Loader\Crate\ExternalCommandSaver;
+use Statusengine\Loader\HostDowntimeLoaderInterface;
+use Statusengine\Loader\ScheduleddowntimeHostLoaderInterface;
+use Statusengine\Loader\ScheduleddowntimeServiceLoaderInterface;
+use Statusengine\Loader\ServiceDowntimeLoaderInterface;
 use Statusengine\Saver\ExternalCommandSaverInterface;
 use Statusengine\ValueObjects\ExternalCommandArgsQueryOptions;
 use Statusengine\ValueObjects\ExternalCommandQueryOptions;
@@ -73,6 +77,23 @@ class ExternalCommand extends Controller {
 
         return $this->ExternalCommandSaver->saveCommand($commandAsStringOrArray, $ExternalCommandArgsQueryOptions->getNodeName());
 
+    }
+
+    public function deleteHostIncludingServiceDowntimes(ExternalCommandArgsQueryOptions $ExternalCommandArgsQueryOptions, ScheduleddowntimeHostLoaderInterface $ScheduleddowntimeHostLoader, ScheduleddowntimeServiceLoaderInterface $ScheduleddowntimeServiceLoader){
+        $hostDowntime = $ScheduleddowntimeHostLoader->getScheduledHostdowntimeById($ExternalCommandArgsQueryOptions->getDowntimeId());
+        if(!empty($hostDowntime)){
+            $serviceDowntimes = $ScheduleddowntimeServiceLoader->getScheduledServicedowntimesByHostdowntime($hostDowntime[0]);
+
+            //Delete host downtime
+            $command = sprintf('[%s] DEL_HOST_DOWNTIME;%s', time(), $ExternalCommandArgsQueryOptions->getDowntimeId());
+            $this->ExternalCommandSaver->saveCommand($command, $ExternalCommandArgsQueryOptions->getNodeName());
+
+            //Delete service downtimes
+            foreach($serviceDowntimes as $serviceDowntime){
+                $command = sprintf('[%s] DEL_SVC_DOWNTIME;%s', time(), $serviceDowntime['internal_downtime_id']);
+                $this->ExternalCommandSaver->saveCommand($command, $ExternalCommandArgsQueryOptions->getNodeName());
+            }
+        }
     }
 
 }

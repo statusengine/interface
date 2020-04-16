@@ -218,6 +218,9 @@ class ExternalCommandArgsQueryOptions extends QueryOptions {
      * @return string
      */
     public function getComment() {
+        if(empty($this->comment)){
+            return 'empty comment';
+        }
         return $this->comment;
     }
 

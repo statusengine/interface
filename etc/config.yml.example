@@ -153,6 +153,11 @@ graphite_prefix: statusengine
 
 # Set the complete URL to your Graphite system
 # Statusengine UI use the Graphite HTTP API to get stored data
+# Examples:
+# - http://localhost:8080
+# - http://localhost:8080/graphite
+# - http://cloud.example.org:8080
+#
 graphite_url: http://localhost:8080
 
 # Do you require a login to reach http://localhost:8080/render ?

@@ -18,6 +18,7 @@
   "require": {
     "php": ">=5.5.9",
     "ext-ldap": "*",
+    "ext-json": "*",
     "slim/slim": "^3.7",
     "symfony/yaml": "2.8",
     "symfony/console": "2.8",

@@ -112,7 +112,6 @@ class ServicePerfdataLoader implements ServicePerfdataLoaderInterfaceByConfig {
             'scroll' => $this->scroll,
             'size' => $this->size,
             'index' => $index,
-            'type' => 'metric',
             'body' => [
                 'sort' => [
                     '@timestamp' => 'asc'

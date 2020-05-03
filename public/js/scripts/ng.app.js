@@ -47,7 +47,7 @@ angular.module('Statusengine', ['ui.router', 'infinite-scroll', 'duScroll', 'ui.
                 }
 
                 if(rejection.status == 401){
-                    window.location = '/login.html';
+                    window.location = './login.html';
                 }
 
                 if(rejection.status >= 500){

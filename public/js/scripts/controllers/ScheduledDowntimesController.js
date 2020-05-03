@@ -31,7 +31,7 @@ angular.module('Statusengine')
                 window.localStorage.setItem('scheduleddowntimes_object_type', 'service');
             }
 
-            $http.get("/api/index.php/scheduleddowntimes", {
+            $http.get("./api/index.php/scheduleddowntimes", {
                 params: {
                     object_type: $scope.object_type,
                     hostname__like: $scope.hostname__like,
@@ -50,7 +50,7 @@ angular.module('Statusengine')
                 }
             );
 
-            $http.get("/api/index.php/cluster").then(function(result){
+            $http.get("./api/index.php/cluster").then(function(result){
                     $scope.clusterNodes = result.data;
                 }
             );
@@ -60,7 +60,7 @@ angular.module('Statusengine')
             $scope.apiIsBusyOrNoDataAnymore = true;
             offset += limit;
 
-            $http.get("/api/index.php/scheduleddowntimes", {
+            $http.get("./api/index.php/scheduleddowntimes", {
                 params: {
                     object_type: $scope.object_type,
                     hostname__like: $scope.hostname__like,
@@ -112,7 +112,7 @@ angular.module('Statusengine')
                 node_name: downtime.node_name
             };
 
-            $http.get("/api/index.php/delete_host_and_service_downtimes", {
+            $http.get("./api/index.php/delete_host_and_service_downtimes", {
                 params: data
             }).then(function(result){
                 noty({
@@ -147,7 +147,7 @@ angular.module('Statusengine')
             data['downtime_id'] = internal_downtime_id;
             data['node_name'] = node_name;
 
-            $http.get("/api/index.php/externalcommand_args", {
+            $http.get("./api/index.php/externalcommand_args", {
                 params: data
             }).then(function(result){
                 noty({
@@ -167,7 +167,7 @@ angular.module('Statusengine')
         };
 
         $scope.getLoginState = function(){
-            $http.get("/api/index.php/loginstate", {
+            $http.get("./api/index.php/loginstate", {
                 params: {}
             }).then(function(result){
                 $scope.isAllowedToSubmitCommand = false;

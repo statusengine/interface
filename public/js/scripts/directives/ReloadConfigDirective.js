@@ -1,4 +1,4 @@
-angular.module('Statusengine').directive('reloadConfig', function(ReloadService, NightModeService){
+angular.module('Statusengine').directive('reloadConfig', function(ReloadService, NightModeService, $location){
     return {
         restrict: 'A',
         templateUrl: 'templates/directives/reloadconfig.html',
@@ -45,17 +45,18 @@ angular.module('Statusengine').directive('reloadConfig', function(ReloadService,
 
 
             $scope.checkLoginState = function(){
-                $http.get("/api/index.php/loginstate", {}
+                $http.get("./api/index.php/loginstate", {}
                 ).then(function(result){
                     $scope.isLoggedIn = result.data.isLoggedIn;
                 });
             };
 
             $scope.logout = function(){
-                $http.get("/api/index.php/logout", {}
+                $http.get("./api/index.php/logout", {}
                 ).then(function(result){
                     $scope.isLoggedIn = false;
-                    window.location = '/login.html';
+                    console.log($location.base);
+                    window.location = './login.html';
                 });
             };
 
@@ -63,7 +64,7 @@ angular.module('Statusengine').directive('reloadConfig', function(ReloadService,
                 $scope.isLoggedIn = false;
                 var currentPage = location.pathname + window.location.hash;
                 window.localStorage.setItem('lastPage', currentPage);
-                window.location = '/login.html';
+                window.location = './login.html';
             };
 
             $scope.checkLoginState();

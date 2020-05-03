@@ -23,19 +23,19 @@ angular.module('Login')
         };
 
         $scope.checkLoginState = function () {
-            $http.get("/api/index.php/loginstate", {}
+            $http.get("./api/index.php/loginstate", {}
             ).then(function (result) {
                 $scope.isAnonymousAllowed = result.data.isAnonymousAllowed;
             });
         };
 
         $scope.getCsrf = function () {
-            $http.get("/api/index.php/login").then(function (result) {
+            $http.get("./api/index.php/login").then(function (result) {
                     $scope.csrf_name = result.data.required_fields.csrf_name;
                     $scope.csrf_value = result.data.required_fields.csrf_value;
 
                     if (result.data.isLoggedIn === true) {
-                        window.location = '/';
+                        window.location = './';
                     }
 
                 }
@@ -43,7 +43,7 @@ angular.module('Login')
         };
 
         $scope.submit = function () {
-            $http.post("/api/index.php/login", {
+            $http.post("./api/index.php/login", {
                 csrf_name: $scope.csrf_name,
                 csrf_value: $scope.csrf_value,
                 username: $scope.username,
@@ -56,7 +56,7 @@ angular.module('Login')
                                 window.location.href = $scope.lastPage;
                             } else {
                                 //Browsers making strange thinks without the else
-                                window.location = '/';
+                                window.location = './';
                             }
                         }
                     }

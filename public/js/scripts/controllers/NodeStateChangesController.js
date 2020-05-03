@@ -20,7 +20,7 @@ angular.module('Statusengine')
 
         $scope.reload = function () {
             offset = 0;
-            $http.get("/api/index.php/hoststatehistory", {
+            $http.get("./api/index.php/hoststatehistory", {
                 params: {
                     hostname: $scope.nodename,
                     order: 'state_time',
@@ -42,7 +42,7 @@ angular.module('Statusengine')
             $scope.apiIsBusyOrNoDataAnymore = true;
             offset += limit;
 
-            $http.get("/api/index.php/hoststatehistory", {
+            $http.get("./api/index.php/hoststatehistory", {
                 params: {
                     hostname: $scope.nodename,
                     order: 'state_time',

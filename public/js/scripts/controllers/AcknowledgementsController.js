@@ -31,7 +31,7 @@ angular.module('Statusengine')
                 window.localStorage.setItem('acknowledgements_object_type', 'service');
             }
 
-            $http.get("/api/index.php/acknowledgements", {
+            $http.get("./api/index.php/acknowledgements", {
                 params: {
                     object_type: $scope.object_type,
                     hostname__like: $scope.hostname__like,
@@ -55,7 +55,7 @@ angular.module('Statusengine')
             $scope.apiIsBusyOrNoDataAnymore = true;
             offset += limit;
 
-            $http.get("/api/index.php/acknowledgements", {
+            $http.get("./api/index.php/acknowledgements", {
                 params: {
                     object_type: $scope.object_type,
                     hostname__like: $scope.hostname__like,
@@ -92,7 +92,7 @@ angular.module('Statusengine')
             }
         });
 
-        $http.get("/api/index.php/cluster").then(function (result) {
+        $http.get("./api/index.php/cluster").then(function (result) {
                 $scope.clusterNodes = result.data;
             }
         );

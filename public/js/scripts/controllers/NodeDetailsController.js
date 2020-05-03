@@ -23,7 +23,7 @@ angular.module('Statusengine')
 
         $scope.reload = function () {
             offset = 0;
-            $http.get("/api/index.php/hostdetails", {
+            $http.get("./api/index.php/hostdetails", {
                 params: {
                     hostname: $scope.nodename,
                     servicedescription__like: $scope.servicedescription__like,
@@ -68,7 +68,7 @@ angular.module('Statusengine')
         };
 
         $scope.loadAcknowledgementData = function () {
-            $http.get("/api/index.php/hostacknowledgements", {
+            $http.get("./api/index.php/hostacknowledgements", {
                 params: {
                     hostname: $scope.nodename,
                     limit: 1,
@@ -84,7 +84,7 @@ angular.module('Statusengine')
         };
 
         $scope.loadHostDowntimeData = function () {
-            $http.get("/api/index.php/hostdowntime", {
+            $http.get("./api/index.php/hostdowntime", {
                 params: {
                     hostname: $scope.nodename
                 }
@@ -149,7 +149,7 @@ angular.module('Statusengine')
             data['downtime_id'] = internal_downtime_id;
             data['node_name'] = $scope.data.hoststatus.node_name;
 
-            $http.get("/api/index.php/externalcommand_args", {
+            $http.get("./api/index.php/externalcommand_args", {
                 params: data
             }).then(function (result) {
                 noty({
@@ -183,7 +183,7 @@ angular.module('Statusengine')
                 node_name: $scope.data.hoststatus.node_name
             };
 
-            $http.get("/api/index.php/delete_host_and_service_downtimes", {
+            $http.get("./api/index.php/delete_host_and_service_downtimes", {
                 params: data
             }).then(function(result){
                 noty({
@@ -209,7 +209,7 @@ angular.module('Statusengine')
             data['hostname'] = $scope.nodename;
             data['node_name'] = $scope.data.hoststatus.node_name;
 
-            $http.get("/api/index.php/externalcommand_args", {
+            $http.get("./api/index.php/externalcommand_args", {
                 params: data
             }).then(function (result) {
                 noty({
@@ -287,7 +287,7 @@ angular.module('Statusengine')
                     break;
             }
 
-            $http.get("/api/index.php/externalcommand", {
+            $http.get("./api/index.php/externalcommand", {
                 params: {
                     hostname: $scope.nodename,
                     node_name: $scope.data.hoststatus.node_name,
@@ -311,7 +311,7 @@ angular.module('Statusengine')
         };
 
         $scope.getLoginState = function () {
-            $http.get("/api/index.php/loginstate", {
+            $http.get("./api/index.php/loginstate", {
                 params: {}
             }).then(function (result) {
                 $scope.isAllowedToSubmitCommand = false;

@@ -20,7 +20,7 @@ angular.module('Statusengine')
 
         $scope.reload = function () {
             offset = 0;
-            $http.get("/api/index.php/hostnotifications", {
+            $http.get("./api/index.php/hostnotifications", {
                 params: {
                     hostname: $scope.nodename,
                     order: 'start_time',
@@ -42,7 +42,7 @@ angular.module('Statusengine')
             $scope.apiIsBusyOrNoDataAnymore = true;
             offset += limit;
 
-            $http.get("/api/index.php/hostnotifications", {
+            $http.get("./api/index.php/hostnotifications", {
                 params: {
                     hostname: $scope.nodename,
                     order: 'start_time',

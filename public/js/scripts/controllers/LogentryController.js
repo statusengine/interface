@@ -12,7 +12,7 @@ angular.module('Statusengine')
         $scope.logentry_data__like = '';
 
         $scope.reload = function () {
-            $http.get("/api/index.php/logentries", {
+            $http.get("./api/index.php/logentries", {
                 params: {
                     limit: 50,
                     logentry_data__like: $scope.logentry_data__like,
@@ -28,7 +28,7 @@ angular.module('Statusengine')
                 }
             );
 
-            $http.get("/api/index.php/cluster").then(function (result) {
+            $http.get("./api/index.php/cluster").then(function (result) {
                     $scope.clusterNodes = result.data;
                 }
             );
@@ -37,7 +37,7 @@ angular.module('Statusengine')
         $scope.loadMoreLogentries = function () {
             $scope.apiIsBusyOrNoDataAnymore = true;
 
-            $http.get("/api/index.php/logentries", {
+            $http.get("./api/index.php/logentries", {
                 params: {
                     limit: 50,
                     entry_time__lt: $scope.data[$scope.data.length - 1].entry_time,

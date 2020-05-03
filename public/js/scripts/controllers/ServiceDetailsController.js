@@ -19,7 +19,7 @@ angular.module('Statusengine')
 
         $scope.reload = function () {
             offset = 0;
-            $http.get("/api/index.php/servicedetails", {
+            $http.get("./api/index.php/servicedetails", {
                 params: {
                     hostname: $scope.nodename,
                     servicedescription: $scope.servicedescription
@@ -63,7 +63,7 @@ angular.module('Statusengine')
         };
 
         $scope.loadAcknowledgementData = function () {
-            $http.get("/api/index.php/serviceacknowledgements", {
+            $http.get("./api/index.php/serviceacknowledgements", {
                 params: {
                     hostname: $scope.nodename,
                     servicedescription: $scope.servicedescription,
@@ -80,7 +80,7 @@ angular.module('Statusengine')
         };
 
         $scope.loadServiceDowntimeData = function () {
-            $http.get("/api/index.php/servicedowntime", {
+            $http.get("./api/index.php/servicedowntime", {
                 params: {
                     hostname: $scope.nodename,
                     servicedescription: $scope.servicedescription
@@ -102,7 +102,7 @@ angular.module('Statusengine')
             data['downtime_id'] = internal_downtime_id;
             data['node_name'] = $scope.data.servicestatus.node_name;
 
-            $http.get("/api/index.php/externalcommand_args", {
+            $http.get("./api/index.php/externalcommand_args", {
                 params: data
             }).then(function (result) {
                 noty({
@@ -173,7 +173,7 @@ angular.module('Statusengine')
             data['servicedescription'] = $scope.data.servicestatus.service_description;
             data['node_name'] = $scope.data.servicestatus.node_name;
 
-            $http.get("/api/index.php/externalcommand_args", {
+            $http.get("./api/index.php/externalcommand_args", {
                 params: data
             }).then(function (result) {
                 noty({
@@ -247,7 +247,7 @@ angular.module('Statusengine')
                     break;
             }
 
-            $http.get("/api/index.php/externalcommand", {
+            $http.get("./api/index.php/externalcommand", {
                 params: {
                     hostname: $scope.data.servicestatus.hostname,
                     servicedescription: $scope.data.servicestatus.service_description,
@@ -272,7 +272,7 @@ angular.module('Statusengine')
         };
 
         $scope.getLoginState = function () {
-            $http.get("/api/index.php/loginstate", {
+            $http.get("./api/index.php/loginstate", {
                 params: {}
             }).then(function (result) {
                 $scope.isAllowedToSubmitCommand = false;

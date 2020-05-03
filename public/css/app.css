@@ -179,6 +179,12 @@ servicestatuspill {
     padding: 3px 20px;
     white-space: nowrap;
     font-weight: 400;
+    display: block;
+}
+
+.dropdown-menu > li > label:hover {
+    background-color: #e1e3e9;
+    color: #333;
 }
 
 .margin-left-15 {
@@ -429,6 +435,4 @@ servicestatuspill {
          */
     }
 }
-
-
 

@@ -51,6 +51,12 @@
     color: #FFF;
 }
 
+.night-mode .dropdown-menu > li > label:hover {
+    background-color: #272B30;
+    color: #FFF;
+}
+
+
 .night-mode .navbar-nav > .notifications-menu > .dropdown-menu > li.header, .navbar-nav > .messages-menu > .dropdown-menu > li.header, .navbar-nav > .tasks-menu > .dropdown-menu > li.header {
     background-color: #32383e;
     border-bottom: 1px solid rgba(0, 0, 0, 0.3);

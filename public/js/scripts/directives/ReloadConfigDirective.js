@@ -48,6 +48,7 @@ angular.module('Statusengine').directive('reloadConfig', function(ReloadService,
                 $http.get("./api/index.php/loginstate", {}
                 ).then(function(result){
                     $scope.isLoggedIn = result.data.isLoggedIn;
+                    $scope.username = result.data.username;
                 });
             };
 

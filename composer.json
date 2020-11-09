@@ -1,5 +1,5 @@
 {
-  "name": "statusengine-interface",
+  "name": "statusengine/interface",
   "description": "A RESTful JSON API for the Statusengine data and frontend",
   "version": "2",
   "homepage": "https://statusengine.org/",

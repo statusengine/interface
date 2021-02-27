@@ -33,7 +33,7 @@ angular.module('Statusengine')
 
         $scope.reload = function () {
             offset = 0;
-            $http.get("/api/index.php/hosts", {
+            $http.get("./api/index.php/hosts", {
                 params: {
                     order: 'hostname',
                     direction: 'asc',
@@ -49,7 +49,7 @@ angular.module('Statusengine')
                 }
             );
 
-            $http.get("/api/index.php/cluster").then(function (result) {
+            $http.get("./api/index.php/cluster").then(function (result) {
                     $scope.clusterNodes = result.data;
                 }
             );
@@ -59,7 +59,7 @@ angular.module('Statusengine')
             $scope.apiIsBusyOrNoDataAnymore = true;
             offset += limit;
 
-            $http.get("/api/index.php/hosts", {
+            $http.get("./api/index.php/hosts", {
                 params: {
                     order: 'hostname',
                     direction: 'asc',

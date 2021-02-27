@@ -36,4 +36,10 @@ interface ScheduleddowntimeHostLoaderInterface {
      */
     public function getScheduledHostdowntimes(ScheduleddowntimeQueryOptions $QueryOptions);
 
+    /**
+     * @param int $id
+     * @return array
+     */
+    public function getScheduledHostdowntimeById($id);
+
 }

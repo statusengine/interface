@@ -22,7 +22,7 @@ angular.module('Statusengine')
 
         $scope.reload = function () {
             offset = 0;
-            $http.get("/api/index.php/serviceacknowledgements", {
+            $http.get("./api/index.php/serviceacknowledgements", {
                 params: {
                     hostname: $scope.nodename,
                     servicedescription: $scope.servicedescription,
@@ -45,7 +45,7 @@ angular.module('Statusengine')
             $scope.apiIsBusyOrNoDataAnymore = true;
             offset += limit;
 
-            $http.get("/api/index.php/serviceacknowledgements", {
+            $http.get("./api/index.php/serviceacknowledgements", {
                 params: {
                     hostname: $scope.nodename,
                     servicedescription: $scope.servicedescription,

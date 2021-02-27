@@ -10,7 +10,7 @@ angular.module('Statusengine')
             $('#menustatsRefresh').show();
 
 
-            $http.get("/api/index.php/menustats", {
+            $http.get("./api/index.php/menustats", {
                 params: {
                     hide_ack_and_downtime: ReloadService.getAckAndDowntimeIsOk()
                 }

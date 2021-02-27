@@ -117,6 +117,7 @@ mysql:
     username: statusengine
     password: password
     database: statusengine
+    encoding: utf8
 
 
 ############
@@ -152,6 +153,11 @@ graphite_prefix: statusengine
 
 # Set the complete URL to your Graphite system
 # Statusengine UI use the Graphite HTTP API to get stored data
+# Examples:
+# - http://localhost:8080
+# - http://localhost:8080/graphite
+# - http://cloud.example.org:8080
+#
 graphite_url: http://localhost:8080
 
 # Do you require a login to reach http://localhost:8080/render ?
@@ -229,4 +235,3 @@ elasticsearch_port: 9200
 #    url: https://assets.statusengine.org/index.php?hostname=$hostname$
 #  - name: Docs of Statusengine
 #    url: https://statusengine.org
-#

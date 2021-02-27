@@ -21,7 +21,7 @@ angular.module('Statusengine').directive('graph', function ($http, $filter, $roo
             $scope.chartInstance = null;
 
             $scope.load = function () {
-                $http.get("/api/index.php/serviceperfdata", {
+                $http.get("./api/index.php/serviceperfdata", {
                     params: {
                         hostname: $scope.servicestatus.hostname,
                         servicedescription: $scope.servicestatus.service_description,

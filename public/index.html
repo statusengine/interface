@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
 
     <!--
+     If you need to run Statusengine in a sub-directory, you need to change this to
+     <base href="/statusengine/"> for example. Make sure it ends with / !
+
+     Please see this issue https://github.com/statusengine/interface/issues/36
+     why this is not available in the config yet.
+     -->
+    <base href="/">
+
+    <!--
 
       ____  _        _                              _
      / ___|| |_ __ _| |_ _   _ ___  ___ _ __   __ _(_)_ __   ___
@@ -61,6 +70,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
     <script type="text/javascript" src="js/scripts/services/ReloadService.js"></script>
+    <script type="text/javascript" src="js/scripts/services/NightModeService.js"></script>
+
 
     <script type="text/javascript" src="js/scripts/controllers/IndexController.js"></script>
     <script type="text/javascript" src="js/scripts/controllers/DashboardController.js"></script>
@@ -100,6 +111,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <script type="text/javascript" src="js/scripts/directives/ServicestatusPillDirective.js"></script>
     <script type="text/javascript" src="js/scripts/directives/ReloadConfigDirective.js"></script>
     <script type="text/javascript" src="js/scripts/directives/GraphDirective.js"></script>
+    <script type="text/javascript" src="js/scripts/directives/DeleteHostDowntimeDirective.js"></script>
     <script type="text/javascript" src="js/scripts/directives/ExternalUrlsDirective.js"></script>
 
 
@@ -118,6 +130,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <link rel="stylesheet" href="bower_components/font-awesome/css/font-awesome.min.css"/>
     <link rel="stylesheet" href="bower_components/animate.css/animate.min.css"/>
     <link rel="stylesheet" href="css/app.css"/>
+    <link rel="stylesheet" href="css/night-mode.css" />
 
 </head>
 <body class="skin-blue sidebar-mini">
@@ -203,8 +216,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
                 <li class="treeview" ui-sref-active="active">
                     <a ui-sref="services">
-                        <i class="fa fa-cog text-primary"></i> <span> Services</span>
-                        <span class="pull-right-container">
+                        <i class="fa fa-cog text-primary"></i>
+                        <span>
+                            <span> Services</span>
                             <small class="label pull-right bg-primary"
                                    ng-show="data.servicestatus_overview.unknown > 0">
                                 {{ data.servicestatus_overview.unknown }}
@@ -221,8 +235,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
                 <li class="treeview" ui-sref-active="active">
                     <a ui-sref="problems">
-                        <i class="fa fa-exclamation-triangle text-primary"></i> <span> Issues</span>
-                        <span class="pull-right-container">
+                        <i class="fa fa-exclamation-triangle text-primary"></i>
+                        <span>
+                            <span> Issues</span>
                             <small class="label pull-right bg-purple" ng-show="data.number_of_service_problems > 0">
                                 {{ data.number_of_service_problems }}
                             </small>

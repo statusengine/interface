@@ -36,4 +36,11 @@ interface ScheduleddowntimeServiceLoaderInterface {
      */
     public function getScheduledServicedowntimes(ScheduleddowntimeQueryOptions $QueryOptions);
 
+    /**
+     * @param array
+     * @return array
+     */
+    public function getScheduledServicedowntimesByHostdowntime($hostDowntime);
+
+
 }

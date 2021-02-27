@@ -22,7 +22,7 @@ angular.module('Statusengine')
 
         $scope.reload = function () {
 
-            $http.get("/api/index.php", {
+            $http.get("./api/index.php", {
                 params: {
                     hide_ack_and_downtime: ReloadService.getAckAndDowntimeIsOk()
                 }

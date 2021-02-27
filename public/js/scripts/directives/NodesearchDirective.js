@@ -17,7 +17,7 @@ angular.module('Statusengine').directive('nodesearch', function ($http, $timeout
             $scope.search = function () {
                 $scope.searching = true;
 
-                $http.get("/api/index.php/hostsearch", {
+                $http.get("./api/index.php/hostsearch", {
                     params: {
                         limit: 25,
                         hostname__like: $scope.nodename

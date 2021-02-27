@@ -3,152 +3,13 @@
 'use strict';
 
 var color = require('chartjs-color');
+var defaults = require('./core.defaults');
+var helpers = require('../helpers/index');
 
-module.exports = function(Chart) {
-	// Global Chart helpers object for utility methods and classes
-	var helpers = Chart.helpers = {};
+module.exports = function() {
 
 	// -- Basic js utility methods
-	helpers.each = function(loopable, callback, self, reverse) {
-		// Check to see if null or undefined firstly.
-		var i, len;
-		if (helpers.isArray(loopable)) {
-			len = loopable.length;
-			if (reverse) {
-				for (i = len - 1; i >= 0; i--) {
-					callback.call(self, loopable[i], i);
-				}
-			} else {
-				for (i = 0; i < len; i++) {
-					callback.call(self, loopable[i], i);
-				}
-			}
-		} else if (typeof loopable === 'object') {
-			var keys = Object.keys(loopable);
-			len = keys.length;
-			for (i = 0; i < len; i++) {
-				callback.call(self, loopable[keys[i]], keys[i]);
-			}
-		}
-	};
-	helpers.clone = function(obj) {
-		var objClone = {};
-		helpers.each(obj, function(value, key) {
-			if (helpers.isArray(value)) {
-				objClone[key] = value.slice(0);
-			} else if (typeof value === 'object' && value !== null) {
-				objClone[key] = helpers.clone(value);
-			} else {
-				objClone[key] = value;
-			}
-		});
-		return objClone;
-	};
-	helpers.extend = function(base) {
-		var setFn = function(value, key) {
-			base[key] = value;
-		};
-		for (var i = 1, ilen = arguments.length; i < ilen; i++) {
-			helpers.each(arguments[i], setFn);
-		}
-		return base;
-	};
-	// Need a special merge function to chart configs since they are now grouped
-	helpers.configMerge = function(_base) {
-		var base = helpers.clone(_base);
-		helpers.each(Array.prototype.slice.call(arguments, 1), function(extension) {
-			helpers.each(extension, function(value, key) {
-				var baseHasProperty = base.hasOwnProperty(key);
-				var baseVal = baseHasProperty ? base[key] : {};
 
-				if (key === 'scales') {
-					// Scale config merging is complex. Add our own function here for that
-					base[key] = helpers.scaleMerge(baseVal, value);
-				} else if (key === 'scale') {
-					// Used in polar area & radar charts since there is only one scale
-					base[key] = helpers.configMerge(baseVal, Chart.scaleService.getScaleDefaults(value.type), value);
-				} else if (baseHasProperty
-						&& typeof baseVal === 'object'
-						&& !helpers.isArray(baseVal)
-						&& baseVal !== null
-						&& typeof value === 'object'
-						&& !helpers.isArray(value)) {
-					// If we are overwriting an object with an object, do a merge of the properties.
-					base[key] = helpers.configMerge(baseVal, value);
-				} else {
-					// can just overwrite the value in this case
-					base[key] = value;
-				}
-			});
-		});
-
-		return base;
-	};
-	helpers.scaleMerge = function(_base, extension) {
-		var base = helpers.clone(_base);
-
-		helpers.each(extension, function(value, key) {
-			if (key === 'xAxes' || key === 'yAxes') {
-				// These properties are arrays of items
-				if (base.hasOwnProperty(key)) {
-					helpers.each(value, function(valueObj, index) {
-						var axisType = helpers.getValueOrDefault(valueObj.type, key === 'xAxes' ? 'category' : 'linear');
-						var axisDefaults = Chart.scaleService.getScaleDefaults(axisType);
-						if (index >= base[key].length || !base[key][index].type) {
-							base[key].push(helpers.configMerge(axisDefaults, valueObj));
-						} else if (valueObj.type && valueObj.type !== base[key][index].type) {
-							// Type changed. Bring in the new defaults before we bring in valueObj so that valueObj can override the correct scale defaults
-							base[key][index] = helpers.configMerge(base[key][index], axisDefaults, valueObj);
-						} else {
-							// Type is the same
-							base[key][index] = helpers.configMerge(base[key][index], valueObj);
-						}
-					});
-				} else {
-					base[key] = [];
-					helpers.each(value, function(valueObj) {
-						var axisType = helpers.getValueOrDefault(valueObj.type, key === 'xAxes' ? 'category' : 'linear');
-						base[key].push(helpers.configMerge(Chart.scaleService.getScaleDefaults(axisType), valueObj));
-					});
-				}
-			} else if (base.hasOwnProperty(key) && typeof base[key] === 'object' && base[key] !== null && typeof value === 'object') {
-				// If we are overwriting an object with an object, do a merge of the properties.
-				base[key] = helpers.configMerge(base[key], value);
-
-			} else {
-				// can just overwrite the value in this case
-				base[key] = value;
-			}
-		});
-
-		return base;
-	};
-	helpers.getValueAtIndexOrDefault = function(value, index, defaultValue) {
-		if (value === undefined || value === null) {
-			return defaultValue;
-		}
-
-		if (helpers.isArray(value)) {
-			return index < value.length ? value[index] : defaultValue;
-		}
-
-		return value;
-	};
-	helpers.getValueOrDefault = function(value, defaultValue) {
-		return value === undefined ? defaultValue : value;
-	};
-	helpers.indexOf = Array.prototype.indexOf?
-		function(array, item) {
-			return array.indexOf(item);
-		}:
-		function(array, item) {
-			for (var i = 0, ilen = array.length; i < ilen; ++i) {
-				if (array[i] === item) {
-					return i;
-				}
-			}
-			return -1;
-		};
 	helpers.where = function(collection, filterCallback) {
 		if (helpers.isArray(collection) && Array.prototype.filter) {
 			return collection.filter(filterCallback);
@@ -163,12 +24,12 @@ module.exports = function(Chart) {
 
 		return filtered;
 	};
-	helpers.findIndex = Array.prototype.findIndex?
+	helpers.findIndex = Array.prototype.findIndex ?
 		function(array, callback, scope) {
 			return array.findIndex(callback, scope);
 		} :
 		function(array, callback, scope) {
-			scope = scope === undefined? array : scope;
+			scope = scope === undefined ? array : scope;
 			for (var i = 0, ilen = array.length; i < ilen; ++i) {
 				if (callback.call(scope, array[i], i, array)) {
 					return i;
@@ -178,7 +39,7 @@ module.exports = function(Chart) {
 		};
 	helpers.findNextWhere = function(arrayToSearch, filterCallback, startIndex) {
 		// Default to start of the array
-		if (startIndex === undefined || startIndex === null) {
+		if (helpers.isNullOrUndef(startIndex)) {
 			startIndex = -1;
 		}
 		for (var i = startIndex + 1; i < arrayToSearch.length; i++) {
@@ -190,7 +51,7 @@ module.exports = function(Chart) {
 	};
 	helpers.findPreviousWhere = function(arrayToSearch, filterCallback, startIndex) {
 		// Default to end of the array
-		if (startIndex === undefined || startIndex === null) {
+		if (helpers.isNullOrUndef(startIndex)) {
 			startIndex = arrayToSearch.length;
 		}
 		for (var i = startIndex - 1; i >= 0; i--) {
@@ -200,42 +61,17 @@ module.exports = function(Chart) {
 			}
 		}
 	};
-	helpers.inherits = function(extensions) {
-		// Basic javascript inheritance based on the model created in Backbone.js
-		var me = this;
-		var ChartElement = (extensions && extensions.hasOwnProperty('constructor')) ? extensions.constructor : function() {
-			return me.apply(this, arguments);
-		};
 
-		var Surrogate = function() {
-			this.constructor = ChartElement;
-		};
-		Surrogate.prototype = me.prototype;
-		ChartElement.prototype = new Surrogate();
-
-		ChartElement.extend = helpers.inherits;
-
-		if (extensions) {
-			helpers.extend(ChartElement.prototype, extensions);
-		}
-
-		ChartElement.__super__ = me.prototype;
-
-		return ChartElement;
-	};
-	helpers.noop = function() {};
-	helpers.uid = (function() {
-		var id = 0;
-		return function() {
-			return id++;
-		};
-	}());
 	// -- Math methods
 	helpers.isNumber = function(n) {
 		return !isNaN(parseFloat(n)) && isFinite(n);
 	};
 	helpers.almostEquals = function(x, y, epsilon) {
 		return Math.abs(x - y) < epsilon;
+	};
+	helpers.almostWhole = function(x, epsilon) {
+		var rounded = Math.round(x);
+		return ((rounded - epsilon) <= x) && ((rounded + epsilon) >= x);
 	};
 	helpers.max = function(array) {
 		return array.reduce(function(max, value) {
@@ -253,7 +89,7 @@ module.exports = function(Chart) {
 			return min;
 		}, Number.POSITIVE_INFINITY);
 	};
-	helpers.sign = Math.sign?
+	helpers.sign = Math.sign ?
 		function(x) {
 			return Math.sign(x);
 		} :
@@ -264,24 +100,38 @@ module.exports = function(Chart) {
 			}
 			return x > 0 ? 1 : -1;
 		};
-	helpers.log10 = Math.log10?
-		function(x) {
-			return Math.log10(x);
-		} :
-		function(x) {
-			return Math.log(x) / Math.LN10;
-		};
 	helpers.toRadians = function(degrees) {
 		return degrees * (Math.PI / 180);
 	};
 	helpers.toDegrees = function(radians) {
 		return radians * (180 / Math.PI);
 	};
+
+	/**
+	 * Returns the number of decimal places
+	 * i.e. the number of digits after the decimal point, of the value of this Number.
+	 * @param {number} x - A number.
+	 * @returns {number} The number of decimal places.
+	 * @private
+	 */
+	helpers._decimalPlaces = function(x) {
+		if (!helpers.isFinite(x)) {
+			return;
+		}
+		var e = 1;
+		var p = 0;
+		while (Math.round(x * e) / e !== x) {
+			e *= 10;
+			p++;
+		}
+		return p;
+	};
+
 	// Gets the angle from vertical upright to the point about a centre.
 	helpers.getAngleFromPoint = function(centrePoint, anglePoint) {
-		var distanceFromXCenter = anglePoint.x - centrePoint.x,
-			distanceFromYCenter = anglePoint.y - centrePoint.y,
-			radialDistanceFromCenter = Math.sqrt(distanceFromXCenter * distanceFromXCenter + distanceFromYCenter * distanceFromYCenter);
+		var distanceFromXCenter = anglePoint.x - centrePoint.x;
+		var distanceFromYCenter = anglePoint.y - centrePoint.y;
+		var radialDistanceFromCenter = Math.sqrt(distanceFromXCenter * distanceFromXCenter + distanceFromYCenter * distanceFromYCenter);
 
 		var angle = Math.atan2(distanceFromYCenter, distanceFromXCenter);
 
@@ -297,18 +147,40 @@ module.exports = function(Chart) {
 	helpers.distanceBetweenPoints = function(pt1, pt2) {
 		return Math.sqrt(Math.pow(pt2.x - pt1.x, 2) + Math.pow(pt2.y - pt1.y, 2));
 	};
+
+	/**
+	 * Provided for backward compatibility, not available anymore
+	 * @function Chart.helpers.aliasPixel
+	 * @deprecated since version 2.8.0
+	 * @todo remove at version 3
+	 */
 	helpers.aliasPixel = function(pixelWidth) {
 		return (pixelWidth % 2 === 0) ? 0 : 0.5;
 	};
+
+	/**
+	 * Returns the aligned pixel value to avoid anti-aliasing blur
+	 * @param {Chart} chart - The chart instance.
+	 * @param {number} pixel - A pixel value.
+	 * @param {number} width - The width of the element.
+	 * @returns {number} The aligned pixel value.
+	 * @private
+	 */
+	helpers._alignPixel = function(chart, pixel, width) {
+		var devicePixelRatio = chart.currentDevicePixelRatio;
+		var halfWidth = width / 2;
+		return Math.round((pixel - halfWidth) * devicePixelRatio) / devicePixelRatio + halfWidth;
+	};
+
 	helpers.splineCurve = function(firstPoint, middlePoint, afterPoint, t) {
 		// Props to Rob Spencer at scaled innovation for his post on splining between points
 		// http://scaledinnovation.com/analytics/splines/aboutSplines.html
 
 		// This function must also respect "skipped" points
 
-		var previous = firstPoint.skip ? middlePoint : firstPoint,
-			current = middlePoint,
-			next = afterPoint.skip ? middlePoint : afterPoint;
+		var previous = firstPoint.skip ? middlePoint : firstPoint;
+		var current = middlePoint;
+		var next = afterPoint.skip ? middlePoint : afterPoint;
 
 		var d01 = Math.sqrt(Math.pow(current.x - previous.x, 2) + Math.pow(current.y - previous.y, 2));
 		var d12 = Math.sqrt(Math.pow(next.x - current.x, 2) + Math.pow(next.y - current.y, 2));
@@ -361,7 +233,10 @@ module.exports = function(Chart) {
 			pointBefore = i > 0 ? pointsWithTangents[i - 1] : null;
 			pointAfter = i < pointsLen - 1 ? pointsWithTangents[i + 1] : null;
 			if (pointAfter && !pointAfter.model.skip) {
-				pointCurrent.deltaK = (pointAfter.model.y - pointCurrent.model.y) / (pointAfter.model.x - pointCurrent.model.x);
+				var slopeDeltaX = (pointAfter.model.x - pointCurrent.model.x);
+
+				// In the case of two points that appear at the same x pixel, slopeDeltaX is 0
+				pointCurrent.deltaK = slopeDeltaX !== 0 ? (pointAfter.model.y - pointCurrent.model.y) / slopeDeltaX : 0;
 			}
 
 			if (!pointBefore || pointBefore.model.skip) {
@@ -463,205 +338,13 @@ module.exports = function(Chart) {
 
 		return niceFraction * Math.pow(10, exponent);
 	};
-	// Easing functions adapted from Robert Penner's easing equations
-	// http://www.robertpenner.com/easing/
-	var easingEffects = helpers.easingEffects = {
-		linear: function(t) {
-			return t;
-		},
-		easeInQuad: function(t) {
-			return t * t;
-		},
-		easeOutQuad: function(t) {
-			return -1 * t * (t - 2);
-		},
-		easeInOutQuad: function(t) {
-			if ((t /= 1 / 2) < 1) {
-				return 1 / 2 * t * t;
-			}
-			return -1 / 2 * ((--t) * (t - 2) - 1);
-		},
-		easeInCubic: function(t) {
-			return t * t * t;
-		},
-		easeOutCubic: function(t) {
-			return 1 * ((t = t / 1 - 1) * t * t + 1);
-		},
-		easeInOutCubic: function(t) {
-			if ((t /= 1 / 2) < 1) {
-				return 1 / 2 * t * t * t;
-			}
-			return 1 / 2 * ((t -= 2) * t * t + 2);
-		},
-		easeInQuart: function(t) {
-			return t * t * t * t;
-		},
-		easeOutQuart: function(t) {
-			return -1 * ((t = t / 1 - 1) * t * t * t - 1);
-		},
-		easeInOutQuart: function(t) {
-			if ((t /= 1 / 2) < 1) {
-				return 1 / 2 * t * t * t * t;
-			}
-			return -1 / 2 * ((t -= 2) * t * t * t - 2);
-		},
-		easeInQuint: function(t) {
-			return 1 * (t /= 1) * t * t * t * t;
-		},
-		easeOutQuint: function(t) {
-			return 1 * ((t = t / 1 - 1) * t * t * t * t + 1);
-		},
-		easeInOutQuint: function(t) {
-			if ((t /= 1 / 2) < 1) {
-				return 1 / 2 * t * t * t * t * t;
-			}
-			return 1 / 2 * ((t -= 2) * t * t * t * t + 2);
-		},
-		easeInSine: function(t) {
-			return -1 * Math.cos(t / 1 * (Math.PI / 2)) + 1;
-		},
-		easeOutSine: function(t) {
-			return 1 * Math.sin(t / 1 * (Math.PI / 2));
-		},
-		easeInOutSine: function(t) {
-			return -1 / 2 * (Math.cos(Math.PI * t / 1) - 1);
-		},
-		easeInExpo: function(t) {
-			return (t === 0) ? 1 : 1 * Math.pow(2, 10 * (t / 1 - 1));
-		},
-		easeOutExpo: function(t) {
-			return (t === 1) ? 1 : 1 * (-Math.pow(2, -10 * t / 1) + 1);
-		},
-		easeInOutExpo: function(t) {
-			if (t === 0) {
-				return 0;
-			}
-			if (t === 1) {
-				return 1;
-			}
-			if ((t /= 1 / 2) < 1) {
-				return 1 / 2 * Math.pow(2, 10 * (t - 1));
-			}
-			return 1 / 2 * (-Math.pow(2, -10 * --t) + 2);
-		},
-		easeInCirc: function(t) {
-			if (t >= 1) {
-				return t;
-			}
-			return -1 * (Math.sqrt(1 - (t /= 1) * t) - 1);
-		},
-		easeOutCirc: function(t) {
-			return 1 * Math.sqrt(1 - (t = t / 1 - 1) * t);
-		},
-		easeInOutCirc: function(t) {
-			if ((t /= 1 / 2) < 1) {
-				return -1 / 2 * (Math.sqrt(1 - t * t) - 1);
-			}
-			return 1 / 2 * (Math.sqrt(1 - (t -= 2) * t) + 1);
-		},
-		easeInElastic: function(t) {
-			var s = 1.70158;
-			var p = 0;
-			var a = 1;
-			if (t === 0) {
-				return 0;
-			}
-			if ((t /= 1) === 1) {
-				return 1;
-			}
-			if (!p) {
-				p = 1 * 0.3;
-			}
-			if (a < Math.abs(1)) {
-				a = 1;
-				s = p / 4;
-			} else {
-				s = p / (2 * Math.PI) * Math.asin(1 / a);
-			}
-			return -(a * Math.pow(2, 10 * (t -= 1)) * Math.sin((t * 1 - s) * (2 * Math.PI) / p));
-		},
-		easeOutElastic: function(t) {
-			var s = 1.70158;
-			var p = 0;
-			var a = 1;
-			if (t === 0) {
-				return 0;
-			}
-			if ((t /= 1) === 1) {
-				return 1;
-			}
-			if (!p) {
-				p = 1 * 0.3;
-			}
-			if (a < Math.abs(1)) {
-				a = 1;
-				s = p / 4;
-			} else {
-				s = p / (2 * Math.PI) * Math.asin(1 / a);
-			}
-			return a * Math.pow(2, -10 * t) * Math.sin((t * 1 - s) * (2 * Math.PI) / p) + 1;
-		},
-		easeInOutElastic: function(t) {
-			var s = 1.70158;
-			var p = 0;
-			var a = 1;
-			if (t === 0) {
-				return 0;
-			}
-			if ((t /= 1 / 2) === 2) {
-				return 1;
-			}
-			if (!p) {
-				p = 1 * (0.3 * 1.5);
-			}
-			if (a < Math.abs(1)) {
-				a = 1;
-				s = p / 4;
-			} else {
-				s = p / (2 * Math.PI) * Math.asin(1 / a);
-			}
-			if (t < 1) {
-				return -0.5 * (a * Math.pow(2, 10 * (t -= 1)) * Math.sin((t * 1 - s) * (2 * Math.PI) / p));
-			}
-			return a * Math.pow(2, -10 * (t -= 1)) * Math.sin((t * 1 - s) * (2 * Math.PI) / p) * 0.5 + 1;
-		},
-		easeInBack: function(t) {
-			var s = 1.70158;
-			return 1 * (t /= 1) * t * ((s + 1) * t - s);
-		},
-		easeOutBack: function(t) {
-			var s = 1.70158;
-			return 1 * ((t = t / 1 - 1) * t * ((s + 1) * t + s) + 1);
-		},
-		easeInOutBack: function(t) {
-			var s = 1.70158;
-			if ((t /= 1 / 2) < 1) {
-				return 1 / 2 * (t * t * (((s *= (1.525)) + 1) * t - s));
-			}
-			return 1 / 2 * ((t -= 2) * t * (((s *= (1.525)) + 1) * t + s) + 2);
-		},
-		easeInBounce: function(t) {
-			return 1 - easingEffects.easeOutBounce(1 - t);
-		},
-		easeOutBounce: function(t) {
-			if ((t /= 1) < (1 / 2.75)) {
-				return 1 * (7.5625 * t * t);
-			} else if (t < (2 / 2.75)) {
-				return 1 * (7.5625 * (t -= (1.5 / 2.75)) * t + 0.75);
-			} else if (t < (2.5 / 2.75)) {
-				return 1 * (7.5625 * (t -= (2.25 / 2.75)) * t + 0.9375);
-			}
-			return 1 * (7.5625 * (t -= (2.625 / 2.75)) * t + 0.984375);
-		},
-		easeInOutBounce: function(t) {
-			if (t < 1 / 2) {
-				return easingEffects.easeInBounce(t * 2) * 0.5;
-			}
-			return easingEffects.easeOutBounce(t * 2 - 1) * 0.5 + 1 * 0.5;
-		}
-	};
-	// Request animation polyfill - http://www.paulirish.com/2011/requestanimationframe-for-smart-animating/
+	// Request animation polyfill - https://www.paulirish.com/2011/requestanimationframe-for-smart-animating/
 	helpers.requestAnimFrame = (function() {
+		if (typeof window === 'undefined') {
+			return function(callback) {
+				callback();
+			};
+		}
 		return window.requestAnimationFrame ||
 			window.webkitRequestAnimationFrame ||
 			window.mozRequestAnimationFrame ||
@@ -671,22 +354,12 @@ module.exports = function(Chart) {
 				return window.setTimeout(callback, 1000 / 60);
 			};
 	}());
-	helpers.cancelAnimFrame = (function() {
-		return window.cancelAnimationFrame ||
-			window.webkitCancelAnimationFrame ||
-			window.mozCancelAnimationFrame ||
-			window.oCancelAnimationFrame ||
-			window.msCancelAnimationFrame ||
-			function(callback) {
-				return window.clearTimeout(callback, 1000 / 60);
-			};
-	}());
 	// -- DOM methods
 	helpers.getRelativePosition = function(evt, chart) {
 		var mouseX, mouseY;
-		var e = evt.originalEvent || evt,
-			canvas = evt.currentTarget || evt.srcElement,
-			boundingRect = canvas.getBoundingClientRect();
+		var e = evt.originalEvent || evt;
+		var canvas = evt.target || evt.srcElement;
+		var boundingRect = canvas.getBoundingClientRect();
 
 		var touches = e.touches;
 		if (touches && touches.length > 0) {
@@ -700,7 +373,7 @@ module.exports = function(Chart) {
 
 		// Scale mouse coordinates into canvas coordinates
 		// by following the pattern laid out by 'jerryj' in the comments of
-		// http://www.html5canvastutorials.com/advanced/html5-canvas-mouse-coordinates/
+		// https://www.html5canvastutorials.com/advanced/html5-canvas-mouse-coordinates/
 		var paddingLeft = parseFloat(helpers.getStyle(canvas, 'padding-left'));
 		var paddingTop = parseFloat(helpers.getStyle(canvas, 'padding-top'));
 		var paddingRight = parseFloat(helpers.getStyle(canvas, 'padding-right'));
@@ -719,46 +392,11 @@ module.exports = function(Chart) {
 		};
 
 	};
-	helpers.addEvent = function(node, eventType, method) {
-		if (node.addEventListener) {
-			node.addEventListener(eventType, method);
-		} else if (node.attachEvent) {
-			node.attachEvent('on' + eventType, method);
-		} else {
-			node['on' + eventType] = method;
-		}
-	};
-	helpers.removeEvent = function(node, eventType, handler) {
-		if (node.removeEventListener) {
-			node.removeEventListener(eventType, handler, false);
-		} else if (node.detachEvent) {
-			node.detachEvent('on' + eventType, handler);
-		} else {
-			node['on' + eventType] = helpers.noop;
-		}
-	};
-	helpers.bindEvents = function(chartInstance, arrayOfEvents, handler) {
-		// Create the events object if it's not already present
-		var events = chartInstance.events = chartInstance.events || {};
-
-		helpers.each(arrayOfEvents, function(eventName) {
-			events[eventName] = function() {
-				handler.apply(chartInstance, arguments);
-			};
-			helpers.addEvent(chartInstance.chart.canvas, eventName, events[eventName]);
-		});
-	};
-	helpers.unbindEvents = function(chartInstance, arrayOfEvents) {
-		var canvas = chartInstance.chart.canvas;
-		helpers.each(arrayOfEvents, function(handler, eventName) {
-			helpers.removeEvent(canvas, eventName, handler);
-		});
-	};
 
 	// Private helper function to convert max-width/max-height values that may be percentages into a number
 	function parseMaxStyle(styleValue, node, parentProperty) {
 		var valueInPixels;
-		if (typeof(styleValue) === 'string') {
+		if (typeof styleValue === 'string') {
 			valueInPixels = parseInt(styleValue, 10);
 
 			if (styleValue.indexOf('%') !== -1) {
@@ -780,14 +418,16 @@ module.exports = function(Chart) {
 		return value !== undefined && value !== null && value !== 'none';
 	}
 
-	// Private helper to get a constraint dimension
-	// @param domNode : the node to check the constraint on
-	// @param maxStyle : the style that defines the maximum for the direction we are using (maxWidth / maxHeight)
-	// @param percentageProperty : property of parent to use when calculating width as a percentage
-	// @see http://www.nathanaeljones.com/blog/2013/reading-max-width-cross-browser
+	/**
+	 * Returns the max width or height of the given DOM node in a cross-browser compatible fashion
+	 * @param {HTMLElement} domNode - the node to check the constraint on
+	 * @param {string} maxStyle - the style that defines the maximum for the direction we are using ('max-width' / 'max-height')
+	 * @param {string} percentageProperty - property of parent to use when calculating width as a percentage
+	 * @see {@link https://www.nathanaeljones.com/blog/2013/reading-max-width-cross-browser}
+	 */
 	function getConstraintDimension(domNode, maxStyle, percentageProperty) {
 		var view = document.defaultView;
-		var parentNode = domNode.parentNode;
+		var parentNode = helpers._getParentNode(domNode);
 		var constrainedNode = view.getComputedStyle(domNode)[maxStyle];
 		var constrainedContainer = view.getComputedStyle(parentNode)[maxStyle];
 		var hasCNode = isConstrainedValue(constrainedNode);
@@ -796,8 +436,8 @@ module.exports = function(Chart) {
 
 		if (hasCNode || hasCContainer) {
 			return Math.min(
-				hasCNode? parseMaxStyle(constrainedNode, domNode, percentageProperty) : infinity,
-				hasCContainer? parseMaxStyle(constrainedContainer, parentNode, percentageProperty) : infinity);
+				hasCNode ? parseMaxStyle(constrainedNode, domNode, percentageProperty) : infinity,
+				hasCContainer ? parseMaxStyle(constrainedContainer, parentNode, percentageProperty) : infinity);
 		}
 
 		return 'none';
@@ -810,29 +450,59 @@ module.exports = function(Chart) {
 	helpers.getConstraintHeight = function(domNode) {
 		return getConstraintDimension(domNode, 'max-height', 'clientHeight');
 	};
+	/**
+	 * @private
+ 	 */
+	helpers._calculatePadding = function(container, padding, parentDimension) {
+		padding = helpers.getStyle(container, padding);
+
+		return padding.indexOf('%') > -1 ? parentDimension * parseInt(padding, 10) / 100 : parseInt(padding, 10);
+	};
+	/**
+	 * @private
+	 */
+	helpers._getParentNode = function(domNode) {
+		var parent = domNode.parentNode;
+		if (parent && parent.toString() === '[object ShadowRoot]') {
+			parent = parent.host;
+		}
+		return parent;
+	};
 	helpers.getMaximumWidth = function(domNode) {
-		var container = domNode.parentNode;
-		var paddingLeft = parseInt(helpers.getStyle(container, 'padding-left'), 10);
-		var paddingRight = parseInt(helpers.getStyle(container, 'padding-right'), 10);
-		var w = container.clientWidth - paddingLeft - paddingRight;
+		var container = helpers._getParentNode(domNode);
+		if (!container) {
+			return domNode.clientWidth;
+		}
+
+		var clientWidth = container.clientWidth;
+		var paddingLeft = helpers._calculatePadding(container, 'padding-left', clientWidth);
+		var paddingRight = helpers._calculatePadding(container, 'padding-right', clientWidth);
+
+		var w = clientWidth - paddingLeft - paddingRight;
 		var cw = helpers.getConstraintWidth(domNode);
-		return isNaN(cw)? w : Math.min(w, cw);
+		return isNaN(cw) ? w : Math.min(w, cw);
 	};
 	helpers.getMaximumHeight = function(domNode) {
-		var container = domNode.parentNode;
-		var paddingTop = parseInt(helpers.getStyle(container, 'padding-top'), 10);
-		var paddingBottom = parseInt(helpers.getStyle(container, 'padding-bottom'), 10);
-		var h = container.clientHeight - paddingTop - paddingBottom;
+		var container = helpers._getParentNode(domNode);
+		if (!container) {
+			return domNode.clientHeight;
+		}
+
+		var clientHeight = container.clientHeight;
+		var paddingTop = helpers._calculatePadding(container, 'padding-top', clientHeight);
+		var paddingBottom = helpers._calculatePadding(container, 'padding-bottom', clientHeight);
+
+		var h = clientHeight - paddingTop - paddingBottom;
 		var ch = helpers.getConstraintHeight(domNode);
-		return isNaN(ch)? h : Math.min(h, ch);
+		return isNaN(ch) ? h : Math.min(h, ch);
 	};
 	helpers.getStyle = function(el, property) {
 		return el.currentStyle ?
 			el.currentStyle[property] :
 			document.defaultView.getComputedStyle(el, null).getPropertyValue(property);
 	};
-	helpers.retinaScale = function(chart) {
-		var pixelRatio = chart.currentDevicePixelRatio = window.devicePixelRatio || 1;
+	helpers.retinaScale = function(chart, forceRatio) {
+		var pixelRatio = chart.currentDevicePixelRatio = forceRatio || (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
 		if (pixelRatio === 1) {
 			return;
 		}
@@ -848,13 +518,12 @@ module.exports = function(Chart) {
 		// If no style has been set on the canvas, the render size is used as display size,
 		// making the chart visually bigger, so let's enforce it to the "correct" values.
 		// See https://github.com/chartjs/Chart.js/issues/3575
-		canvas.style.height = height + 'px';
-		canvas.style.width = width + 'px';
+		if (!canvas.style.height && !canvas.style.width) {
+			canvas.style.height = height + 'px';
+			canvas.style.width = width + 'px';
+		}
 	};
 	// -- Canvas methods
-	helpers.clear = function(chart) {
-		chart.ctx.clearRect(0, 0, chart.width, chart.height);
-	};
 	helpers.fontString = function(pixelSize, fontStyle, fontFamily) {
 		return fontStyle + ' ' + pixelSize + 'px ' + fontFamily;
 	};
@@ -871,25 +540,30 @@ module.exports = function(Chart) {
 
 		ctx.font = font;
 		var longest = 0;
-		helpers.each(arrayOfThings, function(thing) {
+		var ilen = arrayOfThings.length;
+		var i, j, jlen, thing, nestedThing;
+		for (i = 0; i < ilen; i++) {
+			thing = arrayOfThings[i];
+
 			// Undefined strings and arrays should not be measured
 			if (thing !== undefined && thing !== null && helpers.isArray(thing) !== true) {
 				longest = helpers.measureText(ctx, data, gc, longest, thing);
 			} else if (helpers.isArray(thing)) {
 				// if it is an array lets measure each element
 				// to do maybe simplify this function a bit so we can do this more recursively?
-				helpers.each(thing, function(nestedThing) {
+				for (j = 0, jlen = thing.length; j < jlen; j++) {
+					nestedThing = thing[j];
 					// Undefined strings and arrays should not be measured
 					if (nestedThing !== undefined && nestedThing !== null && !helpers.isArray(nestedThing)) {
 						longest = helpers.measureText(ctx, data, gc, longest, nestedThing);
 					}
-				});
+				}
 			}
-		});
+		}
 
 		var gcLen = gc.length / 2;
 		if (gcLen > arrayOfThings.length) {
-			for (var i = 0; i < gcLen; i++) {
+			for (i = 0; i < gcLen; i++) {
 				delete data[gc[i]];
 			}
 			gc.splice(0, gcLen);
@@ -907,6 +581,10 @@ module.exports = function(Chart) {
 		}
 		return longest;
 	};
+
+	/**
+	 * @deprecated
+	 */
 	helpers.numberOfLabelLines = function(arrayOfThings) {
 		var numberOfLines = 1;
 		helpers.each(arrayOfThings, function(thing) {
@@ -918,138 +596,24 @@ module.exports = function(Chart) {
 		});
 		return numberOfLines;
 	};
-	helpers.drawRoundedRectangle = function(ctx, x, y, width, height, radius) {
-		ctx.beginPath();
-		ctx.moveTo(x + radius, y);
-		ctx.lineTo(x + width - radius, y);
-		ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-		ctx.lineTo(x + width, y + height - radius);
-		ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-		ctx.lineTo(x + radius, y + height);
-		ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-		ctx.lineTo(x, y + radius);
-		ctx.quadraticCurveTo(x, y, x + radius, y);
-		ctx.closePath();
-	};
-	helpers.color = function(c) {
-		if (!color) {
+
+	helpers.color = !color ?
+		function(value) {
 			console.error('Color.js not found!');
-			return c;
-		}
-
-		/* global CanvasGradient */
-		if (c instanceof CanvasGradient) {
-			return color(Chart.defaults.global.defaultColor);
-		}
-
-		return color(c);
-	};
-	helpers.addResizeListener = function(node, callback) {
-		var iframe = document.createElement('iframe');
-		iframe.className = 'chartjs-hidden-iframe';
-		iframe.style.cssText =
-			'display:block;'+
-			'overflow:hidden;'+
-			'border:0;'+
-			'margin:0;'+
-			'top:0;'+
-			'left:0;'+
-			'bottom:0;'+
-			'right:0;'+
-			'height:100%;'+
-			'width:100%;'+
-			'position:absolute;'+
-			'pointer-events:none;'+
-			'z-index:-1;';
-
-		// Prevent the iframe to gain focus on tab.
-		// https://github.com/chartjs/Chart.js/issues/3090
-		iframe.tabIndex = -1;
-
-		// Let's keep track of this added iframe and thus avoid DOM query when removing it.
-		var stub = node._chartjs = {
-			resizer: iframe,
-			ticking: false
-		};
-
-		// Throttle the callback notification until the next animation frame.
-		var notify = function() {
-			if (!stub.ticking) {
-				stub.ticking = true;
-				helpers.requestAnimFrame.call(window, function() {
-					if (stub.resizer) {
-						stub.ticking = false;
-						return callback();
-					}
-				});
-			}
-		};
-
-		// If the iframe is re-attached to the DOM, the resize listener is removed because the
-		// content is reloaded, so make sure to install the handler after the iframe is loaded.
-		// https://github.com/chartjs/Chart.js/issues/3521
-		helpers.addEvent(iframe, 'load', function() {
-			helpers.addEvent(iframe.contentWindow || iframe, 'resize', notify);
-
-			// The iframe size might have changed while loading, which can also
-			// happen if the size has been changed while detached from the DOM.
-			notify();
-		});
-
-		node.insertBefore(iframe, node.firstChild);
-	};
-	helpers.removeResizeListener = function(node) {
-		if (!node || !node._chartjs) {
-			return;
-		}
-
-		var iframe = node._chartjs.resizer;
-		if (iframe) {
-			iframe.parentNode.removeChild(iframe);
-			node._chartjs.resizer = null;
-		}
-
-		delete node._chartjs;
-	};
-	helpers.isArray = Array.isArray?
-		function(obj) {
-			return Array.isArray(obj);
+			return value;
 		} :
-		function(obj) {
-			return Object.prototype.toString.call(obj) === '[object Array]';
-		};
-	// ! @see http://stackoverflow.com/a/14853974
-	helpers.arrayEquals = function(a0, a1) {
-		var i, ilen, v0, v1;
-
-		if (!a0 || !a1 || a0.length !== a1.length) {
-			return false;
-		}
-
-		for (i = 0, ilen=a0.length; i < ilen; ++i) {
-			v0 = a0[i];
-			v1 = a1[i];
-
-			if (v0 instanceof Array && v1 instanceof Array) {
-				if (!helpers.arrayEquals(v0, v1)) {
-					return false;
-				}
-			} else if (v0 !== v1) {
-				// NOTE: two different object instances will never be equal: {x:20} != {x:20}
-				return false;
+		function(value) {
+			/* global CanvasGradient */
+			if (value instanceof CanvasGradient) {
+				value = defaults.global.defaultColor;
 			}
-		}
 
-		return true;
-	};
-	helpers.callCallback = function(fn, args, _tArg) {
-		if (fn && typeof fn.call === 'function') {
-			fn.apply(_tArg, args);
-		}
-	};
+			return color(value);
+		};
+
 	helpers.getHoverColor = function(colorValue) {
 		/* global CanvasPattern */
-		return (colorValue instanceof CanvasPattern) ?
+		return (colorValue instanceof CanvasPattern || colorValue instanceof CanvasGradient) ?
 			colorValue :
 			helpers.color(colorValue).saturate(0.5).darken(0.1).rgbString();
 	};

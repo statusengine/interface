@@ -24,6 +24,13 @@
             </div>
 
             <div class="form-group">
+                <label for="forExpertMode" class="col-sm-3 control-label">Date mode</label>
+                <div class="col-sm-9">
+                    <input type="checkbox" id="forExpertMode" ng-model="enableDateMode">
+                </div>
+            </div>
+
+            <div class="form-group" ng-hide="enableDateMode">
                 <label for="forStart" class="col-sm-3 control-label">Start in</label>
                 <div class="col-sm-9">
                     <select class="form-control" id="forStart" ng-model="start">
@@ -44,13 +51,13 @@
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" ng-hide="enableDateMode">
                 <label for="forEnd" class="col-sm-3 control-label">Duration</label>
                 <div class="col-sm-9">
                     <select class="form-control" id="forEnd" ng-model="end">
                         <option value="{{ 60 * 1}}">60 seconds</option>
                         <option value="{{ 60 * 5}}">5 minutes</option>
-                        <option value="54000">15 minutes</option>
+                        <option value="900">15 minutes</option>
                         <option value="{{ 60 * 30}}">30 minutes</option>
                         <option value="{{ 60 * 60}}">1 hour</option>
                         <option value="{{ 60 * 90}}">1.5 hours</option>
@@ -63,6 +70,28 @@
                         <option value="{{ 60 * 60 * 24 * 365 * 5}}">5 years</option>
 
                     </select>
+                </div>
+            </div>
+
+            <div class="form-group" ng-show="enableDateMode">
+                <label class="col-xs-3 control-label">Start time</label>
+
+                <div class="col-xs-5">
+                    <input type="date" class="form-control" ng-model="startDate" style="line-height: inherit;">
+                </div>
+                <div class="col-xs-3">
+                    <input type="time" class="form-control" ng-model="startTime" ng-model-options="{timeSecondsFormat:'ss', timeStripZeroSeconds: true}" style="line-height: inherit;">
+                </div>
+            </div>
+
+            <div class="form-group" ng-show="enableDateMode">
+                <label class="col-xs-3 control-label">End time</label>
+
+                <div class="col-xs-5">
+                    <input type="date" class="form-control" ng-model="endDate" style="line-height: inherit;">
+                </div>
+                <div class="col-xs-3">
+                    <input type="time" class="form-control" ng-model="endTime" ng-model-options="{timeSecondsFormat:'ss', timeStripZeroSeconds: true}" style="line-height: inherit;">
                 </div>
             </div>
 

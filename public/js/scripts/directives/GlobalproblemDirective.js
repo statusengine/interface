@@ -12,7 +12,7 @@ angular.module('Statusengine').directive('globalproblem', function ($http, $inte
 
 
             $scope.load = function () {
-                $http.get("/api/index.php/globalproblems", {
+                $http.get("./api/index.php/globalproblems", {
                     params: {
                         limit: 5
                     }

@@ -271,7 +271,6 @@ angular.module('Statusengine')
                         open: 'animated flipInX',
                         close: 'animated flipOutX'
                     }
-
                 });
             });
         };

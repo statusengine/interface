@@ -47,7 +47,6 @@ $app->add(new \Statusengine\StatusengineAuth(
     $StorageBackendSelector->getStorageBackend()
 ));
 
-
 // Register middleware for all routes
 // If you are implementing per-route checks you must not add this
 $app->add($container->get('csrf'));
@@ -85,12 +84,12 @@ $app->map(['GET', 'POST'], '/login', function (Request $request, Response $respo
         $fields = [
             'username' => 'your_username',
             'password' => 'your_password',
-            $nameKey => $name,
-            $valueKey => $value
+            $nameKey   => $name,
+            $valueKey  => $value
         ];
 
         return $response->withJson([
-            'message' => 'Send a POST request with the required fields to login',
+            'message'         => 'Send a POST request with the required fields to login',
             'required_fields' => $fields,
         ]);
     }
@@ -107,10 +106,10 @@ $app->get('/loginstate', function (Request $request, Response $response) {
     }
 
     return $response->withJson([
-        'isLoggedIn' => $isLoggedIn,
-        'username' => $Session->getUsername(),
-        'auth_type' => $Config->getAuthType(),
-        'isAnonymousAllowed' => $Config->isAnonymousAllowed(),
+        'isLoggedIn'                => $isLoggedIn,
+        'username'                  => $Session->getUsername(),
+        'auth_type'                 => $Config->getAuthType(),
+        'isAnonymousAllowed'        => $Config->isAnonymousAllowed(),
         'canAnonymousSubmitCommand' => $Config->canAnonymousSubmitCommand()
     ]);
 
@@ -288,6 +287,10 @@ $app->get('/hostdetails', function (Request $request, Response $response) {
     );
 
     $data = $HostController->hostdetails(new \Statusengine\ValueObjects\HostQueryOptions($params));
+
+    $Config = new \Statusengine\Config();
+    $data['external_urls'] = $Config->getExternalUrls();
+
     return $response->withJson($data);
 
 });
@@ -309,6 +312,7 @@ $app->get('/servicedetails', function (Request $request, Response $response) {
 
     $data = $ServiceController->servicedetails(new \Statusengine\ValueObjects\ServiceQueryOptions($params));
     $data['display_perfdata'] = $Config->getDisplayPerfdata();
+    $data['external_urls'] = $Config->getExternalUrls();
     return $response->withJson($data);
 
 });
@@ -735,8 +739,8 @@ $app->get('/menustats', function (Request $request, Response $response) {
     $StorageBackend = $this->get('StorageBackend');
     $params = $request->getQueryParams();
     $DashboardQueryOptions = new \Statusengine\ValueObjects\DashboardQueryOptions($params);
-    $DashboardQueryOptions->setHostStates([1,2]); //DO NET PASS ARGUMENTS FROM $_GET OR $_POST!!!
-    $DashboardQueryOptions->setServiceStates([1,2,3]);//DO NET PASS ARGUMENTS FROM $_GET OR $_POST!!!
+    $DashboardQueryOptions->setHostStates([1, 2]); //DO NOT PASS ARGUMENTS FROM $_GET OR $_POST!!!
+    $DashboardQueryOptions->setServiceStates([1, 2, 3]);//DO NOT PASS ARGUMENTS FROM $_GET OR $_POST!!!
     $DashboardController = new \Statusengine\Controller\Dashboard(
         $StorageBackend->getDashboardLoader()
     );

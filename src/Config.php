@@ -417,4 +417,15 @@ class Config {
         return $default;
     }
 
+    /**
+     * @return array
+     */
+    public function getExternalUrls() {
+        $default = [];
+        if (isset($this->config['external_url_lists']) && is_array($this->config['external_url_lists'])) {
+            return $this->config['external_url_lists'];
+        }
+        return $default;
+    }
+
 }

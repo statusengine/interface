@@ -1,6 +1,6 @@
 angular.module('Statusengine')
 
-    .controller("NodeDetailsController", function ($http, $interval, $scope, ReloadService, $stateParams, $location, $uibModal) {
+    .controller("NodeDetailsController", function($http, $interval, $scope, ReloadService, $stateParams, $location, $uibModal){
         ReloadService.enableAutoloadIfRequired();
 
         var hasUserAutoReloadEnabled = ReloadService.getAutoReloadEnabled();
@@ -20,8 +20,9 @@ angular.module('Statusengine')
         $scope.init = true;
 
         $scope.data = {};
+        $scope.external_urls = {};
 
-        $scope.reload = function () {
+        $scope.reload = function(){
             offset = 0;
             $http.get("/api/index.php/hostdetails", {
                 params: {
@@ -29,36 +30,40 @@ angular.module('Statusengine')
                     servicedescription__like: $scope.servicedescription__like,
                     "service_state[]": $scope.state_filter
                 }
-            }).then(function (result) {
+            }).then(function(result){
                     $scope.data = result.data;
                     $scope.init = false;
 
-                    if (!result.data.hoststatus.hasOwnProperty('hostname')) {
+                    if(result.data.hasOwnProperty('external_urls')){
+                        $scope.external_urls = result.data.external_urls;
+                    }
+
+                    if(!result.data.hoststatus.hasOwnProperty('hostname')){
                         $scope.hostNotFound = true;
                         $('#host-not-found-modal').modal('show');
                     }
 
-                    if (result.data.hoststatus.hasOwnProperty('hostname') > 0 && $scope.hostNotFound === true) {
+                    if(result.data.hoststatus.hasOwnProperty('hostname') > 0 && $scope.hostNotFound === true){
                         $scope.hostNotFound = false;
                         $('#host-not-found-modal-dialog').addClass('animated hinge');
-                        $('#host-not-found-modal').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function () {
+                        $('#host-not-found-modal').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(){
                             $('#host-not-found-modal').modal('hide');
                             $('#host-not-found-modal-dialog').removeClass('animated hinge');
                         });
                     }
 
-                    if (result.data.hoststatus.hasOwnProperty('problem_has_been_acknowledged')) {
-                        if (result.data.hoststatus.problem_has_been_acknowledged) {
+                    if(result.data.hoststatus.hasOwnProperty('problem_has_been_acknowledged')){
+                        if(result.data.hoststatus.problem_has_been_acknowledged){
                             $scope.loadAcknowledgementData();
-                        } else {
+                        }else{
                             $scope.acknowledgementData = null;
                         }
                     }
 
-                    if (result.data.hoststatus.hasOwnProperty('scheduled_downtime_depth')) {
-                        if (result.data.hoststatus.scheduled_downtime_depth > 0) {
+                    if(result.data.hoststatus.hasOwnProperty('scheduled_downtime_depth')){
+                        if(result.data.hoststatus.scheduled_downtime_depth > 0){
                             $scope.loadHostDowntimeData();
-                        } else {
+                        }else{
                             $scope.downtimeData = null;
                         }
                     }
@@ -67,7 +72,7 @@ angular.module('Statusengine')
             );
         };
 
-        $scope.loadAcknowledgementData = function () {
+        $scope.loadAcknowledgementData = function(){
             $http.get("/api/index.php/hostacknowledgements", {
                 params: {
                     hostname: $scope.nodename,
@@ -75,73 +80,73 @@ angular.module('Statusengine')
                     order: 'entry_time',
                     direction: 'desc'
                 }
-            }).then(function (result) {
-                if (result.data.length > 0) {
+            }).then(function(result){
+                if(result.data.length > 0){
                     $scope.acknowledgementData = result.data[0];
                 }
 
             });
         };
 
-        $scope.loadHostDowntimeData = function () {
+        $scope.loadHostDowntimeData = function(){
             $http.get("/api/index.php/hostdowntime", {
                 params: {
                     hostname: $scope.nodename
                 }
-            }).then(function (result) {
-                if (result.data.length > 0) {
+            }).then(function(result){
+                if(result.data.length > 0){
                     $scope.downtimeData = result.data[0];
                 }
 
             });
         };
 
-        $scope.submitPassiveCheckResult = function () {
+        $scope.submitPassiveCheckResult = function(){
             var modal = $uibModal.open({
                 templateUrl: 'templates/modals/submitPassiveHostCheckResult.html',
                 controller: 'SubmitPassiveHostCheckController'
             });
 
-            modal.result.then(function (data) {
+            modal.result.then(function(data){
                 $scope.sendCommandWithArgs(data);
             });
         };
 
-        $scope.sendCustomHostNotification = function () {
+        $scope.sendCustomHostNotification = function(){
             var modal = $uibModal.open({
                 templateUrl: 'templates/modals/submitCustomHostNotification.html',
                 controller: 'SubmitCustomHostNotificationController'
             });
 
-            modal.result.then(function (data) {
+            modal.result.then(function(data){
                 $scope.sendCommandWithArgs(data);
             });
         };
 
-        $scope.submitHostDowntime = function () {
+        $scope.submitHostDowntime = function(){
             var modal = $uibModal.open({
                 templateUrl: 'templates/modals/submitHostDowntime.html',
                 controller: 'SubmitHostDowntimeController'
             });
 
-            modal.result.then(function (data) {
+            modal.result.then(function(data){
                 $scope.sendCommandWithArgs(data);
             });
         };
 
-        $scope.submitHostAcknowledgement = function () {
+        $scope.submitHostAcknowledgement = function(){
             var modal = $uibModal.open({
                 templateUrl: 'templates/modals/submitHostAcknowledgement.html',
                 controller: 'SubmitHostAcknowledgementController'
             });
 
-            modal.result.then(function (data) {
+            modal.result.then(function(data){
                 $scope.sendCommandWithArgs(data);
             });
         };
 
-        $scope.submitDeleteDowntime = function (internal_downtime_id) {
-            if ($scope.isAllowedToSubmitCommand === false) {
+        $scope.submitDeleteDowntime = function(internal_downtime_id){
+            if($scope.isAllowedToSubmitCommand === false){
                 return;
             }
             var data = {};
@@ -151,7 +156,7 @@ angular.module('Statusengine')
 
             $http.get("/api/index.php/externalcommand_args", {
                 params: data
-            }).then(function (result) {
+            }).then(function(result){
                 noty({
                     theme: 'metrouiAdminLTE',
                     progressBar: true,
@@ -168,8 +173,8 @@ angular.module('Statusengine')
             });
         };
 
-        $scope.sendCommandWithArgs = function (data) {
-            if ($scope.isAllowedToSubmitCommand === false) {
+        $scope.sendCommandWithArgs = function(data){
+            if($scope.isAllowedToSubmitCommand === false){
                 return;
             }
             data['hostname'] = $scope.nodename;
@@ -177,7 +182,7 @@ angular.module('Statusengine')
 
             $http.get("/api/index.php/externalcommand_args", {
                 params: data
-            }).then(function (result) {
+            }).then(function(result){
                 noty({
                     theme: 'metrouiAdminLTE',
                     progressBar: true,
@@ -194,8 +199,8 @@ angular.module('Statusengine')
             });
         };
 
-        $scope.sendCommand = function (commandString) {
-            if ($scope.isAllowedToSubmitCommand === false) {
+        $scope.sendCommand = function(commandString){
+            if($scope.isAllowedToSubmitCommand === false){
                 return;
             }
             /**
@@ -203,38 +208,38 @@ angular.module('Statusengine')
              */
 
             var commandId = null;
-            switch (commandString) {
+            switch(commandString){
                 case 'notifications':
                     commandId = 27; //Enable
-                    if ($scope.data.hoststatus.notifications_enabled === true) {
+                    if($scope.data.hoststatus.notifications_enabled === true){
                         commandId = 26; //Disable
                     }
                     break;
 
                 case 'activeChecks':
                     commandId = 21; //Enable
-                    if ($scope.data.hoststatus.active_checks_enabled === true) {
+                    if($scope.data.hoststatus.active_checks_enabled === true){
                         commandId = 20; //Disable
                     }
                     break;
 
                 case 'passiveChecks':
                     commandId = 29; //Enable
-                    if ($scope.data.hoststatus.passive_checks_enabled === true) {
+                    if($scope.data.hoststatus.passive_checks_enabled === true){
                         commandId = 28; //Disable
                     }
                     break;
 
                 case 'flappDetection':
                     commandId = 25; //Enable
-                    if ($scope.data.hoststatus.flap_detection_enabled === true) {
+                    if($scope.data.hoststatus.flap_detection_enabled === true){
                         commandId = 24; //Disable
                     }
                     break;
 
                 case 'eventHandler':
                     commandId = 23; //Enable
-                    if ($scope.data.hoststatus.event_handler_enabled === true) {
+                    if($scope.data.hoststatus.event_handler_enabled === true){
                         commandId = 22; //Disable
                     }
                     break;
@@ -259,7 +264,7 @@ angular.module('Statusengine')
                     node_name: $scope.data.hoststatus.node_name,
                     command: commandId
                 }
-            }).then(function (result) {
+            }).then(function(result){
                 noty({
                     theme: 'metrouiAdminLTE',
                     progressBar: true,
@@ -276,19 +281,19 @@ angular.module('Statusengine')
             });
         };
 
-        $scope.getLoginState = function () {
+        $scope.getLoginState = function(){
             $http.get("/api/index.php/loginstate", {
                 params: {}
-            }).then(function (result) {
+            }).then(function(result){
                 $scope.isAllowedToSubmitCommand = false;
-                if (result.data.canAnonymousSubmitCommand === true || result.data.isLoggedIn === true) {
+                if(result.data.canAnonymousSubmitCommand === true || result.data.isLoggedIn === true){
                     $scope.isAllowedToSubmitCommand = true;
                 }
             });
         };
 
         //triggers reload on load and on search
-        $scope.$watch('[state_filter, servicedescription__like]', function () {
+        $scope.$watch('[state_filter, servicedescription__like]', function(){
             if($scope.init === true){
                 return;
             }

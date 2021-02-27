@@ -1,0 +1,15 @@
+<div class="btn-group" role="group" ng-if="links.length > 0">
+    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
+            aria-haspopup="true" aria-expanded="false">
+        <i class="fa fa-external-link"></i>
+        Links
+        <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu">
+        <li ng-repeat="link in links">
+            <a ng-href="{{link.url}}" target="_blank">
+                {{link.name}}
+            </a>
+        </li>
+    </ul>
+</div>

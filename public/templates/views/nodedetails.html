@@ -99,6 +99,11 @@
                             </ul>
                         </div>
 
+                        <external-urls
+                                data="data.hoststatus"
+                                external-urls="external_urls"
+                                ng-if="data.hoststatus.hostname"></external-urls>
+
                     </div>
 
                     <div class="col-xs-12">
@@ -266,13 +271,16 @@
                                     <div class="col-xs-12">
                                         <div class="input-group input-group">
                                             <div class="input-group-btn">
-                                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
+                                                <button type="button" class="btn btn-default dropdown-toggle"
+                                                        data-toggle="dropdown"
                                                         aria-expanded="false">By state
                                                     <span class="fa fa-caret-down"></span></button>
                                                 <ul class="dropdown-menu">
-                                                    <li><label><input type="checkbox" ng-model="state_filter[0]" ng-true-value="'ok'"/>
+                                                    <li><label><input type="checkbox" ng-model="state_filter[0]"
+                                                                      ng-true-value="'ok'"/>
                                                         Ok</label></li>
-                                                    <li><label><input type="checkbox" ng-model="state_filter[1]" ng-true-value="'warning'"/>
+                                                    <li><label><input type="checkbox" ng-model="state_filter[1]"
+                                                                      ng-true-value="'warning'"/>
                                                         Warning</label></li>
                                                     <li><label><input type="checkbox" ng-model="state_filter[2]"
                                                                       ng-true-value="'critical'"/> Critical</label></li>

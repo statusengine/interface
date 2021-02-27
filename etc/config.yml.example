@@ -198,3 +198,35 @@ elasticsearch_address: 127.0.0.1
 # Port where your Elasticsearch server is listening to
 elasticsearch_port: 9200
 
+############
+# External URLs
+############
+# When defined a new drop down list of links to external applications will be visible on the host and service details overview.
+# This can be used to link objects from the monitoring to an ticketing system
+#
+# The following list of variables can be added to the URL and will be replaced by the system
+#
+#  | Variable                        | Data type | Example value                                    | Description                                                                         |
+#  |---------------------------------|-----------|--------------------------------------------------|-------------------------------------------------------------------------------------|
+#  | $hostname$                      | string    | localhost                                        | Name of the host                                                                    |
+#  | $service_description$           | string    | HTTP                                             | Name of the service                                                                 |
+#  | $node_name$                     | string    | Crowbar                                          | Name of the Statusengine Cluster                                                    |
+#  | $current_check_attempt$         | uint      | 1                                                | Current check attempt                                                               |
+#  | $max_check_attempts$            | uint      | 4                                                | When max check attempts is reached the objects switches into hard state             |
+#  | $current_state$                 | uint      | 0                                                | Hosts: 0=Up, 1= Down, 2=Unreachable Services: 0=Ok, 1=Warning, 2=Critical 3=Unknown |
+#  | $is_hardstate$                  | bool      | true                                             | Has the object reached max_check_attempts                                           |
+#  | $output$                        | string    | HTTP OK: HTTP/1.1 302 Fo…30 second response time | Last output of the check plugin                                                     |
+#  | $scheduled_downtime_depth$      | uint      | 1                                                | Amount of scheduled downtimes for this object                                       |
+#  | $problem_has_been_acknowledged$ | bool      | false                                            | Is a user aware of the issue and working on it?                                     |
+#  | $last_check$                    | int       | 1614428713                                       | Unix timestamp when the last check occured                                          |
+#  | $next_check$                    | int       | 1614428773                                       | Unix timestamp when the next check will be executed                                 |
+#  | $last_state_change$             | int       | 1592209064                                       | Unix timestamp of the last state change event                                       |
+
+#external_url_lists:
+#  - name: Ticketsystem
+#    url: https://issues.statusengine.org/index.php?hostname=$hostname$&servicename=$service_description$
+#  - name: CMDB
+#    url: https://assets.statusengine.org/index.php?hostname=$hostname$
+#  - name: Docs of Statusengine
+#    url: https://statusengine.org
+#

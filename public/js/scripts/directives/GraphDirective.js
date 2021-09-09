@@ -26,7 +26,7 @@ angular.module('Statusengine').directive('graph', function ($http, $filter, $roo
                         hostname: $scope.servicestatus.hostname,
                         servicedescription: $scope.servicestatus.service_description,
                         metric: $scope.perfdataname,
-                        points: 500,
+                        limit: 500,
                         start: $scope.start,
                         end: $scope.end,
                         compression_algorithm: $scope.algorithm

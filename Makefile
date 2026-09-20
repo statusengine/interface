@@ -39,6 +39,14 @@ test: test-go test-ui ## Run every test
 test-go: ## Run the Go tests
 	go test ./...
 
+.PHONY: test-integration
+test-integration: ## Run the repository tests against a real Statusengine schema (read-only)
+	@test -n "$(SEI_TEST_DSN)" || { \
+		echo "SEI_TEST_DSN is not set. Example:"; \
+		echo "  make test-integration SEI_TEST_DSN='user:pass@tcp(127.0.0.1:3306)/statusengine'"; \
+		exit 1; }
+	SEI_TEST_DSN="$(SEI_TEST_DSN)" go test -count=1 ./internal/repository/...
+
 .PHONY: test-ui
 test-ui: ## Run the frontend tests
 	cd frontend && npx ng test --watch=false

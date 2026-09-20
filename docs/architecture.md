@@ -56,17 +56,57 @@ Three interfaces carry the parts that are meant to be replaceable:
 - **`events.Source`** — the worker's WebSocket today; a polling source
   covers the case where it is unreachable.
 
-## Queries against a partitioned schema
+## Time windows, partitions and the indexes that are missing
 
-The worker partitions its history tables by `time DIV 86400`:
-`*checks`, `*_statehistory`, `*_notifications`, `*_notifications_log` and
-`logentries`. A query without a bound on the partitioning column scans
-every partition, which on a table of a few hundred thousand rows is the
-difference between a page that loads and one that does not.
+The worker partitions its history tables by `time DIV 86400`. That reads
+like an invitation to rely on partition pruning, and it is not one:
+**MySQL does not prune for a `RANGE (col DIV 86400)` expression.** Measured
+on this schema, a windowed query reports every partition in `EXPLAIN`,
+including one whose range cannot contain a single matching row.
 
-So every history endpoint **requires** a time window and defaults to the
-last 24 hours when the caller does not give one. That is not a UI
-convenience; it is what makes partition pruning happen.
+What actually decides whether a history query is fast is the index, and
+the picture is uneven:
+
+| Table | Index leading with a time column |
+|---|---|
+| `statusengine_logentries` | `logentries_se (entry_time, node_name)` |
+| `statusengine_hostchecks` | `times (start_time, end_time)` |
+| `statusengine_host_notifications` | `start_time (start_time)` |
+| `statusengine_service_notifications` | `start_time (start_time)` |
+| `statusengine_perfdata` | `timestamp_unix`, plus the composite below |
+| `statusengine_servicechecks` | **none** |
+| `statusengine_host_statehistory` | **none** |
+| `statusengine_service_statehistory` | **none** |
+
+For the last three, every index leads with `hostname` or
+`service_description`. So:
+
+- **Per-object history is fast.** `hostname + service_description + time`
+  hits `servicename (hostname, service_description, start_time)`. Measured
+  at 8 ms against 321k rows. This is the service detail page's history
+  tab, and it is the common case.
+- **Global history across all objects is a full scan.** Measured at 244 ms
+  against 321k rows, and it scales linearly: a year of a real
+  installation is tens of millions of rows and tens of seconds.
+
+Two consequences, both deliberate:
+
+1. Every history endpoint requires a time window and defaults to a short
+   one. That does not buy pruning, but it does bound the result set and it
+   does use the index on the five tables that have one.
+2. The global check-history and state-change pages steer towards an object
+   filter rather than pretending an unfiltered year is a reasonable
+   request, and they cap the window.
+
+An operator who wants fast global history can add the missing index. This
+is their call, not ours - the `statusengine_*` tables belong to the worker
+and this interface does not write to them:
+
+```sql
+ALTER TABLE statusengine_servicechecks          ADD INDEX time (start_time);
+ALTER TABLE statusengine_host_statehistory      ADD INDEX time (state_time);
+ALTER TABLE statusengine_service_statehistory   ADD INDEX time (state_time);
+```
 
 `statusengine_perfdata` is not partitioned, but it carries
 `metric (hostname, service_description, label, timestamp_unix)`. The chart

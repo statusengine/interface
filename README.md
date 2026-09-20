@@ -161,6 +161,21 @@ Worth knowing before filing a bug:
   microsecond collide, and one row is lost. That is upstream, not
   something this interface can fix, but it can make check history look
   incomplete.
+- **Three history tables have no index leading with a time column:**
+  `statusengine_servicechecks`, `statusengine_host_statehistory` and
+  `statusengine_service_statehistory`. Per-object history is fast (8 ms
+  against 321k rows here); global history across all objects is a full
+  scan (244 ms against the same data, and linear from there). Partition
+  pruning does not help - MySQL does not prune a `RANGE (col DIV 86400)`
+  expression. If global history matters on your installation, the fix is
+  three indexes, and it is your call because these are the worker's
+  tables:
+
+  ```sql
+  ALTER TABLE statusengine_servicechecks        ADD INDEX time (start_time);
+  ALTER TABLE statusengine_host_statehistory    ADD INDEX time (state_time);
+  ALTER TABLE statusengine_service_statehistory ADD INDEX time (state_time);
+  ```
 
 ## Testing
 
@@ -170,3 +185,14 @@ make test-go
 make test-ui
 make lint
 ```
+
+The repository tests can also run against a real Statusengine schema.
+They only read, and they are skipped unless a DSN is given:
+
+```bash
+make test-integration SEI_TEST_DSN='user:pass@tcp(127.0.0.1:3306)/statusengine'
+```
+
+They are worth running after any change to a query: a builder test proves
+the clause reads correctly, but only a database proves MySQL accepts it
+and that the column list and the scan targets still line up.

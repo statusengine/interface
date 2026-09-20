@@ -33,11 +33,15 @@ dev-ui: ## Run the Angular dev server on :4200, proxying /api to :8090
 	cd frontend && npm start
 
 .PHONY: test
-test: test-go test-ui ## Run every test
+test: test-go test-ui test-i18n ## Run every test
 
 .PHONY: test-go
 test-go: ## Run the Go tests
 	go test ./...
+
+.PHONY: test-i18n
+test-i18n: ## Check both translation files against the code that uses them
+	node tools/i18n/check.mjs
 
 .PHONY: test-integration
 test-integration: ## Run the repository tests against a real Statusengine schema (read-only)

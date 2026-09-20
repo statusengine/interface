@@ -256,11 +256,17 @@ Worth knowing before filing a bug:
 ## Testing
 
 ```bash
-make test        # Go and frontend
+make test        # Go, frontend and translations
 make test-go
 make test-ui
+make test-i18n
 make lint
 ```
+
+`make test-i18n` reads both translation files and the code that uses
+them: same keys in both languages, every key the code names resolves,
+nothing empty, and the keys assembled at runtime - states, error codes,
+command actions - complete against what the backend can send.
 
 Accessibility is checked with axe-core against every page in both
 themes, plus the four command dialogs, and a keyboard-only walkthrough

@@ -372,9 +372,7 @@
     "polling": "Polling",
     "pollingTitle": "The live stream is not available, so this page refreshes every 30 seconds. Everything still works.",
     "offline": "Offline",
-    "offlineTitle": "Neither the live stream nor polling is getting through. Check the connection to the server.",
-    "idle": "",
-    "idleTitle": ""
+    "offlineTitle": "Neither the live stream nor polling is getting through. Check the connection to the server."
   },
   "commands": {
     "disabled": "External commands are switched off on this deployment: the worker has no command API key.",

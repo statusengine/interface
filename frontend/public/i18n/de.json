@@ -372,9 +372,7 @@
     "polling": "Abfrage",
     "pollingTitle": "Der Live-Stream ist nicht verfügbar, diese Seite lädt daher alle 30 Sekunden neu. Es funktioniert alles.",
     "offline": "Offline",
-    "offlineTitle": "Weder der Live-Stream noch die Abfrage kommen durch. Prüf die Verbindung zum Server.",
-    "idle": "",
-    "idleTitle": ""
+    "offlineTitle": "Weder der Live-Stream noch die Abfrage kommen durch. Prüf die Verbindung zum Server."
   },
   "commands": {
     "disabled": "Externe Kommandos sind auf dieser Installation aus: der Worker hat keinen Command-API-Key.",

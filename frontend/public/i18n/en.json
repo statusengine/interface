@@ -279,7 +279,31 @@
     "errorTitle": "Could not load the dashboard",
     "nodes": "Monitoring cores",
     "unnamedNode": "unnamed",
-    "nodeCounts": "{{hosts}} hosts, {{services}} services"
+    "nodeCounts": "{{hosts}} hosts, {{services}} services",
+    "windowLabel": "Time window",
+    "trendLabel": "Alerts per hour",
+    "trendSummary": "{{total}} alerts over {{hours}} hours, peaking at {{peak}} around {{at}}",
+    "oldestLabel": "Open longest:",
+    "oldestFor": "for {{duration}}",
+    "kpi": {
+      "hostsAvailable": "Hosts available",
+      "servicesAvailable": "Services OK",
+      "ofTotal": "{{part}} of {{total}}",
+      "unhandled": "Unhandled",
+      "ofProblems": "{{percent}}% of {{total}} problems",
+      "noProblems": "No open problems",
+      "steady": "Unchanged ({{hours}}h)",
+      "changed": "{{changed}} of {{total}} objects changed state",
+      "alerts": "Alerts ({{hours}}h)",
+      "inDowntime": "{{count}} objects in planned maintenance",
+      "noDowntime": "No planned maintenance",
+      "peak": "Peak {{count}} at {{at}}",
+      "noAlerts": "Nobody was alerted",
+      "moreThanBefore": "{{percent}}% more than the period before",
+      "fewerThanBefore": "{{percent}}% fewer than the period before",
+      "unchangedVsBefore": "the same as the period before",
+      "inDowntimeOne": "One object in planned maintenance"
+    }
   },
   "detail": {
     "breadcrumb": "Breadcrumb",

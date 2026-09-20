@@ -3,7 +3,9 @@ package httpapi
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -508,11 +510,32 @@ func (s *Server) handleListLogEntries(w http.ResponseWriter, r *http.Request) {
 
 // --- summary ---------------------------------------------------------------
 
+// summaryWindowHours bounds how far back the dashboard's recent figures
+// reach. A week is the longest span the notification index makes cheap,
+// and a manager asking for a quarter wants a report, not a dashboard.
+const (
+	defaultSummaryHours = 24
+	maxSummaryHours     = 168
+)
+
 func (s *Server) handleSummary(w http.ResponseWriter, r *http.Request) {
-	summary, err := s.summary.Get(r.Context())
+	hours := defaultSummaryHours
+	if v := r.URL.Query().Get("hours"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 1 || n > maxSummaryHours {
+			writeFieldError(w, http.StatusBadRequest, CodeBadRequest,
+				fmt.Sprintf("hours must be between 1 and %d", maxSummaryHours), "hours")
+			return
+		}
+		hours = n
+	}
+
+	since := time.Now().Add(-time.Duration(hours) * time.Hour).Unix()
+	summary, err := s.summary.Get(r.Context(), since)
 	if err != nil {
 		s.internalError(w, r, "the summary", err)
 		return
 	}
+	summary.Window.Hours = hours
 	writeJSON(w, http.StatusOK, summary)
 }

@@ -3,6 +3,29 @@
     [title]="t('pages.dashboard.title')"
     [description]="t('pages.dashboard.description')"
   >
+    <div
+      actions
+      class="flex items-center gap-1"
+      role="group"
+      [attr.aria-label]="t('dashboard.windowLabel')"
+    >
+      @for (window of windows; track window) {
+        <button
+          type="button"
+          (click)="setHours(window)"
+          class="rounded-sm border px-2 py-1 text-[12px] transition-colors"
+          [class.border-accent]="hours() === window"
+          [class.text-accent]="hours() === window"
+          [class.bg-accent-wash]="hours() === window"
+          [class.border-line]="hours() !== window"
+          [class.text-ink-dim]="hours() !== window"
+          [attr.aria-pressed]="hours() === window"
+        >
+          {{ window === 24 ? t('range.24h') : t('range.7d') }}
+        </button>
+      }
+    </div>
+
     <button
       actions
       type="button"
@@ -45,7 +68,114 @@
         }
       </p>
 
-      <div class="grid gap-4 lg:grid-cols-2">
+      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <sei-kpi-tile
+          [label]="t('dashboard.kpi.hostsAvailable')"
+          [value]="hostAvailability() === null ? '—' : hostAvailability() + ''"
+          [unit]="hostAvailability() === null ? '' : '%'"
+          [context]="
+            t('dashboard.kpi.ofTotal', {
+              part: data.hosts.by_state['up'] ?? 0,
+              total: data.hosts.total,
+            })
+          "
+          link="/hosts"
+        />
+        <sei-kpi-tile
+          [label]="t('dashboard.kpi.servicesAvailable')"
+          [value]="serviceAvailability() === null ? '—' : serviceAvailability() + ''"
+          [unit]="serviceAvailability() === null ? '' : '%'"
+          [context]="
+            t('dashboard.kpi.ofTotal', {
+              part: data.services.by_state['ok'] ?? 0,
+              total: data.services.total,
+            })
+          "
+          link="/services"
+        />
+        <sei-kpi-tile
+          [label]="t('dashboard.kpi.unhandled')"
+          [value]="unhandledTotal() + ''"
+          [context]="
+            unhandledShare() === null
+              ? t('dashboard.kpi.noProblems')
+              : t('dashboard.kpi.ofProblems', {
+                  percent: unhandledShare(),
+                  total: problemsTotal(),
+                })
+          "
+          [tone]="unhandledTotal() > 0 ? 'critical' : 'neutral'"
+          link="/problems"
+          [linkParams]="{ handled: 'false' }"
+        />
+        <sei-kpi-tile
+          [label]="t('dashboard.kpi.steady', { hours: hours() })"
+          [value]="steadyShare() === null ? '—' : steadyShare() + ''"
+          [unit]="steadyShare() === null ? '' : '%'"
+          [context]="t('dashboard.kpi.changed', { changed: changedTotal(), total: objectsTotal() })"
+        />
+      </div>
+
+      <!-- What it cost in attention: one row per contact actually
+           notified, which is the number a manager feels. -->
+      <div class="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_2fr]">
+        <sei-kpi-tile
+          [label]="t('dashboard.kpi.alerts', { hours: hours() })"
+          [value]="notifications() + ''"
+          [context]="
+            alertsChange() === null
+              ? peak()
+                ? t('dashboard.kpi.peak', { count: peak()!.count, at: peak()!.at })
+                : t('dashboard.kpi.noAlerts')
+              : alertsChange() === 0
+                ? t('dashboard.kpi.unchangedVsBefore')
+                : alertsChange()! > 0
+                  ? t('dashboard.kpi.moreThanBefore', { percent: alertsChange() })
+                  : t('dashboard.kpi.fewerThanBefore', { percent: -alertsChange()! })
+          "
+          link="/history/notifications"
+        />
+        <div class="rounded-md border border-line bg-surface px-4 py-3">
+          <sei-hour-bars [buckets]="trend()" [label]="t('dashboard.trendLabel')" />
+        </div>
+      </div>
+
+      @if (oldest() || inDowntime() > 0) {
+        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+          @if (oldest(); as problem) {
+            <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-ink-dim">
+              <span>{{ t('dashboard.oldestLabel') }}</span>
+              @if (problem.kind === 'host') {
+                <a
+                  [routerLink]="['/hosts', problem.hostname]"
+                  class="mono text-ink hover:text-accent hover:underline"
+                  >{{ problem.hostname }}</a
+                >
+              } @else {
+                <a
+                  routerLink="/service"
+                  [queryParams]="{ host: problem.hostname, service: problem.service_description }"
+                  class="mono text-ink hover:text-accent hover:underline"
+                  >{{ problem.hostname }}/{{ problem.service_description }}</a
+                >
+              }
+              <sei-state-badge [state]="problem.state_text" />
+              <span>{{ t('dashboard.oldestFor', { duration: oldestAge() | seiDuration }) }}</span>
+            </p>
+          }
+          @if (inDowntime() > 0) {
+            <p class="text-[13px] text-ink-dim">
+              <a routerLink="/downtimes" class="hover:text-accent hover:underline">{{
+                inDowntime() === 1
+                  ? t('dashboard.kpi.inDowntimeOne')
+                  : t('dashboard.kpi.inDowntime', { count: inDowntime() })
+              }}</a>
+            </p>
+          }
+        </div>
+      }
+
+      <div class="mt-5 grid gap-4 lg:grid-cols-2">
         <sei-state-strip
           [title]="t('nav.hosts')"
           [counts]="data.hosts"

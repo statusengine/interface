@@ -243,6 +243,43 @@ export interface Summary {
   /** Newest status_update_time across both tables: how current this is. */
   last_update: number;
   nodes: MonitoringNode[];
+  window: SummaryWindow;
+}
+
+/** One hour of the alert trend. Empty hours are present with a zero. */
+export interface HourBucket {
+  t: number;
+  count: number;
+}
+
+/** The longest-running problem nobody has taken on. */
+export interface OldestProblem {
+  kind: Kind;
+  hostname: string;
+  service_description?: string;
+  state: number;
+  state_text: string;
+  since: number;
+}
+
+/**
+ * The recent past in numbers.
+ *
+ * `*_changed` counts objects that moved at all inside the window, not
+ * how often: an object that flapped forty times counts once. Counting
+ * the changes themselves would mean scanning a history table with no
+ * index on its time column.
+ */
+export interface SummaryWindow {
+  hours: number;
+  since: number;
+  hosts_changed: number;
+  services_changed: number;
+  notifications: number;
+  notifications_by_hour: HourBucket[];
+  /** The same count over the window before this one. */
+  notifications_previous: number;
+  oldest_problem?: OldestProblem;
 }
 
 // --- metrics ---------------------------------------------------------------

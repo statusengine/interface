@@ -3,7 +3,9 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/statusengine/interface/internal/domain"
 )
@@ -22,14 +24,14 @@ func NewSummary(db *sql.DB) *Summary { return &Summary{db: db} }
 // object rather than per event - a few thousand rows on a large
 // installation, not a few million. Counting them directly is cheaper and
 // far less surprising than maintaining a cache that can go stale.
-func (r *Summary) Get(ctx context.Context) (domain.Summary, error) {
+func (r *Summary) Get(ctx context.Context, since int64) (domain.Summary, error) {
 	var out domain.Summary
 
-	hosts, err := r.counts(ctx, "statusengine_hoststatus", hostStateNames)
+	hosts, err := r.counts(ctx, "statusengine_hoststatus", hostStateNames, since)
 	if err != nil {
 		return out, err
 	}
-	services, err := r.counts(ctx, "statusengine_servicestatus", serviceStateNames)
+	services, err := r.counts(ctx, "statusengine_servicestatus", serviceStateNames, since)
 	if err != nil {
 		return out, err
 	}
@@ -47,7 +49,153 @@ func (r *Summary) Get(ctx context.Context) (domain.Summary, error) {
 		return out, err
 	}
 	out.Nodes = nodes
+
+	out.Window.Since = since
+	out.Window.HostsChanged = hosts.changed
+	out.Window.ServicesChanged = services.changed
+
+	notifications, byHour, err := r.notifications(ctx, since)
+	if err != nil {
+		return out, err
+	}
+	out.Window.Notifications = notifications
+	out.Window.NotificationsByHour = byHour
+
+	previous, err := r.notificationsBetween(ctx, since-(time.Now().Unix()-since), since)
+	if err != nil {
+		return out, err
+	}
+	out.Window.NotificationsPrevious = previous
+
+	oldest, err := r.oldestUnhandled(ctx)
+	if err != nil {
+		return out, err
+	}
+	out.Window.Oldest = oldest
 	return out, nil
+}
+
+// notifications counts what was actually sent inside the window, and the
+// same again per hour.
+//
+// One row per contact notified, which is the honest unit: a problem that
+// woke four people is four notifications. Both tables carry an index on
+// start_time, so this is a range read rather than a scan - the reason the
+// trend is drawn from notifications and not from the state history, which
+// has no index on its time column alone.
+func (r *Summary) notifications(ctx context.Context, since int64) (int64, []domain.HourBucket, error) {
+	const hour = 3600
+	buckets := make(map[int64]int64)
+	var total int64
+
+	for _, table := range []string{
+		"statusengine_host_notifications",
+		"statusengine_service_notifications",
+	} {
+		// DIV rather than FLOOR(a/b): MySQL hands back a DECIMAL for the
+		// division, and scanning that into an int64 fails.
+		// Grouped by the alias, not by the expression repeated: with
+		// placeholders in it, only_full_group_by does not recognise the
+		// two as the same thing.
+		query := "SELECT (start_time DIV ?) * ? AS bucket, COUNT(*) FROM " + table +
+			" WHERE start_time >= ? GROUP BY bucket"
+		rows, err := r.db.QueryContext(ctx, query, hour, hour, since)
+		if err != nil {
+			return 0, nil, fmt.Errorf("counting notifications in %s: %w", table, err)
+		}
+		for rows.Next() {
+			var bucket, n int64
+			if err := rows.Scan(&bucket, &n); err != nil {
+				rows.Close()
+				return 0, nil, fmt.Errorf("counting notifications in %s: %w", table, err)
+			}
+			buckets[bucket] += n
+			total += n
+		}
+		if err := rows.Err(); err != nil {
+			rows.Close()
+			return 0, nil, fmt.Errorf("counting notifications in %s: %w", table, err)
+		}
+		rows.Close()
+	}
+
+	// Every hour in the window, including the empty ones: a gap drawn as
+	// nothing reads as a quiet hour, and those are not the same thing.
+	start := (since / hour) * hour
+	end := (time.Now().Unix() / hour) * hour
+	out := make([]domain.HourBucket, 0, (end-start)/hour+1)
+	for t := start; t <= end; t += hour {
+		out = append(out, domain.HourBucket{T: t, Count: buckets[t]})
+	}
+	return total, out, nil
+}
+
+// notificationsBetween counts what was sent in [from, to), for the
+// comparison with the window before this one.
+func (r *Summary) notificationsBetween(ctx context.Context, from, to int64) (int64, error) {
+	var total int64
+	for _, table := range []string{
+		"statusengine_host_notifications",
+		"statusengine_service_notifications",
+	} {
+		query := "SELECT COUNT(*) FROM " + table + " WHERE start_time >= ? AND start_time < ?"
+		var n int64
+		if err := r.db.QueryRowContext(ctx, query, from, to).Scan(&n); err != nil {
+			return 0, fmt.Errorf("counting earlier notifications in %s: %w", table, err)
+		}
+		total += n
+	}
+	return total, nil
+}
+
+// oldestUnhandled finds the problem that has been in its state longest
+// with nobody having taken it on.
+//
+// Both status tables are one row per object, so this is the same cheap
+// scan the counts above already pay for.
+func (r *Summary) oldestUnhandled(ctx context.Context) (*domain.OldestProblem, error) {
+	var best *domain.OldestProblem
+
+	for _, t := range []struct {
+		table string
+		kind  domain.Kind
+		names map[int]string
+	}{
+		{"statusengine_hoststatus", domain.KindHost, hostStateNames},
+		{"statusengine_servicestatus", domain.KindService, serviceStateNames},
+	} {
+		columns := "hostname, '' AS service_description"
+		if t.kind == domain.KindService {
+			columns = "hostname, service_description"
+		}
+		query := "SELECT " + columns + `, COALESCE(current_state, 0), last_state_change
+			FROM ` + t.table + ` WHERE last_check > 0
+			  AND COALESCE(current_state, 0) <> 0
+			  AND COALESCE(problem_has_been_acknowledged, 0) = 0
+			  AND COALESCE(scheduled_downtime_depth, 0) = 0
+			  AND last_state_change > 0
+			ORDER BY last_state_change ASC LIMIT 1`
+
+		var p domain.OldestProblem
+		err := r.db.QueryRowContext(ctx, query).Scan(
+			&p.Hostname, &p.Description, &p.State, &p.Since)
+		if errors.Is(err, sql.ErrNoRows) {
+			continue
+		}
+		if err != nil {
+			return nil, fmt.Errorf("finding the oldest problem in %s: %w", t.table, err)
+		}
+		p.Kind = t.kind
+		p.StateText = t.names[p.State]
+		if p.StateText == "" {
+			p.StateText = "unknown"
+		}
+		if best == nil || p.Since < best.Since {
+			copy := p
+			best = &copy
+		}
+	}
+	return best, nil
 }
 
 var hostStateNames = map[int]string{0: "up", 1: "down", 2: "unreachable"}
@@ -58,11 +206,13 @@ var serviceStateNames = map[int]string{0: "ok", 1: "warning", 2: "critical", 3: 
 type stateCounts struct {
 	domain.StateCounts
 	newest int64
+	// changed is how many objects last changed state inside the window.
+	changed int64
 }
 
 func (s stateCounts) LastUpdate() int64 { return s.newest }
 
-func (r *Summary) counts(ctx context.Context, table string, names map[int]string) (stateCounts, error) {
+func (r *Summary) counts(ctx context.Context, table string, names map[int]string, since int64) (stateCounts, error) {
 	var out stateCounts
 	out.ByState = make(map[string]int64, len(names))
 	for _, name := range names {
@@ -84,15 +234,16 @@ func (r *Summary) counts(ctx context.Context, table string, names map[int]string
 		SUM(COALESCE(is_flapping, 0) = 1),
 		SUM(COALESCE(notifications_enabled, 0) = 0),
 		SUM(COALESCE(active_checks_enabled, 0) = 0),
+		SUM(last_state_change >= ? AND last_state_change > 0),
 		COALESCE(MAX(status_update_time), 0)
 		FROM ` + table
 
 	// SUM over an empty table is NULL, so every total needs a nullable
 	// destination even though the values are counts.
-	var pending, problems, unhandled, acked, downtime, flapping, notifOff, activeOff sql.NullInt64
-	err := r.db.QueryRowContext(ctx, query).Scan(
+	var pending, problems, unhandled, acked, downtime, flapping, notifOff, activeOff, changed sql.NullInt64
+	err := r.db.QueryRowContext(ctx, query, since).Scan(
 		&out.Total, &pending, &problems, &unhandled, &acked, &downtime,
-		&flapping, &notifOff, &activeOff, &out.newest)
+		&flapping, &notifOff, &activeOff, &changed, &out.newest)
 	if err != nil {
 		return out, fmt.Errorf("summarising %s: %w", table, err)
 	}
@@ -105,6 +256,7 @@ func (r *Summary) counts(ctx context.Context, table string, names map[int]string
 	out.Flapping = flapping.Int64
 	out.NotificationsDisabled = notifOff.Int64
 	out.ActiveChecksDisabled = activeOff.Int64
+	out.changed = changed.Int64
 
 	byState, err := r.byState(ctx, table, names)
 	if err != nil {

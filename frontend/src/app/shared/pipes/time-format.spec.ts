@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { formatDuration, formatSince, formatTimestamp, type TimeWords } from './time-format';
+import {
+  formatDuration,
+  formatHour,
+  formatSince,
+  formatTimestamp,
+  type TimeWords,
+} from './time-format';
 
 const en: TimeWords = {
   never: 'never',
@@ -91,5 +97,17 @@ describe('formatTimestamp', () => {
     const short = formatTimestamp(noon, 'de', 'short', de.never);
     expect(short).not.toContain('2026');
     expect(short).toMatch(/\d{2}:\d{2}:\d{2}/);
+  });
+});
+
+describe('formatHour', () => {
+  const noon = Date.UTC(2026, 7, 2, 12, 0, 0) / 1000;
+
+  // The label has to identify one bar and no other. Over a day two bars
+  // read "19:00"; over a week, two read "Sun 19:00".
+  it('adds as much of the date as the window needs', () => {
+    expect(formatHour(noon, 'de', 6)).toMatch(/^\d{2}:\d{2}$/);
+    expect(formatHour(noon, 'de', 25)).toMatch(/^So\.?,? \d{2}:\d{2}$/);
+    expect(formatHour(noon, 'de', 169)).toMatch(/^02\.08\.,? \d{2}:\d{2}$/);
   });
 });

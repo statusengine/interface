@@ -125,6 +125,24 @@ login page as one click. It signs in through the ordinary session path, and
 the server refuses every command it submits - the UI hides those controls
 as a courtesy, but the refusal is what enforces it.
 
+## The dashboard
+
+The top of the dashboard answers the questions somebody asks who is not
+going to read a table: how much of the estate is available, how much of
+what is broken nobody has taken on, how much of it moved at all in the
+window, and how often somebody was actually alerted - with the hour by
+hour shape of those alerts and a comparison against the window before.
+Every percentage carries its denominator, because "50% of hosts are
+down" has meant one host of two more than once.
+
+The window is 24 hours or 7 days. Both are cheap: the figures come from
+the status tables, which hold one row per object, and from an indexed
+range on the notification tables. Counting individual state changes
+would mean scanning a history table that has no index on its time column
+alone, so the dashboard says how many objects changed rather than how
+many times - an object that flapped forty times counts once, and the
+page stays fast on an estate of any size.
+
 ## External commands
 
 Operator actions go to the worker's `/commands` endpoint, which hands

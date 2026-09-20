@@ -332,7 +332,8 @@ func TestIntegrationSummary(t *testing.T) {
 	r := NewSummary(testDB(t))
 	ctx := ctxFor(t)
 
-	s, err := r.Get(ctx)
+	since := time.Now().Add(-24 * time.Hour).Unix()
+	s, err := r.Get(ctx, since)
 	if err != nil {
 		t.Fatalf("Get: %v", err)
 	}
@@ -350,6 +351,40 @@ func TestIntegrationSummary(t *testing.T) {
 		}
 		if counts.Unhandled > counts.Problems {
 			t.Errorf("%s: more unhandled (%d) than problems (%d)", label, counts.Unhandled, counts.Problems)
+		}
+	}
+
+	// The window figures are what the dashboard reads as percentages, so
+	// they have to stay inside their populations.
+	if s.Window.HostsChanged > s.Hosts.Total {
+		t.Errorf("%d hosts changed state but only %d exist", s.Window.HostsChanged, s.Hosts.Total)
+	}
+	if s.Window.ServicesChanged > s.Services.Total {
+		t.Errorf("%d services changed state but only %d exist", s.Window.ServicesChanged, s.Services.Total)
+	}
+
+	// Every hour in the window is present, empty ones included: a gap
+	// drawn as nothing reads as a quiet hour.
+	if got := len(s.Window.NotificationsByHour); got < 24 || got > 26 {
+		t.Errorf("a 24 hour window produced %d buckets, want one per hour", got)
+	}
+	var summed int64
+	for _, b := range s.Window.NotificationsByHour {
+		if b.T < (since/3600)*3600 {
+			t.Errorf("bucket %d starts before the window", b.T)
+		}
+		summed += b.Count
+	}
+	if summed != s.Window.Notifications {
+		t.Errorf("the hourly buckets add up to %d, the total says %d", summed, s.Window.Notifications)
+	}
+
+	if oldest := s.Window.Oldest; oldest != nil {
+		if oldest.Hostname == "" || oldest.Since <= 0 {
+			t.Errorf("the oldest problem is missing its identity: %+v", oldest)
+		}
+		if oldest.State == 0 {
+			t.Error("the oldest unhandled problem is in an OK state, which is not a problem")
 		}
 	}
 }

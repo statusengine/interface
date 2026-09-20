@@ -279,7 +279,31 @@
     "errorTitle": "Übersicht konnte nicht geladen werden",
     "nodes": "Monitoring-Kerne",
     "unnamedNode": "ohne Namen",
-    "nodeCounts": "{{hosts}} Hosts, {{services}} Services"
+    "nodeCounts": "{{hosts}} Hosts, {{services}} Services",
+    "windowLabel": "Zeitfenster",
+    "trendLabel": "Alarme pro Stunde",
+    "trendSummary": "{{total}} Alarme in {{hours}} Stunden, Spitze {{peak}} um {{at}}",
+    "oldestLabel": "Am längsten offen:",
+    "oldestFor": "seit {{duration}}",
+    "kpi": {
+      "hostsAvailable": "Hosts verfügbar",
+      "servicesAvailable": "Services OK",
+      "ofTotal": "{{part}} von {{total}}",
+      "unhandled": "Unbearbeitet",
+      "ofProblems": "{{percent}}% von {{total}} Problemen",
+      "noProblems": "Keine offenen Probleme",
+      "steady": "Unverändert ({{hours}} h)",
+      "changed": "{{changed}} von {{total}} Objekten haben gewechselt",
+      "alerts": "Alarme ({{hours}} h)",
+      "inDowntime": "{{count}} Objekte in geplanter Wartung",
+      "noDowntime": "Keine geplante Wartung",
+      "peak": "Spitze {{count}} um {{at}}",
+      "noAlerts": "Niemand wurde alarmiert",
+      "moreThanBefore": "{{percent}}% mehr als im Vorzeitraum",
+      "fewerThanBefore": "{{percent}}% weniger als im Vorzeitraum",
+      "unchangedVsBefore": "genauso viele wie im Vorzeitraum",
+      "inDowntimeOne": "Ein Objekt in geplanter Wartung"
+    }
   },
   "detail": {
     "breadcrumb": "Brotkrumen",

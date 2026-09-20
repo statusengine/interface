@@ -101,3 +101,27 @@ export function formatTimestamp(
     second: '2-digit',
   });
 }
+
+/**
+ * One hour bucket as a label, told how wide the window around it is.
+ *
+ * The span decides how much of the date has to be there for the label
+ * to identify one bar and no other. Over a day, two bars read "19:00";
+ * over a week, two read "Sun 19:00". Both make a complete axis look
+ * broken.
+ */
+export function formatHour(t: number, locale: string, spanHours: number): string {
+  const date = new Date(t * 1000);
+  if (spanHours >= 6 * 24) {
+    return date.toLocaleString(locale, {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+  if (spanHours >= 24) {
+    return date.toLocaleString(locale, { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+  return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+}

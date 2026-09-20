@@ -220,6 +220,61 @@ type Summary struct {
 	LastUpdate int64 `json:"last_update"`
 
 	Nodes []Node `json:"nodes"`
+
+	// Window is the recent past in numbers: what moved, how often
+	// somebody was told about it, and what has been broken longest.
+	Window WindowSummary `json:"window"`
+}
+
+// WindowSummary is the part of the dashboard that reads as a report
+// rather than as a status board.
+//
+// Every figure in here comes from the status tables or from an indexed
+// range on the notification tables. Counting individual state changes
+// would mean scanning a history table that has no index on its time
+// column alone, and a dashboard is the last place to put a query that
+// grows with the estate.
+type WindowSummary struct {
+	// Hours the window covers, and the moment it starts.
+	Hours int   `json:"hours"`
+	Since int64 `json:"since"`
+
+	// Changed counts objects whose last state change falls inside the
+	// window: how much of the estate moved at all, not how often. An
+	// object that flapped forty times counts once.
+	HostsChanged    int64 `json:"hosts_changed"`
+	ServicesChanged int64 `json:"services_changed"`
+
+	// Notifications actually sent in the window, one per contact
+	// notified, and the same count per hour for the trend.
+	Notifications       int64        `json:"notifications"`
+	NotificationsByHour []HourBucket `json:"notifications_by_hour"`
+
+	// NotificationsPrevious is the same count over the window before
+	// this one. On its own "19 alerts" says nothing about whether that
+	// is a bad day or a quiet one.
+	NotificationsPrevious int64 `json:"notifications_previous"`
+
+	// Oldest is the unhandled problem that has been in its state
+	// longest - neither acknowledged nor in a downtime.
+	Oldest *OldestProblem `json:"oldest_problem,omitempty"`
+}
+
+// HourBucket is one hour of the trend. Empty hours are present with a
+// zero, so a gap in the data cannot read as a quiet hour.
+type HourBucket struct {
+	T     int64 `json:"t"`
+	Count int64 `json:"count"`
+}
+
+// OldestProblem names the longest-running unhandled problem.
+type OldestProblem struct {
+	Kind        Kind   `json:"kind"`
+	Hostname    string `json:"hostname"`
+	Description string `json:"service_description,omitempty"`
+	State       int    `json:"state"`
+	StateText   string `json:"state_text"`
+	Since       int64  `json:"since"`
 }
 
 // StateCounts breaks a population down by state. Handled counts the rows

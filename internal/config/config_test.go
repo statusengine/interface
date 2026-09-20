@@ -128,3 +128,48 @@ func TestListenAddrDefaultsToLoopback(t *testing.T) {
 		t.Errorf("default ListenAddr = %q, want a loopback address", got)
 	}
 }
+
+// The demo account is the one account a stranger gets, so what it may
+// send is an allowlist and the validation is part of the guard.
+func TestDemoCommandsMustNameKnownActions(t *testing.T) {
+	c := Default()
+	c.MySQLDSN = "user:pass@tcp(127.0.0.1:3306)/statusengine"
+	c.DemoCommands = []string{"acknowledge", "make-coffee"}
+
+	err := c.Validate()
+	if err == nil || !strings.Contains(err.Error(), "make-coffee") {
+		t.Errorf("Validate() = %v, want it to name the unknown action", err)
+	}
+}
+
+// A custom notification mails and pages the real contacts of whatever is
+// being monitored. It is refused by name rather than left to judgement.
+func TestDemoCommandsNeverIncludeNotify(t *testing.T) {
+	c := Default()
+	c.MySQLDSN = "user:pass@tcp(127.0.0.1:3306)/statusengine"
+	c.DemoCommands = []string{"notify"}
+
+	err := c.Validate()
+	if err == nil || !strings.Contains(err.Error(), "notify") {
+		t.Errorf("Validate() = %v, want it to refuse notify", err)
+	}
+}
+
+func TestAllowsDemoCommand(t *testing.T) {
+	c := Default()
+	c.DemoMode = true
+	c.DemoCommands = []string{"acknowledge"}
+
+	if !c.AllowsDemoCommand("acknowledge") {
+		t.Error("an allowlisted command should be allowed")
+	}
+	if c.AllowsDemoCommand("submit-result") {
+		t.Error("a command nobody listed should not be allowed")
+	}
+
+	// Demo mode off means there is no demo account to allow anything to.
+	c.DemoMode = false
+	if c.AllowsDemoCommand("acknowledge") {
+		t.Error("with demo mode off, nothing is allowed")
+	}
+}

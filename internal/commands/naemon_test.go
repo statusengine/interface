@@ -556,3 +556,24 @@ func TestEverySwitchCoversBothKinds(t *testing.T) {
 		})
 	}
 }
+
+// Naemon reads a command line into a fixed buffer and truncates past it,
+// so a field longer than the limit is silently lost work. It is also how
+// much text one submission can put in front of everybody else.
+func TestAFieldHasACeiling(t *testing.T) {
+	long := strings.Repeat("a", MaxFieldLength+1)
+	_, err := Acknowledge(AcknowledgeRequest{
+		Target:  hostTarget("web01"),
+		Comment: long,
+	}, "ops")
+	if err == nil || !strings.Contains(err.Error(), "limit") {
+		t.Errorf("Acknowledge() with a %d character comment: %v, want a refusal", len(long), err)
+	}
+
+	if _, err := Acknowledge(AcknowledgeRequest{
+		Target:  hostTarget("web01"),
+		Comment: strings.Repeat("a", MaxFieldLength),
+	}, "ops"); err != nil {
+		t.Errorf("a comment exactly at the limit should be accepted: %v", err)
+	}
+}

@@ -324,7 +324,8 @@ verbs only appear in `internal/auth/store.go` and
 | Error messages to the client | `internal/httpapi/response.go` + `internalError` — a code and a sentence, never a driver error or a query |
 | CSP and headers | `internal/httpapi/middleware.go:144` |
 | Secrets | `internal/config/config.go` — `mysql_dsn`, `worker_command_key`, `worker_events_key`. Check `handleMeta` (`handlers_health.go:73`): it is the only thing an anonymous caller reads, and it carries no secret |
-| Denial of service | `max_page_size`, `query_timeout`, `MaxBulkCommands`, `maxVerifyTargets`, SSE client buffers in `internal/events/hub.go` |
+| Denial of service | `max_page_size`, `query_timeout`, `MaxBulkCommands`, `maxVerifyTargets`, `max_event_clients`, and the command rate limits in `internal/httpapi/commandlimit.go` |
+| What a public demo may do | `demo_commands` in `internal/config/config.go`, mapped in `auth.DemoCommandPermission`, re-checked in `auth.LoginDemo`. `docs/security.md` has the review |
 | Static assets and caching | `internal/httpapi/ui.go` — `fingerprinted` decides immutable vs. revalidate |
 | Frontend XSS | No `innerHTML`, no `bypassSecurityTrust*` anywhere in `frontend/src` — Angular's interpolation escapes everything. Worth re-grepping after any change |
 | Who can read the command log | `audit:read`: admin and operator, not guest (`internal/auth/bootstrap.go`) |

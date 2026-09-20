@@ -9,12 +9,15 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/statusengine/interface/internal/auth"
+	"github.com/statusengine/interface/internal/commands"
 	"github.com/statusengine/interface/internal/config"
 	"github.com/statusengine/interface/internal/database"
 	"github.com/statusengine/interface/internal/events"
@@ -100,7 +103,9 @@ func serve(args []string) error {
 	}
 
 	store := auth.NewStore(db)
-	if err := auth.Bootstrap(ctx, store, log, cfg.DemoMode, cfg.DemoUser); err != nil {
+	if err := auth.Bootstrap(ctx, store, log, auth.BootstrapOptions{
+		DemoMode: cfg.DemoMode, DemoUser: cfg.DemoUser, DemoCommands: cfg.DemoCommands,
+	}); err != nil {
 		return err
 	}
 
@@ -109,6 +114,7 @@ func serve(args []string) error {
 		LoginRateLimit:  cfg.LoginRateLimit,
 		LoginRateWindow: cfg.LoginRateWindow,
 		DemoUser:        demoUserOrEmpty(cfg),
+		DemoCommands:    cfg.DemoCommands,
 	})
 	go authSvc.PruneSessions(ctx, time.Hour)
 
@@ -125,15 +131,34 @@ func serve(args []string) error {
 	if !cfg.EventsEnabled() {
 		log.Warn("live updates are disabled: set worker_events_key to enable them; the UI will poll instead")
 	}
+	if cfg.DemoMode {
+		if len(cfg.DemoCommands) > 0 {
+			log.Warn("the public demo account may submit external commands",
+				"commands", strings.Join(cfg.DemoCommands, ","),
+				"per_visitor_per_minute", cfg.DemoCommandRateLimit,
+				"max_objects_per_command", cfg.DemoMaxTargets)
+		} else {
+			log.Info("demo mode is on and read-only", "account", cfg.DemoUser)
+		}
+		if !cfg.SecureCookies && !isLoopback(cfg.ListenAddr) {
+			log.Warn("demo mode is reachable off this machine without secure_cookies: " +
+				"the session cookie will travel in the clear unless something in front sets it right")
+		}
+	}
 
 	// One WebSocket to the worker for the whole process, fanned out to
 	// browsers over SSE. Nil when no key is configured, which the
 	// endpoint reports so the UI can poll instead.
 	var hub *events.Hub
 	if cfg.EventsEnabled() {
-		hub = events.NewHub(log, events.HubOptions{})
+		hub = events.NewHub(log, events.HubOptions{MaxClients: cfg.MaxEventClients})
 		go hub.Run(ctx)
 		go events.NewWorkerSource(cfg.WorkerEventsURL, cfg.WorkerEventsKey, hub, log).Run(ctx)
+	}
+
+	if cfg.AuditRetentionDays > 0 {
+		keep := time.Duration(cfg.AuditRetentionDays) * 24 * time.Hour
+		go commands.NewAudit(db, log).PruneEvery(ctx, 6*time.Hour, keep)
 	}
 
 	srv := httpapi.New(httpapi.Options{
@@ -174,7 +199,9 @@ func migrateOnly(args []string) error {
 		return err
 	}
 	store := auth.NewStore(db)
-	if err := auth.Bootstrap(ctx, store, log, cfg.DemoMode, cfg.DemoUser); err != nil {
+	if err := auth.Bootstrap(ctx, store, log, auth.BootstrapOptions{
+		DemoMode: cfg.DemoMode, DemoUser: cfg.DemoUser, DemoCommands: cfg.DemoCommands,
+	}); err != nil {
 		return err
 	}
 	log.Info("schema is up to date")
@@ -208,3 +235,18 @@ func resolveUI(cfg config.Config, log *slog.Logger) fs.FS {
 }
 
 var errNoSuchUser = errors.New("no such user")
+
+// isLoopback reports whether a listen address only accepts connections
+// from this machine, which is the case where the plaintext warnings do
+// not apply.
+func isLoopback(addr string) bool {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		host = addr
+	}
+	if host == "" {
+		return false
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
+}

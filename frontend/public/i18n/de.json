@@ -89,7 +89,9 @@
     "demoExplainer": "Nur lesend. Jeder Befehl wird abgelehnt.",
     "readOnlySession": "Nur lesend",
     "sessionExpired": "Deine Sitzung ist abgelaufen. Melde dich an, um weiterzumachen.",
-    "sessionUnverifiable": "Der Server konnte deine Sitzung nicht prüfen — eine benötigte Komponente ist nicht erreichbar. Deine Sitzung ist vermutlich in Ordnung; versuch es gleich nochmal."
+    "sessionUnverifiable": "Der Server konnte deine Sitzung nicht prüfen — eine benötigte Komponente ist nicht erreichbar. Deine Sitzung ist vermutlich in Ordnung; versuch es gleich nochmal.",
+    "demoExplainerCommands": "Lesen, und diese Kommandos: {{commands}}.",
+    "demoSession": "Demo-Zugang"
   },
   "roles": {
     "admin": "Administrator",
@@ -539,5 +541,12 @@
       "custom_notification": "Benachrichtigung senden",
       "toggle": "Einstellung ändern"
     }
+  },
+  "demoCommand": {
+    "acknowledge": "Quittieren",
+    "downtime": "Wartung planen",
+    "reschedule": "Check erzwingen",
+    "submit-result": "Passives Ergebnis",
+    "toggle": "Einstellungen ändern"
   }
 }

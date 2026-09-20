@@ -85,7 +85,9 @@ func withStore(args []string, register func(*flag.FlagSet), fn func(context.Cont
 		return err
 	}
 	store := auth.NewStore(db)
-	if err := auth.Bootstrap(ctx, store, log, cfg.DemoMode, cfg.DemoUser); err != nil {
+	if err := auth.Bootstrap(ctx, store, log, auth.BootstrapOptions{
+		DemoMode: cfg.DemoMode, DemoUser: cfg.DemoUser, DemoCommands: cfg.DemoCommands,
+	}); err != nil {
 		return err
 	}
 	return fn(ctx, store)

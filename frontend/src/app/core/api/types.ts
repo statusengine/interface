@@ -28,6 +28,8 @@ export interface ServerMeta {
   product: string;
   version: string;
   demo_mode: boolean;
+  /** What the public demo account may submit, empty when read-only. */
+  demo_commands?: string[];
   commands_enabled: boolean;
   events_enabled: boolean;
   metrics_provider: string;

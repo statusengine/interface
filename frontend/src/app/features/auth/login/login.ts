@@ -39,6 +39,10 @@ export class Login {
 
   readonly demoAvailable = computed(() => this.server.demoMode);
 
+  /** What to promise about the demo account. Read-only is the usual
+   *  case and the honest one only while the allowlist is empty. */
+  readonly demoCommands = computed(() => this.server.demoCommands);
+
   async submit(): Promise<void> {
     if (this.busy()) {
       return;
@@ -81,6 +85,13 @@ export class Login {
     // login to bounce someone off-site.
     const target = next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard';
     await this.router.navigateByUrl(target);
+  }
+
+  /** The allowlist as words, in the reader's language. */
+  demoCommandLabels(t: (key: string) => string): string {
+    return this.demoCommands()
+      .map((name) => t('demoCommand.' + name))
+      .join(', ');
   }
 
   private describe(err: unknown): string {

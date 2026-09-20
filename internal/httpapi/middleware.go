@@ -141,9 +141,16 @@ func recoverMiddleware(log *slog.Logger) middleware {
 // securityHeadersMiddleware sets the headers that cost nothing and close
 // off whole classes of problem. The CSP is strict because this app ships
 // its own bundle and loads nothing from anywhere else.
-func securityHeadersMiddleware(next http.Handler) http.Handler {
+func (s *Server) securityHeadersMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := w.Header()
+		// secure_cookies is the deployment saying the browser reaches
+		// this over TLS. That is exactly when HSTS is safe to send and
+		// worth sending: without it the first request of the day is
+		// still plaintext and still carries the session cookie.
+		if s.cfg.SecureCookies {
+			h.Set("Strict-Transport-Security", "max-age=15552000")
+		}
 		h.Set("X-Content-Type-Options", "nosniff")
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Referrer-Policy", "same-origin")

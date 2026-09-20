@@ -48,3 +48,41 @@ func TestOperatorReadsTheCommandLogButGuestDoesNot(t *testing.T) {
 		t.Error("a guest should not: the log names people and their addresses")
 	}
 }
+
+// The demo role is built from the allowlist and nothing else. A command
+// with no mapping cannot reach the public account by accident.
+func TestDemoPermissionsAreReadsPlusTheAllowlist(t *testing.T) {
+	perms := NewPermissionSet(DemoPermissions([]string{"acknowledge", "reschedule"}))
+
+	for _, read := range ReadPermissions() {
+		if !perms.Has(read) {
+			t.Errorf("the demo role should still read %s", read)
+		}
+	}
+	if !perms.Has(PermCmdAcknowledge) || !perms.Has(PermCmdReschedule) {
+		t.Error("the allowlisted commands should be granted")
+	}
+	for _, denied := range []string{PermCmdDowntime, PermCmdPassiveResult, PermCmdToggle,
+		PermCmdNotification, PermAuditRead, PermUsersManage} {
+		if perms.Has(denied) {
+			t.Errorf("the demo role must not hold %s", denied)
+		}
+	}
+}
+
+func TestNotifyHasNoDemoMapping(t *testing.T) {
+	// Even if a future config accepted the name, there is no permission
+	// behind it to grant.
+	if _, ok := DemoCommandPermission("notify"); ok {
+		t.Error("notify must not map to a permission the demo account can hold")
+	}
+	if perms := DemoPermissions([]string{"notify"}); NewPermissionSet(perms).Has(PermCmdNotification) {
+		t.Error("a notify entry must not grant the notification permission")
+	}
+}
+
+func TestAnEmptyAllowlistLeavesTheDemoAccountReadOnly(t *testing.T) {
+	if NewPermissionSet(DemoPermissions(nil)).HasAnyCommand() {
+		t.Error("with no allowlist the demo account holds no command at all")
+	}
+}

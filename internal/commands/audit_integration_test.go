@@ -50,7 +50,7 @@ func auditForTest(t *testing.T) (*Audit, string) {
 	t.Cleanup(func() {
 		_, _ = db.Exec("DELETE FROM sei_command_audit WHERE username = ?", user)
 	})
-	return NewAudit(db), user
+	return NewAudit(db, nil), user
 }
 
 func TestIntegrationAuditListFiltersAndOrders(t *testing.T) {
@@ -154,5 +154,45 @@ func TestIntegrationAuditRecordBatchWritesOneRowPerTarget(t *testing.T) {
 	}
 	if total != 4 {
 		t.Fatalf("a bulk command over four objects wrote %d rows, want 4", total)
+	}
+}
+
+// A public deployment cannot keep every command forever: the table only
+// grows, and on a demo the rows are strangers' activity.
+func TestIntegrationAuditPruneDropsOnlyWhatIsOldEnough(t *testing.T) {
+	audit, user := auditForTest(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	if err := audit.Record(ctx, Entry{
+		Username: user, Action: ActionReschedule, Target: "fresh", HTTPStatus: 202,
+	}); err != nil {
+		t.Fatalf("recording: %v", err)
+	}
+	// Backdated by hand: Record stamps now, and the point is a row that
+	// is older than the window.
+	if _, err := audit.db.ExecContext(ctx,
+		`INSERT INTO sei_command_audit
+			(user_id, username, action, target, payload, http_status, response, remote_ip, created_at)
+		 VALUES (NULL, ?, 'reschedule', 'ancient', '{}', 202, '', '', ?)`,
+		user, time.Now().Add(-72*time.Hour).Unix()); err != nil {
+		t.Fatalf("inserting an old row: %v", err)
+	}
+
+	// Keeping everything is what a zero window means, and it must not
+	// be read as "keep nothing".
+	if n, err := audit.Prune(ctx, 0); err != nil || n != 0 {
+		t.Fatalf("Prune(0) = %d, %v; want it to keep everything", n, err)
+	}
+
+	if _, err := audit.Prune(ctx, 24*time.Hour); err != nil {
+		t.Fatalf("Prune: %v", err)
+	}
+	rows, total, err := audit.List(ctx, AuditFilter{Username: user}, AuditPage{Limit: 50, Desc: true})
+	if err != nil {
+		t.Fatalf("listing: %v", err)
+	}
+	if total != 1 || rows[0].Target != "fresh" {
+		t.Errorf("after pruning, %d rows remain (%v); want only the fresh one", total, rows)
 	}
 }

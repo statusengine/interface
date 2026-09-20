@@ -81,6 +81,10 @@ func (s *Server) handleLoginDemo(w http.ResponseWriter, r *http.Request) {
 
 	token, ident, err := s.auth.LoginDemo(r.Context(), r.UserAgent(), clientIP(r))
 	switch {
+	case errors.Is(err, auth.ErrRateLimited):
+		writeError(w, http.StatusTooManyRequests, CodeRateLimited,
+			"too many attempts from this address; wait a moment and try again")
+		return
 	case errors.Is(err, auth.ErrInvalidCredentials):
 		writeError(w, http.StatusUnauthorized, CodeUnauthorized, "the demo account is not available")
 		return

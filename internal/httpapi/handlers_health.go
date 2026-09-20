@@ -57,24 +57,38 @@ func (s *Server) handleReadyz(w http.ResponseWriter, r *http.Request) {
 // metaResponse is what the login page needs before anyone is logged in.
 // It deliberately says nothing about which accounts exist.
 type metaResponse struct {
-	Product         string `json:"product"`
-	Version         string `json:"version"`
-	DemoMode        bool   `json:"demo_mode"`
-	CommandsEnabled bool   `json:"commands_enabled"`
-	EventsEnabled   bool   `json:"events_enabled"`
-	MetricsProvider string `json:"metrics_provider"`
-	DefaultPageSize int    `json:"default_page_size"`
-	MaxPageSize     int    `json:"max_page_size"`
+	Product  string `json:"product"`
+	Version  string `json:"version"`
+	DemoMode bool   `json:"demo_mode"`
+	// DemoCommands names what the public account may submit, so the
+	// login page can describe it instead of promising read-only.
+	DemoCommands    []string `json:"demo_commands,omitempty"`
+	CommandsEnabled bool     `json:"commands_enabled"`
+	EventsEnabled   bool     `json:"events_enabled"`
+	MetricsProvider string   `json:"metrics_provider"`
+	DefaultPageSize int      `json:"default_page_size"`
+	MaxPageSize     int      `json:"max_page_size"`
 }
 
 // Version is set at build time with -ldflags "-X ...Version=v1.2.3".
 var Version = "dev"
+
+// demoCommands is what the public account may submit, for a login page
+// that has to describe it accurately. Empty unless demo mode is on, so
+// the list cannot claim anything about an account nobody can reach.
+func (s *Server) demoCommands() []string {
+	if !s.cfg.DemoMode {
+		return nil
+	}
+	return s.cfg.DemoCommands
+}
 
 func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, metaResponse{
 		Product:         "Statusengine Web Interface",
 		Version:         Version,
 		DemoMode:        s.cfg.DemoMode,
+		DemoCommands:    s.demoCommands(),
 		CommandsEnabled: s.cfg.CommandsEnabled(),
 		EventsEnabled:   s.cfg.EventsEnabled(),
 		MetricsProvider: s.cfg.MetricsProvider,

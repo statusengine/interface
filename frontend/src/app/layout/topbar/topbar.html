@@ -33,7 +33,7 @@
     <span
       class="hidden rounded-xs border border-line px-2 py-0.5 text-[11px] text-ink-dim sm:inline"
     >
-      {{ t('auth.readOnlySession') }}
+      {{ demoCanCommand() ? t('auth.demoSession') : t('auth.readOnlySession') }}
     </span>
   }
 

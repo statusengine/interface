@@ -89,7 +89,9 @@
     "demoExplainer": "Read-only. Every command is refused.",
     "readOnlySession": "Read-only",
     "sessionExpired": "Your session ended. Sign in to pick up where you left off.",
-    "sessionUnverifiable": "The server could not check your session — a dependency it needs is unavailable. Your session is probably still fine; try again in a moment."
+    "sessionUnverifiable": "The server could not check your session — a dependency it needs is unavailable. Your session is probably still fine; try again in a moment.",
+    "demoExplainerCommands": "Read everything, and these commands: {{commands}}.",
+    "demoSession": "Demo session"
   },
   "roles": {
     "admin": "Administrator",
@@ -539,5 +541,12 @@
       "custom_notification": "Send notification",
       "toggle": "Change setting"
     }
+  },
+  "demoCommand": {
+    "acknowledge": "Acknowledge",
+    "downtime": "Schedule downtime",
+    "reschedule": "Force a check",
+    "submit-result": "Passive result",
+    "toggle": "Change settings"
   }
 }

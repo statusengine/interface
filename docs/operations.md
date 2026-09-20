@@ -160,6 +160,38 @@ that already has the role. Nothing in the interface edits a role, so the
 reconcile cannot overwrite somebody's choice - a role you want to differ
 has to be a new one, not one of the three built-ins.
 
+## Running it in public
+
+`docs/security.md` has the review and the full checklist. The short
+version: TLS in front, `secure_cookies: true`, a MySQL account that can
+only read the worker's tables, and the worker's own ports reachable from
+nothing but this process.
+
+A demo account that may submit commands is opt-in, by name:
+
+```yaml
+demo_mode: true
+demo_user: guest
+demo_commands: [acknowledge, downtime, reschedule]
+demo_command_rate_limit: 10    # per visitor per minute
+demo_max_targets: 25           # objects per command
+audit_retention_days: 30
+audit_client_ip: false         # keep the trail, not the addresses
+```
+
+That builds a `demo` role holding read access plus exactly those
+commands, rebuilt from this file on every start. `notify` is refused
+here whatever you write: a custom notification mails and pages the real
+contacts of whatever is being monitored. The login page lists what it
+allows, generated from the same configuration the server enforces.
+
+Startup says so out loud:
+
+```
+level=WARN msg="the public demo account may submit external commands"
+  commands=acknowledge,downtime,reschedule per_visitor_per_minute=10 max_objects_per_command=25
+```
+
 ## Accounts
 
 ```

@@ -54,6 +54,45 @@ type Config struct {
 	LoginRateLimit  int           `yaml:"login_rate_limit"`
 	LoginRateWindow time.Duration `yaml:"login_rate_window"`
 
+	// DemoCommands is the allowlist of external commands the demo
+	// account may submit. Empty, the default, means none: a
+	// passwordless account on the open internet gets nothing that
+	// reaches the monitoring core unless somebody says so by name.
+	//
+	// "notify" is refused here whatever it is set to. A custom
+	// notification leaves the building - it mails and pages the real
+	// contacts of whatever is being monitored - and no demo is worth
+	// handing that to strangers.
+	DemoCommands []string `yaml:"demo_commands"`
+
+	// CommandRateLimit bounds how many command requests one session may
+	// send per minute, and DemoCommandRateLimit does the same for the
+	// demo account, which is shared by everybody who clicks "try it".
+	// Zero means the default; a negative number switches the limit off.
+	CommandRateLimit     int `yaml:"command_rate_limit"`
+	DemoCommandRateLimit int `yaml:"demo_command_rate_limit"`
+
+	// DemoMaxTargets caps how many objects one command from the demo
+	// account may address. A bulk of a thousand is a feature for an
+	// operator and a stampede from a stranger.
+	DemoMaxTargets int `yaml:"demo_max_targets"`
+
+	// AuditClientIP records the caller's address with each command.
+	// True is right for an internal deployment, where the question is
+	// who did this. A public demo records strangers, so an operator can
+	// turn it off and keep the rest of the trail.
+	AuditClientIP bool `yaml:"audit_client_ip"`
+
+	// AuditRetentionDays drops audit rows older than this. Zero keeps
+	// them forever, which is what an internal deployment usually wants
+	// and a public one usually does not.
+	AuditRetentionDays int `yaml:"audit_retention_days"`
+
+	// MaxEventClients caps concurrent event-stream connections. Each is
+	// cheap, but nothing else stops one client from opening them until
+	// the process runs out of file descriptors.
+	MaxEventClients int `yaml:"max_event_clients"`
+
 	// Metrics
 	MetricsProvider string `yaml:"metrics_provider"`
 	GraphiteURL     string `yaml:"graphite_url"`
@@ -96,6 +135,14 @@ func Default() Config {
 		DemoUser:        "guest",
 		LoginRateLimit:  10,
 		LoginRateWindow: time.Minute,
+
+		AuditClientIP:        true,
+		AuditRetentionDays:   0,
+		DemoCommands:         nil,
+		CommandRateLimit:     60,
+		DemoCommandRateLimit: 10,
+		DemoMaxTargets:       25,
+		MaxEventClients:      500,
 
 		MetricsProvider: "mysql",
 		GraphitePrefix:  "statusengine",
@@ -184,10 +231,15 @@ func (c *Config) mergeEnv() error {
 	}
 
 	ints := map[string]*int{
-		"SEI_MYSQL_MAX_OPEN_CONNS": &c.MySQLMaxOpenConns,
-		"SEI_LOGIN_RATE_LIMIT":     &c.LoginRateLimit,
-		"SEI_DEFAULT_PAGE_SIZE":    &c.DefaultPageSize,
-		"SEI_MAX_PAGE_SIZE":        &c.MaxPageSize,
+		"SEI_MYSQL_MAX_OPEN_CONNS":    &c.MySQLMaxOpenConns,
+		"SEI_LOGIN_RATE_LIMIT":        &c.LoginRateLimit,
+		"SEI_COMMAND_RATE_LIMIT":      &c.CommandRateLimit,
+		"SEI_DEMO_COMMAND_RATE_LIMIT": &c.DemoCommandRateLimit,
+		"SEI_DEMO_MAX_TARGETS":        &c.DemoMaxTargets,
+		"SEI_MAX_EVENT_CLIENTS":       &c.MaxEventClients,
+		"SEI_AUDIT_RETENTION_DAYS":    &c.AuditRetentionDays,
+		"SEI_DEFAULT_PAGE_SIZE":       &c.DefaultPageSize,
+		"SEI_MAX_PAGE_SIZE":           &c.MaxPageSize,
 	}
 	for k, p := range ints {
 		v, ok := os.LookupEnv(k)
@@ -201,9 +253,19 @@ func (c *Config) mergeEnv() error {
 		*p = n
 	}
 
+	if v, ok := os.LookupEnv("SEI_DEMO_COMMANDS"); ok {
+		c.DemoCommands = nil
+		for _, name := range strings.Split(v, ",") {
+			if name = strings.TrimSpace(name); name != "" {
+				c.DemoCommands = append(c.DemoCommands, name)
+			}
+		}
+	}
+
 	bools := map[string]*bool{
-		"SEI_SECURE_COOKIES": &c.SecureCookies,
-		"SEI_DEMO_MODE":      &c.DemoMode,
+		"SEI_SECURE_COOKIES":  &c.SecureCookies,
+		"SEI_DEMO_MODE":       &c.DemoMode,
+		"SEI_AUDIT_CLIENT_IP": &c.AuditClientIP,
 	}
 	for k, p := range bools {
 		v, ok := os.LookupEnv(k)
@@ -286,6 +348,26 @@ func (c *Config) Validate() error {
 	if c.SessionTTL <= 0 {
 		errs = append(errs, errors.New("session_ttl must be positive"))
 	}
+	for _, name := range c.DemoCommands {
+		switch {
+		case name == DemoCommandNotify:
+			errs = append(errs, errors.New(
+				`demo_commands must not contain "notify": a custom notification mails and pages `+
+					`the real contacts of the monitored objects, and the demo account is public`))
+		case !isDemoCommand(name):
+			errs = append(errs, fmt.Errorf("demo_commands: %q is not one of %s",
+				name, strings.Join(DemoCommandNames(), ", ")))
+		}
+	}
+	if c.DemoMaxTargets < 1 {
+		errs = append(errs, errors.New("demo_max_targets must be at least 1"))
+	}
+	if c.AuditRetentionDays < 0 {
+		errs = append(errs, errors.New("audit_retention_days must be zero or more"))
+	}
+	if c.MaxEventClients < 1 {
+		errs = append(errs, errors.New("max_event_clients must be at least 1"))
+	}
 	if c.QueryTimeout <= 0 {
 		errs = append(errs, errors.New("query_timeout must be positive"))
 	}
@@ -307,3 +389,52 @@ func (c *Config) EventsEnabled() bool {
 type nopWriter struct{}
 
 func (nopWriter) Write(p []byte) (int, error) { return len(p), nil }
+
+// The command actions an operator may hand to the demo account. They are
+// named here rather than taken from the command package so that adding a
+// command cannot silently widen what a public demo can do: a new action
+// has to be added to this list on purpose.
+const (
+	// Each name is one right, not one route: acknowledging and removing
+	// an acknowledgement are the same right, as are scheduling a
+	// downtime and cancelling one.
+	DemoCommandAcknowledge  = "acknowledge"
+	DemoCommandDowntime     = "downtime"
+	DemoCommandReschedule   = "reschedule"
+	DemoCommandSubmitResult = "submit-result"
+	DemoCommandToggle       = "toggle"
+
+	// DemoCommandNotify is listed only so it can be refused by name.
+	DemoCommandNotify = "notify"
+)
+
+// DemoCommandNames returns every action that may appear in
+// demo_commands.
+func DemoCommandNames() []string {
+	return []string{
+		DemoCommandAcknowledge, DemoCommandDowntime, DemoCommandReschedule,
+		DemoCommandSubmitResult, DemoCommandToggle,
+	}
+}
+
+func isDemoCommand(name string) bool {
+	for _, known := range DemoCommandNames() {
+		if known == name {
+			return true
+		}
+	}
+	return false
+}
+
+// AllowsDemoCommand reports whether the demo account may submit one.
+func (c Config) AllowsDemoCommand(name string) bool {
+	if !c.DemoMode {
+		return false
+	}
+	for _, allowed := range c.DemoCommands {
+		if allowed == name {
+			return true
+		}
+	}
+	return false
+}

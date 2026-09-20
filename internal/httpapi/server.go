@@ -75,6 +75,10 @@ type Server struct {
 	// on first use. See uiHandler.
 	etags sync.Map
 
+	// commandLimits throttles command submissions. Nil when every limit
+	// is switched off.
+	commandLimits *commandLimiter
+
 	handler http.Handler
 }
 
@@ -110,9 +114,10 @@ func New(opt Options) *Server {
 
 		commands: commands.NewClient(
 			opt.Config.WorkerCommandURL, opt.Config.WorkerCommandKey, opt.Config.WorkerTimeout),
-		audit:  commands.NewAudit(opt.DB),
+		audit:  commands.NewAudit(opt.DB, opt.Logger),
 		events: opt.Events,
 	}
+	s.commandLimits = newCommandLimiter(opt.Config.CommandRateLimit, opt.Config.DemoCommandRateLimit)
 	s.handler = s.routes()
 	return s
 }
@@ -143,6 +148,13 @@ func (s *Server) routes() http.Handler {
 			return chain(h, s.authMiddleware)
 		}
 		return chain(h, s.authMiddleware, requirePermission(perm))
+	}
+
+	// Commanding carries a rate limit as well as a permission. The
+	// permission says who may; the limit says how fast, because every
+	// command that gets through becomes work for the monitoring core.
+	commanding := func(perm string, h http.HandlerFunc) http.Handler {
+		return chain(h, s.authMiddleware, requirePermission(perm), s.commandRateLimit)
 	}
 
 	api.Handle("GET /api/v1/auth/me", authed("", s.handleMe))
@@ -177,14 +189,14 @@ func (s *Server) routes() http.Handler {
 
 	// Commands. Each route names the permission it needs right here, so
 	// the rules read as a table rather than hiding inside the handlers.
-	api.Handle("POST /api/v1/commands/acknowledge", authed(auth.PermCmdAcknowledge, s.handleAcknowledge))
-	api.Handle("POST /api/v1/commands/remove-acknowledgement", authed(auth.PermCmdAcknowledge, s.handleRemoveAcknowledgement))
-	api.Handle("POST /api/v1/commands/downtime", authed(auth.PermCmdDowntime, s.handleScheduleDowntime))
-	api.Handle("POST /api/v1/commands/downtime/delete", authed(auth.PermCmdDowntime, s.handleDeleteDowntime))
-	api.Handle("POST /api/v1/commands/reschedule", authed(auth.PermCmdReschedule, s.handleReschedule))
-	api.Handle("POST /api/v1/commands/submit-result", authed(auth.PermCmdPassiveResult, s.handleSubmitResult))
-	api.Handle("POST /api/v1/commands/notify", authed(auth.PermCmdNotification, s.handleNotify))
-	api.Handle("POST /api/v1/commands/toggle", authed(auth.PermCmdToggle, s.handleToggle))
+	api.Handle("POST /api/v1/commands/acknowledge", commanding(auth.PermCmdAcknowledge, s.handleAcknowledge))
+	api.Handle("POST /api/v1/commands/remove-acknowledgement", commanding(auth.PermCmdAcknowledge, s.handleRemoveAcknowledgement))
+	api.Handle("POST /api/v1/commands/downtime", commanding(auth.PermCmdDowntime, s.handleScheduleDowntime))
+	api.Handle("POST /api/v1/commands/downtime/delete", commanding(auth.PermCmdDowntime, s.handleDeleteDowntime))
+	api.Handle("POST /api/v1/commands/reschedule", commanding(auth.PermCmdReschedule, s.handleReschedule))
+	api.Handle("POST /api/v1/commands/submit-result", commanding(auth.PermCmdPassiveResult, s.handleSubmitResult))
+	api.Handle("POST /api/v1/commands/notify", commanding(auth.PermCmdNotification, s.handleNotify))
+	api.Handle("POST /api/v1/commands/toggle", commanding(auth.PermCmdToggle, s.handleToggle))
 
 	api.Handle("GET /api/v1/commands/audit", authed(auth.PermAuditRead, s.handleListAudit))
 
@@ -201,7 +213,7 @@ func (s *Server) routes() http.Handler {
 		requestIDMiddleware,
 		loggingMiddleware(s.log),
 		recoverMiddleware(s.log),
-		securityHeadersMiddleware,
+		s.securityHeadersMiddleware,
 		timeoutMiddleware(s.cfg.QueryTimeout, isStreamingRequest),
 	)
 }

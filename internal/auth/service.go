@@ -10,8 +10,9 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
-	"sync"
 	"time"
+
+	"github.com/statusengine/interface/internal/ratelimit"
 )
 
 // ErrInvalidCredentials covers a wrong password, an unknown user and a
@@ -45,6 +46,12 @@ type Options struct {
 	LoginRateLimit  int
 	LoginRateWindow time.Duration
 	DemoUser        string
+
+	// DemoCommands is the allowlist from the configuration. The
+	// passwordless login checks the demo account against it: an account
+	// that somehow holds more than this does not get a session that
+	// way, whatever the database says.
+	DemoCommands []string
 }
 
 // Service turns credentials into sessions and sessions back into
@@ -54,7 +61,7 @@ type Service struct {
 	log   *slog.Logger
 	opt   Options
 
-	limiter *attemptLimiter
+	limiter *ratelimit.Window
 }
 
 // NewService wires a Service to its store.
@@ -66,7 +73,7 @@ func NewService(store *Store, log *slog.Logger, opt Options) *Service {
 		store:   store,
 		log:     log,
 		opt:     opt,
-		limiter: newAttemptLimiter(opt.LoginRateLimit, opt.LoginRateWindow),
+		limiter: ratelimit.New(opt.LoginRateLimit, opt.LoginRateWindow),
 	}
 }
 
@@ -81,7 +88,7 @@ func (s *Service) SessionTTL() time.Duration { return s.opt.SessionTTL }
 // to be handed to the client; only its hash is stored.
 func (s *Service) Login(ctx context.Context, username, password, userAgent, ip string) (token string, id Identity, err error) {
 	username = strings.TrimSpace(username)
-	if !s.limiter.allow(ip) {
+	if !s.limiter.Allow(ip) {
 		return "", Identity{}, ErrRateLimited
 	}
 
@@ -107,7 +114,7 @@ func (s *Service) Login(ctx context.Context, username, password, userAgent, ip s
 		return "", Identity{}, ErrInvalidCredentials
 	}
 
-	s.limiter.reset(ip)
+	s.limiter.Reset(ip)
 
 	ident, err := s.identityFor(ctx, user)
 	if err != nil {
@@ -244,67 +251,4 @@ func newToken() (token, hash string, err error) {
 func hashToken(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
-}
-
-// attemptLimiter throttles failed logins per client address. It is a fixed
-// window rather than a token bucket because the point is to make online
-// guessing slow, and precision at the window edge does not change that.
-type attemptLimiter struct {
-	mu      sync.Mutex
-	limit   int
-	window  time.Duration
-	entries map[string]*attemptEntry
-}
-
-type attemptEntry struct {
-	count int
-	start time.Time
-}
-
-func newAttemptLimiter(limit int, window time.Duration) *attemptLimiter {
-	if limit <= 0 {
-		limit = 10
-	}
-	if window <= 0 {
-		window = time.Minute
-	}
-	return &attemptLimiter{limit: limit, window: window, entries: make(map[string]*attemptEntry)}
-}
-
-func (l *attemptLimiter) allow(key string) bool {
-	if key == "" {
-		return true
-	}
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	now := time.Now()
-	e, ok := l.entries[key]
-	if !ok || now.Sub(e.start) > l.window {
-		l.entries[key] = &attemptEntry{count: 1, start: now}
-		l.sweep(now)
-		return true
-	}
-	e.count++
-	return e.count <= l.limit
-}
-
-func (l *attemptLimiter) reset(key string) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	delete(l.entries, key)
-}
-
-// sweep drops stale entries so the map does not grow with every distinct
-// address that ever tried to log in. Called from allow, which already
-// holds the lock.
-func (l *attemptLimiter) sweep(now time.Time) {
-	if len(l.entries) < 1024 {
-		return
-	}
-	for k, e := range l.entries {
-		if now.Sub(e.start) > l.window {
-			delete(l.entries, k)
-		}
-	}
 }

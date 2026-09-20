@@ -92,7 +92,15 @@
               {{ t('auth.enterDemo') }}
             </button>
             <p class="mt-2 text-center text-[12px] text-ink-dim">
-              {{ t('auth.demoExplainer') }}
+              @if (demoCommands().length === 0) {
+                {{ t('auth.demoExplainer') }}
+              } @else {
+                {{
+                  t('auth.demoExplainerCommands', {
+                    commands: demoCommandLabels(t),
+                  })
+                }}
+              }
             </p>
           </div>
         }

@@ -31,6 +31,13 @@ export class ServerInfo {
     return this._meta()?.demo_mode ?? false;
   }
 
+  /** The commands the demo account may submit. Empty means read-only,
+   *  which is what the login page must say when it is true and must not
+   *  say when it is not. */
+  get demoCommands(): string[] {
+    return this._meta()?.demo_commands ?? [];
+  }
+
   get commandsEnabled(): boolean {
     return this._meta()?.commands_enabled ?? false;
   }

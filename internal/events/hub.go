@@ -45,9 +45,10 @@ type Batch struct {
 // thread on JSON parsing and tell it nothing it could not learn from one
 // batch a quarter of a second later.
 type Hub struct {
-	log      *slog.Logger
-	interval time.Duration
-	maxBatch int
+	log        *slog.Logger
+	interval   time.Duration
+	maxBatch   int
+	maxClients int
 
 	mu          sync.Mutex
 	subscribers map[chan Batch]struct{}
@@ -68,6 +69,11 @@ type HubOptions struct {
 	// MaxBatch caps one batch. Beyond it, changes are counted and
 	// dropped rather than buffered without limit.
 	MaxBatch int
+
+	// MaxClients caps concurrent subscribers. Each costs little, but
+	// without a ceiling one client can open them until the process runs
+	// out of file descriptors. Zero means 500.
+	MaxClients int
 }
 
 // NewHub returns a Hub.
@@ -78,16 +84,23 @@ func NewHub(log *slog.Logger, opt HubOptions) *Hub {
 	if opt.MaxBatch <= 0 {
 		opt.MaxBatch = 500
 	}
+	if opt.MaxClients <= 0 {
+		opt.MaxClients = 500
+	}
 	return &Hub{
 		log:         log,
 		interval:    opt.FlushInterval,
 		maxBatch:    opt.MaxBatch,
+		maxClients:  opt.MaxClients,
 		subscribers: make(map[chan Batch]struct{}),
 		pending:     make(map[Change]struct{}),
 	}
 }
 
-// Subscribe returns a channel of batches and a function to release it.
+// Subscribe returns a channel of batches and a function to release it,
+// or nil when the hub is already carrying as many clients as it will.
+// The caller turns that into an answer the browser can act on, which is
+// to fall back to polling.
 func (h *Hub) Subscribe() (<-chan Batch, func()) {
 	// Buffered: a browser that stalls for a moment should not block the
 	// flush loop for everyone else. Overruns are dropped, and a client
@@ -95,6 +108,10 @@ func (h *Hub) Subscribe() (<-chan Batch, func()) {
 	ch := make(chan Batch, 8)
 
 	h.mu.Lock()
+	if len(h.subscribers) >= h.maxClients {
+		h.mu.Unlock()
+		return nil, func() {}
+	}
 	h.subscribers[ch] = struct{}{}
 	h.mu.Unlock()
 

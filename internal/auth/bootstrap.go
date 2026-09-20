@@ -14,7 +14,36 @@ const (
 	RoleAdmin    = "admin"
 	RoleOperator = "operator"
 	RoleGuest    = "guest"
+
+	// RoleDemo exists only when an operator has named commands the
+	// public demo account may submit. It is guest plus exactly those,
+	// rebuilt from the configuration on every start, so the way to
+	// change what a stranger can do is the config file and nothing else.
+	RoleDemo = "demo"
 )
+
+// BootstrapOptions carry what the built-in roles and the demo account
+// depend on.
+type BootstrapOptions struct {
+	DemoMode bool
+	DemoUser string
+	// DemoCommands are the allowlist entries from the configuration,
+	// already validated. Empty means the demo account stays read-only
+	// and no demo role is created.
+	DemoCommands []string
+}
+
+// DemoPermissions is what the demo role holds: everything readable,
+// plus the commands named in the allowlist and nothing else.
+func DemoPermissions(allowlist []string) []string {
+	perms := ReadPermissions()
+	for _, name := range allowlist {
+		if perm, ok := DemoCommandPermission(name); ok {
+			perms = append(perms, perm)
+		}
+	}
+	return perms
+}
 
 // Bootstrap creates the three built-in roles if they are missing, and the
 // demo account when demo mode is on. It is idempotent, so it can run on
@@ -23,7 +52,7 @@ const (
 // It deliberately does not create an administrator with a fixed password.
 // The first admin is made with `seid user create`, so a default credential
 // never exists to be forgotten.
-func Bootstrap(ctx context.Context, store *Store, log *slog.Logger, demoMode bool, demoUser string) error {
+func Bootstrap(ctx context.Context, store *Store, log *slog.Logger, opt BootstrapOptions) error {
 	builtins := []Role{
 		{
 			Name:        RoleAdmin,
@@ -46,6 +75,14 @@ func Bootstrap(ctx context.Context, store *Store, log *slog.Logger, demoMode boo
 			Permissions: ReadPermissions(),
 			IsSystem:    true,
 		},
+	}
+	if len(opt.DemoCommands) > 0 {
+		builtins = append(builtins, Role{
+			Name:        RoleDemo,
+			Description: "The public demo account: read-only plus the commands named in demo_commands",
+			Permissions: DemoPermissions(opt.DemoCommands),
+			IsSystem:    true,
+		})
 	}
 
 	for _, r := range builtins {
@@ -81,22 +118,44 @@ func Bootstrap(ctx context.Context, store *Store, log *slog.Logger, demoMode boo
 		log.Info("created built-in role", "role", r.Name)
 	}
 
-	if !demoMode || demoUser == "" {
+	if !opt.DemoMode || opt.DemoUser == "" {
 		return nil
 	}
-	return ensureDemoUser(ctx, store, log, demoUser)
+	return ensureDemoUser(ctx, store, log, opt)
 }
 
-func ensureDemoUser(ctx context.Context, store *Store, log *slog.Logger, username string) error {
-	if _, err := store.UserByUsername(ctx, username); err == nil {
+func ensureDemoUser(ctx context.Context, store *Store, log *slog.Logger, opt BootstrapOptions) error {
+	username := opt.DemoUser
+	roleName := RoleGuest
+	if len(opt.DemoCommands) > 0 {
+		roleName = RoleDemo
+	}
+	role, err := store.RoleByName(ctx, roleName)
+	if err != nil {
+		return fmt.Errorf("auth: demo account needs the %q role: %w", roleName, err)
+	}
+
+	existing, err := store.UserByUsername(ctx, username)
+	if err == nil {
+		// Already there. What can change between starts is which role
+		// it belongs on: adding a name to demo_commands has to reach an
+		// account that already exists, and removing the last one has to
+		// take the commands away again.
+		if existing.RoleID == role.ID {
+			return nil
+		}
+		if err := store.SetRole(ctx, existing.ID, role.ID); err != nil {
+			return err
+		}
+		// Sessions carry the permissions they were opened with.
+		if err := store.DeleteUserSessions(ctx, existing.ID); err != nil {
+			return err
+		}
+		log.Info("moved the demo account to a different role",
+			"username", username, "from", existing.RoleName, "to", roleName)
 		return nil
 	} else if !errors.Is(err, ErrNotFound) {
 		return err
-	}
-
-	guest, err := store.RoleByName(ctx, RoleGuest)
-	if err != nil {
-		return fmt.Errorf("auth: demo account needs the %q role: %w", RoleGuest, err)
 	}
 
 	// The demo account signs in through the normal form, so it needs a
@@ -116,12 +175,12 @@ func ensureDemoUser(ctx context.Context, store *Store, log *slog.Logger, usernam
 		Username:     username,
 		PasswordHash: hash,
 		DisplayName:  "Demo",
-		RoleID:       guest.ID,
+		RoleID:       role.ID,
 		IsActive:     true,
 	}); err != nil && !errors.Is(err, ErrDuplicate) {
 		return err
 	}
-	log.Info("created demo account", "username", username, "role", RoleGuest)
+	log.Info("created demo account", "username", username, "role", roleName)
 	return nil
 }
 
@@ -142,6 +201,11 @@ func (s *Service) LoginDemo(ctx context.Context, userAgent, ip string) (string, 
 	if s.opt.DemoUser == "" {
 		return "", Identity{}, ErrInvalidCredentials
 	}
+	// It needs no password, so nothing else costs an attacker anything
+	// here - and every call writes a session row.
+	if !s.limiter.Allow(ip) {
+		return "", Identity{}, ErrRateLimited
+	}
 	user, err := s.store.UserByUsername(ctx, s.opt.DemoUser)
 	if errors.Is(err, ErrNotFound) {
 		return "", Identity{}, ErrInvalidCredentials
@@ -157,12 +221,23 @@ func (s *Service) LoginDemo(ctx context.Context, userAgent, ip string) (string, 
 	if err != nil {
 		return "", Identity{}, err
 	}
-	if ident.Role.Name != RoleGuest {
-		return "", Identity{}, fmt.Errorf("auth: demo account %q is on role %q, not %q - refusing passwordless login",
-			user.Username, ident.Role.Name, RoleGuest)
+	// The guard on the passwordless path: this account may hold nothing
+	// beyond reading, plus exactly the commands the configuration names.
+	// The role is rebuilt from that configuration on every start, so
+	// this can only fire if the database was edited underneath us - and
+	// then refusing is the right answer.
+	if ident.Role.Name != RoleGuest && ident.Role.Name != RoleDemo {
+		return "", Identity{}, fmt.Errorf(
+			"auth: demo account %q is on role %q, not %q or %q - refusing passwordless login",
+			user.Username, ident.Role.Name, RoleGuest, RoleDemo)
 	}
-	if ident.Permissions.HasAnyCommand() {
-		return "", Identity{}, fmt.Errorf("auth: demo account %q would be granted commands - refusing passwordless login", user.Username)
+	allowed := NewPermissionSet(DemoPermissions(s.opt.DemoCommands))
+	for _, held := range ident.Permissions.List() {
+		if !allowed.Has(held) {
+			return "", Identity{}, fmt.Errorf(
+				"auth: demo account %q holds %q, which demo_commands does not allow - refusing passwordless login",
+				user.Username, held)
+		}
 	}
 
 	return s.openSession(ctx, user, ident, userAgent, ip)

@@ -46,6 +46,28 @@ func CommandPermissions() []string {
 	}
 }
 
+// DemoCommandPermission maps an entry in the demo_commands allowlist to
+// the permission that enforces it. Nothing else grants the demo account
+// anything, so a command with no entry here can never reach it.
+//
+// PermCmdNotification is deliberately absent: a custom notification
+// leaves the building.
+func DemoCommandPermission(name string) (string, bool) {
+	switch name {
+	case "acknowledge":
+		return PermCmdAcknowledge, true
+	case "downtime":
+		return PermCmdDowntime, true
+	case "reschedule":
+		return PermCmdReschedule, true
+	case "submit-result":
+		return PermCmdPassiveResult, true
+	case "toggle":
+		return PermCmdToggle, true
+	}
+	return "", false
+}
+
 // AllPermissions is the full catalogue, used to validate a role definition
 // so a typo in a permission name is rejected instead of silently granting
 // nothing.

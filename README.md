@@ -121,9 +121,23 @@ of `sei_sessions` is not a set of live credentials.
 ### Demo mode
 
 Setting `demo_mode: true` creates a `guest` account and offers it on the
-login page as one click. It signs in through the ordinary session path, and
-the server refuses every command it submits - the UI hides those controls
-as a courtesy, but the refusal is what enforces it.
+login page as one click. It signs in through the ordinary session path.
+
+By default it can only read, and the server refuses every command it
+submits - the UI hides those controls as a courtesy, but the refusal is
+what enforces it. A deployment that wants visitors to try commands names
+them one by one:
+
+```yaml
+demo_commands: [acknowledge, downtime, reschedule]
+```
+
+That builds a `demo` role of read access plus exactly those, with its
+own rate limit and a smaller ceiling on how many objects one command may
+address. `notify` is refused whatever you write there, because a custom
+notification reaches the real contacts of the monitored objects.
+`docs/security.md` has the reasoning and the checklist for putting this
+on the open internet.
 
 ## The dashboard
 

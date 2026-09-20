@@ -33,6 +33,16 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Claim a slot before a single header goes out: once the status
+	// line is written, "no room" can only be said by hanging up, and
+	// the client cannot tell that from a network fault.
+	batches, unsubscribe := h.hub.Subscribe()
+	if batches == nil {
+		http.Error(w, "the event stream is at capacity; poll instead", http.StatusServiceUnavailable)
+		return
+	}
+	defer unsubscribe()
+
 	// The server's WriteTimeout would cut a healthy stream off mid-shift.
 	// Clearing the deadline for this one response is what SSE needs; the
 	// read side keeps its timeout.
@@ -63,9 +73,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"at":        time.Now().Unix(),
 	})
 	flusher.Flush()
-
-	batches, unsubscribe := h.hub.Subscribe()
-	defer unsubscribe()
 
 	heartbeat := time.NewTicker(h.Heartbeat)
 	defer heartbeat.Stop()

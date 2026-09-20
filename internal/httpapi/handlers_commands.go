@@ -128,6 +128,15 @@ type commandResponse struct {
 // operator working out which three did not take, at the moment they can
 // least afford it, so a target that fails to build stops the whole
 // request before anything is sent.
+// auditIP is the address to record with a command, or nothing when the
+// deployment has decided not to keep visitors' addresses.
+func (s *Server) auditIP(r *http.Request) string {
+	if !s.cfg.AuditClientIP {
+		return ""
+	}
+	return clientIP(r)
+}
+
 func (s *Server) submit(
 	w http.ResponseWriter,
 	r *http.Request,
@@ -238,7 +247,7 @@ func (s *Server) recordCommands(
 			Payload:    payload,
 			HTTPStatus: status,
 			Response:   response,
-			RemoteIP:   clientIP(r),
+			RemoteIP:   s.auditIP(r),
 		}
 		if ident.User.ID != 0 {
 			id := ident.User.ID
@@ -271,7 +280,7 @@ func author(r *http.Request) string {
 
 // decodeTargets is the opening of every command handler: read the body,
 // resolve the objects, or answer.
-func decodeTargets(w http.ResponseWriter, r *http.Request, body interface{ resolved() targetsRequest }) ([]commands.Target, bool) {
+func (s *Server) decodeTargets(w http.ResponseWriter, r *http.Request, body interface{ resolved() targetsRequest }) ([]commands.Target, bool) {
 	if err := decodeJSON(r, body); err != nil {
 		writeError(w, http.StatusBadRequest, CodeBadRequest, err.Error())
 		return nil, false
@@ -280,6 +289,22 @@ func decodeTargets(w http.ResponseWriter, r *http.Request, body interface{ resol
 	if apiErr != nil {
 		fail(w, apiErr)
 		return nil, false
+	}
+
+	// A bulk of a thousand is a feature for an operator who knows what
+	// they selected, and a stampede from a stranger. The demo account
+	// gets a much smaller ceiling.
+	if ident, ok := identityFrom(r.Context()); ok && ident.IsDemo(s.cfg.DemoUser) {
+		if max := s.cfg.DemoMaxTargets; max > 0 && len(targets) > max {
+			fail(w, &apiError{
+				Code: CodeBadRequest,
+				Message: fmt.Sprintf(
+					"the demo account may address at most %d objects in one command; this names %d",
+					max, len(targets)),
+				Field: "targets",
+			})
+			return nil, false
+		}
 	}
 	return targets, true
 }
@@ -298,7 +323,7 @@ func (b *acknowledgeBody) resolved() targetsRequest { return b.targetsRequest }
 
 func (s *Server) handleAcknowledge(w http.ResponseWriter, r *http.Request) {
 	var body acknowledgeBody
-	targets, ok := decodeTargets(w, r, &body)
+	targets, ok := s.decodeTargets(w, r, &body)
 	if !ok {
 		return
 	}
@@ -322,7 +347,7 @@ func (b *plainBody) resolved() targetsRequest { return b.targetsRequest }
 
 func (s *Server) handleRemoveAcknowledgement(w http.ResponseWriter, r *http.Request) {
 	var body plainBody
-	targets, ok := decodeTargets(w, r, &body)
+	targets, ok := s.decodeTargets(w, r, &body)
 	if !ok {
 		return
 	}
@@ -348,7 +373,7 @@ func (b *downtimeBody) resolved() targetsRequest { return b.targetsRequest }
 
 func (s *Server) handleScheduleDowntime(w http.ResponseWriter, r *http.Request) {
 	var body downtimeBody
-	targets, ok := decodeTargets(w, r, &body)
+	targets, ok := s.decodeTargets(w, r, &body)
 	if !ok {
 		return
 	}
@@ -385,7 +410,7 @@ func (b *deleteDowntimeBody) resolved() targetsRequest { return b.targetsRequest
 // refused rather than interpreted.
 func (s *Server) handleDeleteDowntime(w http.ResponseWriter, r *http.Request) {
 	var body deleteDowntimeBody
-	targets, ok := decodeTargets(w, r, &body)
+	targets, ok := s.decodeTargets(w, r, &body)
 	if !ok {
 		return
 	}
@@ -417,7 +442,7 @@ func (b *rescheduleBody) resolved() targetsRequest { return b.targetsRequest }
 
 func (s *Server) handleReschedule(w http.ResponseWriter, r *http.Request) {
 	var body rescheduleBody
-	targets, ok := decodeTargets(w, r, &body)
+	targets, ok := s.decodeTargets(w, r, &body)
 	if !ok {
 		return
 	}
@@ -442,7 +467,7 @@ func (b *submitResultBody) resolved() targetsRequest { return b.targetsRequest }
 
 func (s *Server) handleSubmitResult(w http.ResponseWriter, r *http.Request) {
 	var body submitResultBody
-	targets, ok := decodeTargets(w, r, &body)
+	targets, ok := s.decodeTargets(w, r, &body)
 	if !ok {
 		return
 	}
@@ -472,7 +497,7 @@ func (b *notifyBody) resolved() targetsRequest { return b.targetsRequest }
 
 func (s *Server) handleNotify(w http.ResponseWriter, r *http.Request) {
 	var body notifyBody
-	targets, ok := decodeTargets(w, r, &body)
+	targets, ok := s.decodeTargets(w, r, &body)
 	if !ok {
 		return
 	}
@@ -500,7 +525,7 @@ func (b *toggleBody) resolved() targetsRequest { return b.targetsRequest }
 // mapping belongs in one table rather than spread across the routing.
 func (s *Server) handleToggle(w http.ResponseWriter, r *http.Request) {
 	var body toggleBody
-	targets, ok := decodeTargets(w, r, &body)
+	targets, ok := s.decodeTargets(w, r, &body)
 	if !ok {
 		return
 	}

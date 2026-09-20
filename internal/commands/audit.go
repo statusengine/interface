@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log/slog"
 	"strings"
 	"time"
 )
@@ -27,11 +29,17 @@ type Entry struct {
 // it not take" is a question that comes up during a post-mortem, and an
 // audit trail that only holds successes cannot answer it.
 type Audit struct {
-	db *sql.DB
+	db  *sql.DB
+	log *slog.Logger
 }
 
 // NewAudit returns an Audit backed by db.
-func NewAudit(db *sql.DB) *Audit { return &Audit{db: db} }
+func NewAudit(db *sql.DB, log *slog.Logger) *Audit {
+	if log == nil {
+		log = slog.New(slog.NewTextHandler(io.Discard, nil))
+	}
+	return &Audit{db: db, log: log}
+}
 
 // RecordBatch writes one entry per target in a single statement.
 //
@@ -91,6 +99,46 @@ func truncate(s string, n int) string {
 		return s
 	}
 	return s[:n]
+}
+
+// Prune drops audit rows older than the retention window and returns
+// how many went. A zero or negative window keeps everything, which is
+// what an internal deployment usually wants.
+func (a *Audit) Prune(ctx context.Context, keep time.Duration) (int64, error) {
+	if keep <= 0 {
+		return 0, nil
+	}
+	cutoff := time.Now().Add(-keep).Unix()
+	res, err := a.db.ExecContext(ctx, "DELETE FROM sei_command_audit WHERE created_at < ?", cutoff)
+	if err != nil {
+		return 0, fmt.Errorf("commands: pruning the audit: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("commands: pruning the audit: %w", err)
+	}
+	return n, nil
+}
+
+// PruneEvery runs Prune until ctx is done. Run it in a goroutine.
+func (a *Audit) PruneEvery(ctx context.Context, every, keep time.Duration) {
+	if keep <= 0 {
+		return
+	}
+	ticker := time.NewTicker(every)
+	defer ticker.Stop()
+	for {
+		if n, err := a.Prune(ctx, keep); err != nil {
+			a.log.Error("pruning the command audit", "error", err)
+		} else if n > 0 {
+			a.log.Info("pruned the command audit", "rows", n, "older_than", keep)
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
 }
 
 // Record is what the audit list returns.

@@ -11,6 +11,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { Auth } from '../../core/auth/auth.service';
 import { Live } from '../../core/events/live.service';
 import { LanguageService, type Language } from '../../core/i18n/language.service';
+import { ServerInfo } from '../../core/meta/meta.service';
 import { Theme } from '../../core/theme/theme.service';
 import { Icon } from '../../shared/ui/icon';
 
@@ -26,12 +27,17 @@ export class Topbar {
   readonly theme = inject(Theme);
   readonly live = inject(Live);
   readonly language = inject(LanguageService);
+  private readonly server = inject(ServerInfo);
 
   readonly openDrawer = output<void>();
 
   readonly menuOpen = signal(false);
   readonly displayName = this.auth.displayName;
   readonly isDemo = this.auth.isDemo;
+
+  /** A demo account that can act is still a demo account, but calling
+   *  it read-only would be false. */
+  readonly demoCanCommand = computed(() => this.server.demoCommands.length > 0);
   readonly role = computed(() => this.auth.identity()?.role ?? '');
 
   readonly themeIcon = computed(() => {

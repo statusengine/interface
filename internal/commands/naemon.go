@@ -117,7 +117,19 @@ func (t Target) Validate() error {
 // Refusing is the honest option. Substituting the character would change
 // what an operator wrote without telling them, and a comment is often
 // the only record of why something was silenced.
+// MaxFieldLength bounds one command field.
+//
+// Naemon reads a command line into a fixed buffer and quietly truncates
+// beyond it, so a long comment is lost work at best. It is also the
+// ceiling on how much text one submission can put in front of everybody
+// else's eyes, which matters when the account sending it is public.
+const MaxFieldLength = 255
+
 func checkField(name, value string) error {
+	if len(value) > MaxFieldLength {
+		return fmt.Errorf("commands: %s is %d characters; the limit is %d",
+			name, len(value), MaxFieldLength)
+	}
 	if strings.ContainsRune(value, ';') {
 		return fmt.Errorf(
 			"commands: %s must not contain a semicolon - Naemon splits command fields on it and there is no escape", name)

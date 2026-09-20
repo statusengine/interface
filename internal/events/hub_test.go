@@ -256,3 +256,27 @@ func TestBackoffGrowsAndStaysBounded(t *testing.T) {
 		t.Error("backoff produced no jitter")
 	}
 }
+
+// Each subscriber is cheap, but without a ceiling one client can open
+// them until the process runs out of file descriptors.
+func TestTheHubRefusesSubscribersBeyondItsCeiling(t *testing.T) {
+	hub := testHub(t, HubOptions{MaxClients: 2})
+
+	first, releaseFirst := hub.Subscribe()
+	second, _ := hub.Subscribe()
+	if first == nil || second == nil {
+		t.Fatal("the first two subscribers are inside the ceiling")
+	}
+
+	third, _ := hub.Subscribe()
+	if third != nil {
+		t.Error("the third subscriber should have been refused")
+	}
+
+	// A slot comes back when a client leaves.
+	releaseFirst()
+	fourth, _ := hub.Subscribe()
+	if fourth == nil {
+		t.Error("releasing one subscriber should free its slot")
+	}
+}

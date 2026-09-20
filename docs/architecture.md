@@ -105,7 +105,7 @@ queries here are written to hit them:
 
 ```sql
 SELECT label, unit,
-       FLOOR(timestamp_unix / ?) * ? AS bucket,
+       (timestamp_unix DIV ?) * ? AS bucket,
        AVG(value), MIN(value), MAX(value)
 FROM statusengine_perfdata
 WHERE hostname = ? AND service_description = ?

@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/statusengine/interface/internal/domain"
+	"github.com/statusengine/interface/internal/metrics/mysqlprov"
 )
 
 // These exercise the real SQL against a real Statusengine schema. A query
@@ -351,4 +352,203 @@ func TestIntegrationSummary(t *testing.T) {
 			t.Errorf("%s: more unhandled (%d) than problems (%d)", label, counts.Unhandled, counts.Problems)
 		}
 	}
+}
+
+func TestIntegrationHistory(t *testing.T) {
+	r := NewHistory(testDB(t))
+	ctx := ctxFor(t)
+	now := time.Now().Unix()
+	window := HistoryFilter{From: now - 30*86400, To: now}
+
+	t.Run("checks", func(t *testing.T) {
+		rows, _, err := r.Checks(ctx, window, page("start_time", true))
+		if err != nil {
+			t.Fatalf("Checks: %v", err)
+		}
+		for _, c := range rows {
+			if c.StartTime < window.From || c.StartTime > window.To {
+				t.Errorf("check at %d is outside the window", c.StartTime)
+			}
+			if c.StateText == "" {
+				t.Error("check has no state_text")
+			}
+		}
+		for name := range CheckSortColumns {
+			if _, _, err := r.Checks(ctx, window, page(name, true)); err != nil {
+				t.Errorf("sorting checks by %s: %v", name, err)
+			}
+		}
+	})
+
+	t.Run("state changes", func(t *testing.T) {
+		if _, _, err := r.StateChanges(ctx, window, page("state_time", true)); err != nil {
+			t.Fatalf("StateChanges: %v", err)
+		}
+		for name := range StateChangeSortColumns {
+			if _, _, err := r.StateChanges(ctx, window, page(name, true)); err != nil {
+				t.Errorf("sorting state changes by %s: %v", name, err)
+			}
+		}
+	})
+
+	t.Run("notifications", func(t *testing.T) {
+		rows, _, err := r.Notifications(ctx, window, page("start_time", true))
+		if err != nil {
+			t.Fatalf("Notifications: %v", err)
+		}
+		for _, n := range rows {
+			if n.Reason == "" {
+				t.Error("notification has no decoded reason")
+			}
+		}
+		for name := range NotificationSortColumns {
+			if _, _, err := r.Notifications(ctx, window, page(name, true)); err != nil {
+				t.Errorf("sorting notifications by %s: %v", name, err)
+			}
+		}
+	})
+
+	// hard_only and transitions_only touch columns that exist on some of
+	// these tables and not others, which is exactly the kind of thing
+	// only a real database catches.
+	t.Run("optional predicates parse on every table", func(t *testing.T) {
+		hard := window
+		hard.HardOnly = true
+		if _, _, err := r.Checks(ctx, hard, page("start_time", true)); err != nil {
+			t.Errorf("hard_only on checks: %v", err)
+		}
+		if _, _, err := r.StateChanges(ctx, hard, page("state_time", true)); err != nil {
+			t.Errorf("hard_only on state changes: %v", err)
+		}
+		// The notification tables have no is_hardstate column; the
+		// handler clears the flag, and the repository must not add it.
+		if _, _, err := r.Notifications(ctx, window, page("start_time", true)); err != nil {
+			t.Errorf("notifications: %v", err)
+		}
+
+		transitions := window
+		transitions.TransitionsOnly = true
+		if _, _, err := r.StateChanges(ctx, transitions, page("state_time", true)); err != nil {
+			t.Errorf("transitions_only: %v", err)
+		}
+	})
+
+	t.Run("scoping to one object", func(t *testing.T) {
+		scoped := window
+		scoped.Host = "localhost"
+		scoped.Description = "PING"
+		rows, _, err := r.Checks(ctx, scoped, page("start_time", true))
+		if err != nil {
+			t.Fatalf("Checks: %v", err)
+		}
+		for _, c := range rows {
+			if c.Hostname != "localhost" || c.Description != "PING" {
+				t.Errorf("got %s/%s, want localhost/PING", c.Hostname, c.Description)
+			}
+		}
+		if !scoped.Scoped() {
+			t.Error("a filter naming a host should report itself as scoped")
+		}
+	})
+}
+
+func TestIntegrationMetrics(t *testing.T) {
+	p := mysqlprov.New(testDB(t))
+	ctx := ctxFor(t)
+	now := time.Now().Unix()
+
+	// Find a service that actually has performance data.
+	services := NewServices(testDB(t))
+	all, total, err := services.List(ctx, StatusFilter{}, page("hostname", false))
+	if err != nil {
+		t.Fatalf("listing services: %v", err)
+	}
+	if total == 0 {
+		t.Skip("no services in the test database")
+	}
+
+	var withData []domain.MetricMeta
+	var host, description string
+	for _, s := range all {
+		labels, err := p.Labels(ctx, s.Hostname, s.Description)
+		if err != nil {
+			t.Fatalf("Labels(%q, %q): %v", s.Hostname, s.Description, err)
+		}
+		if len(labels) > 0 {
+			withData, host, description = labels, s.Hostname, s.Description
+			break
+		}
+	}
+	if withData == nil {
+		t.Skip("no performance data in the test database")
+	}
+
+	for _, meta := range withData {
+		if meta.LastSeen < meta.FirstSeen {
+			t.Errorf("%s: last_seen is before first_seen", meta.Label)
+		}
+	}
+
+	t.Run("downsamples to the budget", func(t *testing.T) {
+		const budget = 20
+		result, err := p.Query(ctx, domain.MetricQuery{
+			Hostname: host, Description: description,
+			From: now - 86400, To: now, MaxPoints: budget,
+		})
+		if err != nil {
+			t.Fatalf("Query: %v", err)
+		}
+		if result.Source != "mysql" {
+			t.Errorf("source = %q", result.Source)
+		}
+		if result.BucketSeconds <= 0 {
+			t.Errorf("bucket = %d", result.BucketSeconds)
+		}
+		for _, series := range result.Series {
+			if len(series.Points) > budget+1 {
+				t.Errorf("%s: %d points for a budget of %d", series.Label, len(series.Points), budget)
+			}
+			for _, point := range series.Points {
+				// The bucket boundary has to be a whole timestamp; a
+				// DECIMAL here is what a FLOOR(a/b) would produce.
+				if point.Time%result.BucketSeconds != 0 {
+					t.Errorf("%s: point at %d is not aligned to a %ds bucket",
+						series.Label, point.Time, result.BucketSeconds)
+				}
+				if point.Min > point.Avg || point.Avg > point.Max {
+					t.Errorf("%s: min %v, avg %v, max %v are out of order",
+						series.Label, point.Min, point.Avg, point.Max)
+				}
+			}
+		}
+	})
+
+	t.Run("filters to one label", func(t *testing.T) {
+		want := withData[0].Label
+		result, err := p.Query(ctx, domain.MetricQuery{
+			Hostname: host, Description: description,
+			Labels: []string{want}, From: now - 86400, To: now, MaxPoints: 500,
+		})
+		if err != nil {
+			t.Fatalf("Query: %v", err)
+		}
+		for _, series := range result.Series {
+			if series.Label != want {
+				t.Errorf("asked for %q, got %q", want, series.Label)
+			}
+		}
+	})
+
+	t.Run("a service with no data is empty, not an error", func(t *testing.T) {
+		result, err := p.Query(ctx, domain.MetricQuery{
+			Hostname: "no-such-host-9f3a", Description: "nothing",
+			From: now - 3600, To: now, MaxPoints: 500,
+		})
+		if err != nil {
+			t.Fatalf("Query: %v", err)
+		}
+		if len(result.Series) != 0 {
+			t.Errorf("got %d series for a host that does not exist", len(result.Series))
+		}
+	})
 }

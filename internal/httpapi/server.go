@@ -10,6 +10,9 @@ import (
 
 	"github.com/statusengine/interface/internal/auth"
 	"github.com/statusengine/interface/internal/config"
+	"github.com/statusengine/interface/internal/metrics"
+	"github.com/statusengine/interface/internal/metrics/graphite"
+	"github.com/statusengine/interface/internal/metrics/mysqlprov"
 	repo "github.com/statusengine/interface/internal/repository/mysql"
 )
 
@@ -31,6 +34,12 @@ type Server struct {
 	acks      *repo.Acknowledgements
 	logs      *repo.LogEntries
 	summary   *repo.Summary
+	history   *repo.History
+
+	// metrics is chosen by configuration. The interface is the point:
+	// the endpoint, the chart and the downsampling contract do not know
+	// which backend answered.
+	metrics metrics.Provider
 
 	// ui is the built frontend. It may be nil during development, when
 	// the Angular dev server serves the UI and proxies /api here.
@@ -64,6 +73,9 @@ func New(opt Options) *Server {
 		acks:      repo.NewAcknowledgements(opt.DB),
 		logs:      repo.NewLogEntries(opt.DB),
 		summary:   repo.NewSummary(opt.DB),
+		history:   repo.NewHistory(opt.DB),
+
+		metrics: newMetricsProvider(opt.Config, opt.DB),
 	}
 	s.handler = s.routes()
 	return s
@@ -120,6 +132,13 @@ func (s *Server) routes() http.Handler {
 
 	api.Handle("GET /api/v1/logentries", authed(auth.PermLogEntriesRead, s.handleListLogEntries))
 
+	api.Handle("GET /api/v1/history/checks", authed(auth.PermHistoryRead, s.handleHistoryChecks))
+	api.Handle("GET /api/v1/history/statechanges", authed(auth.PermHistoryRead, s.handleHistoryStateChanges))
+	api.Handle("GET /api/v1/history/notifications", authed(auth.PermHistoryRead, s.handleHistoryNotifications))
+
+	api.Handle("GET /api/v1/metrics/labels", authed(auth.PermMetricsRead, s.handleMetricLabels))
+	api.Handle("GET /api/v1/metrics/series", authed(auth.PermMetricsRead, s.handleMetricSeries))
+
 	root := http.NewServeMux()
 	root.Handle("/api/", api)
 	root.Handle("/", s.uiHandler())
@@ -130,6 +149,17 @@ func (s *Server) routes() http.Handler {
 		recoverMiddleware(s.log),
 		securityHeadersMiddleware,
 	)
+}
+
+// newMetricsProvider picks the backend named in the configuration. The
+// config is validated at startup, so an unknown name cannot reach here;
+// MySQL is the fallback because it is the one that always works when a
+// database is configured at all.
+func newMetricsProvider(cfg config.Config, db *sql.DB) metrics.Provider {
+	if cfg.MetricsProvider == "graphite" {
+		return graphite.New(cfg.GraphiteURL, cfg.GraphitePrefix)
+	}
+	return mysqlprov.New(db)
 }
 
 // ListenAndServe runs the HTTP server until ctx is cancelled, then shuts

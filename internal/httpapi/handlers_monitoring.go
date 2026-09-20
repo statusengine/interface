@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strings"
@@ -44,9 +45,26 @@ func metaFor(p repo.Page, total int64) ListMeta {
 	return ListMeta{Total: total, Limit: p.Limit, Offset: p.Offset, Sort: spec}
 }
 
-// internalError logs the detail and tells the client only that it failed.
-// A SQL error in a response body is a description of our schema.
+// internalError logs the detail and tells the client only that it
+// failed. A SQL error in a response body is a description of our schema.
+//
+// A deadline is pulled out separately. It is not an internal error: the
+// query was valid and the database was reachable, it just could not
+// answer in time, and the useful reply says what to do differently.
 func (s *Server) internalError(w http.ResponseWriter, r *http.Request, what string, err error) {
+	if errors.Is(err, context.DeadlineExceeded) {
+		loggerFrom(r.Context()).Warn("query exceeded the deadline",
+			"what", what, "path", r.URL.Path, "query", r.URL.RawQuery, "timeout", s.cfg.QueryTimeout)
+		writeError(w, http.StatusGatewayTimeout, CodeTimeout,
+			"reading "+what+" took longer than "+s.cfg.QueryTimeout.String()+
+				". Narrow the time window, name a host, or ask for fewer rows.")
+		return
+	}
+	if errors.Is(err, context.Canceled) {
+		// The browser navigated away mid-request. Nothing to report and
+		// nobody to report it to.
+		return
+	}
 	loggerFrom(r.Context()).Error(what, "error", err)
 	writeError(w, http.StatusInternalServerError, CodeInternal, "could not read "+what)
 }

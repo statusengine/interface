@@ -29,7 +29,7 @@ import { RangePicker } from '../../shared/ui/range-picker';
             [value]="host() ?? ''"
             (change)="hostChange.emit($any($event.target).value.trim() || undefined)"
             [attr.placeholder]="t('history.anyHost')"
-            class="mono w-44 rounded-sm border border-line bg-ground px-2 py-1 text-[12px] text-ink outline-none transition-colors focus:border-accent"
+            class="mono w-44 rounded-sm border border-line bg-ground px-2 py-1 text-[12px] text-ink transition-colors focus:border-accent"
           />
         </label>
         <datalist id="sei-host-names">
@@ -46,7 +46,7 @@ import { RangePicker } from '../../shared/ui/range-picker';
             [disabled]="!host()"
             (change)="serviceChange.emit($any($event.target).value.trim() || undefined)"
             [attr.placeholder]="host() ? t('history.anyService') : t('history.needsHost')"
-            class="mono w-48 rounded-sm border border-line bg-ground px-2 py-1 text-[12px] text-ink outline-none transition-colors focus:border-accent disabled:opacity-50"
+            class="mono w-48 rounded-sm border border-line bg-ground px-2 py-1 text-[12px] text-ink transition-colors focus:border-accent disabled:opacity-50"
           />
         </label>
 

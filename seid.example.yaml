@@ -20,6 +20,12 @@ listen_addr: 127.0.0.1:8090
 mysql_dsn: statusengine:statusengine@tcp(127.0.0.1:3306)/statusengine?parseTime=true
 mysql_max_open_conns: 25
 
+# How long one API request may spend in the database. Without a bound, a
+# query that cannot finish holds a pooled connection and a browser tab
+# for as long as the server is willing to wait, which is forever. The
+# live event stream is exempt - it is meant to stay open.
+query_timeout: 20s
+
 # --- Statusengine worker ---------------------------------------------------
 
 # External commands. Without a key this is left switched off and the UI

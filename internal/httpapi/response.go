@@ -49,6 +49,7 @@ const (
 	CodeUnavailable   = "unavailable"
 	CodeInternal      = "internal_error"
 	CodeInvalidFilter = "invalid_filter"
+	CodeTimeout       = "timeout"
 )
 
 func writeJSON(w http.ResponseWriter, status int, body any) {

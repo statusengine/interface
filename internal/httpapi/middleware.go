@@ -159,28 +159,43 @@ func securityHeadersMiddleware(next http.Handler) http.Handler {
 // anonymous requests outright: every route it wraps needs a caller.
 func (s *Server) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ident, ok := s.identityFromRequest(r)
-		if !ok {
+		ident, err := s.identityFromRequest(r)
+		switch {
+		case errors.Is(err, errNoSession):
 			writeError(w, http.StatusUnauthorized, CodeUnauthorized, "authentication required")
+			return
+		case err != nil:
+			// Not a 401. The session may well be valid - we could not
+			// check. Answering "authentication required" here logs
+			// everyone out of a working installation the moment the
+			// database blinks, and sends them to a login page that
+			// cannot work either.
+			loggerFrom(r.Context()).Error("could not resolve the session", "error", err)
+			writeError(w, http.StatusServiceUnavailable, CodeUnavailable,
+				"could not verify your session because a dependency is unavailable; your session is probably still fine")
 			return
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKeyIdentity, ident)))
 	})
 }
 
-func (s *Server) identityFromRequest(r *http.Request) (auth.Identity, bool) {
+// errNoSession means there is no valid session: no cookie, an unknown
+// token, or a disabled account. Anything else means we could not tell.
+var errNoSession = errors.New("no session")
+
+func (s *Server) identityFromRequest(r *http.Request) (auth.Identity, error) {
 	c, err := r.Cookie(s.cfg.SessionCookie)
 	if err != nil || c.Value == "" {
-		return auth.Identity{}, false
+		return auth.Identity{}, errNoSession
 	}
 	ident, err := s.auth.Authenticate(r.Context(), c.Value)
-	if err != nil {
-		if !errors.Is(err, auth.ErrNotFound) {
-			loggerFrom(r.Context()).Error("resolving session", "error", err)
-		}
-		return auth.Identity{}, false
+	switch {
+	case errors.Is(err, auth.ErrNotFound):
+		return auth.Identity{}, errNoSession
+	case err != nil:
+		return auth.Identity{}, err
 	}
-	return ident, true
+	return ident, nil
 }
 
 // requirePermission guards a route. It runs after authMiddleware, so an
@@ -239,4 +254,28 @@ func clientIP(r *http.Request) string {
 		}
 	}
 	return host
+}
+
+// timeoutMiddleware bounds how long one request may spend in the
+// database.
+//
+// Without it a query that cannot finish holds a pooled connection and
+// the browser tab for as long as the server is willing to wait, which
+// is forever. With it, the driver cancels the query and the handler
+// gets a deadline it can turn into an answer.
+//
+// The live event stream is exempt by design: it is meant to stay open
+// for a shift.
+func timeoutMiddleware(timeout time.Duration, exempt func(*http.Request) bool) middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if timeout <= 0 || (exempt != nil && exempt(r)) {
+				next.ServeHTTP(w, r)
+				return
+			}
+			ctx, cancel := context.WithTimeout(r.Context(), timeout)
+			defer cancel()
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }

@@ -15,7 +15,7 @@ systems. This repository is the web interface and its API.
 | 2 | Dashboard, hosts, services, problems, downtimes, acknowledgements, log entries | done |
 | 3 | History pages, performance charts, metrics provider abstraction | done |
 | 4 | External commands, live updates with polling fallback | done |
-| 5 | Accessibility pass, edge cases, hardening | next |
+| 5 | Accessibility pass, edge cases, hardening | done |
 
 Pages from a later phase are already routed and permission-guarded; they
 say which phase they belong to rather than showing a spinner.
@@ -66,6 +66,13 @@ That brings up MySQL and the interface. The worker stays outside the stack -
 set `SEI_WORKER_COMMAND_KEY` and `SEI_WORKER_EVENTS_KEY` in the environment
 to connect to it.
 
+## Documentation
+
+- [Architecture](docs/architecture.md) - the shape of it, and why the
+  queries look the way they do.
+- [Running it](docs/operations.md) - deployment, an outage-symptom table,
+  measured page costs at 60 000 services, backups and upgrades.
+
 ## Configuration
 
 Settings resolve in this order, each beating the one before it:
@@ -87,6 +94,10 @@ Two settings are worth calling out:
 - **`worker_command_key` and `worker_events_key` are empty by default.**
   Without them the interface starts with commands and live updates switched
   off, and the UI says so rather than offering buttons that always fail.
+- **`query_timeout` (20s) bounds one request's database work.** Without
+  it a query that cannot finish holds a pooled connection and a browser
+  tab indefinitely. The live event stream is exempt; it is meant to stay
+  open.
 
 ## Accounts and roles
 
@@ -219,6 +230,12 @@ make test-go
 make test-ui
 make lint
 ```
+
+Accessibility is checked with axe-core against every page in both
+themes, plus the four command dialogs, and a keyboard-only walkthrough
+that asserts every tab stop is visible and has a focus ring. The colour
+tokens are not eyeballed: every text colour is computed against all
+three surfaces of its theme and must clear 4.5:1.
 
 The repository tests can also run against a real Statusengine schema.
 They only read, and they are skipped unless a DSN is given:

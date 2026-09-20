@@ -355,12 +355,28 @@ func TestIntegrationSummary(t *testing.T) {
 }
 
 func TestIntegrationHistory(t *testing.T) {
-	r := NewHistory(testDB(t))
-	ctx := ctxFor(t)
+	db := testDB(t)
+	r := NewHistory(db)
 	now := time.Now().Unix()
-	window := HistoryFilter{From: now - 30*86400, To: now}
+
+	// Six hours, because that is the widest unscoped window the API
+	// allows. A thirty-day unscoped query is a shape the product
+	// forbids, and measuring it only proves that forbidding it was
+	// right.
+	window := HistoryFilter{From: now - 6*3600, To: now}
+
+	// Each subtest gets its own deadline. Sharing one across a dozen
+	// queries against a large table turns a slow first read on a cold
+	// buffer pool into a dozen confusing failures.
+	ctxFor := func(t *testing.T) context.Context {
+		t.Helper()
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		t.Cleanup(cancel)
+		return ctx
+	}
 
 	t.Run("checks", func(t *testing.T) {
+		ctx := ctxFor(t)
 		rows, _, err := r.Checks(ctx, window, page("start_time", true))
 		if err != nil {
 			t.Fatalf("Checks: %v", err)
@@ -381,6 +397,7 @@ func TestIntegrationHistory(t *testing.T) {
 	})
 
 	t.Run("state changes", func(t *testing.T) {
+		ctx := ctxFor(t)
 		if _, _, err := r.StateChanges(ctx, window, page("state_time", true)); err != nil {
 			t.Fatalf("StateChanges: %v", err)
 		}
@@ -392,6 +409,7 @@ func TestIntegrationHistory(t *testing.T) {
 	})
 
 	t.Run("notifications", func(t *testing.T) {
+		ctx := ctxFor(t)
 		rows, _, err := r.Notifications(ctx, window, page("start_time", true))
 		if err != nil {
 			t.Fatalf("Notifications: %v", err)
@@ -412,6 +430,7 @@ func TestIntegrationHistory(t *testing.T) {
 	// these tables and not others, which is exactly the kind of thing
 	// only a real database catches.
 	t.Run("optional predicates parse on every table", func(t *testing.T) {
+		ctx := ctxFor(t)
 		hard := window
 		hard.HardOnly = true
 		if _, _, err := r.Checks(ctx, hard, page("start_time", true)); err != nil {
@@ -434,20 +453,35 @@ func TestIntegrationHistory(t *testing.T) {
 	})
 
 	t.Run("scoping to one object", func(t *testing.T) {
+		ctx := ctxFor(t)
+
+		// Whatever this database actually has, rather than a name that
+		// only exists on one installation.
+		all, _, err := r.Checks(ctx, window, page("start_time", true))
+		if err != nil {
+			t.Fatalf("Checks: %v", err)
+		}
+		if len(all) == 0 {
+			t.Skip("no checks in the window")
+		}
+		sample := all[0]
+
 		scoped := window
-		scoped.Host = "localhost"
-		scoped.Description = "PING"
+		scoped.Host = sample.Hostname
+		scoped.Description = sample.Description
+		if !scoped.Scoped() {
+			t.Error("a filter naming a host should report itself as scoped")
+		}
+
 		rows, _, err := r.Checks(ctx, scoped, page("start_time", true))
 		if err != nil {
 			t.Fatalf("Checks: %v", err)
 		}
 		for _, c := range rows {
-			if c.Hostname != "localhost" || c.Description != "PING" {
-				t.Errorf("got %s/%s, want localhost/PING", c.Hostname, c.Description)
+			if c.Hostname != sample.Hostname || c.Description != sample.Description {
+				t.Errorf("got %s/%s, want %s/%s",
+					c.Hostname, c.Description, sample.Hostname, sample.Description)
 			}
-		}
-		if !scoped.Scoped() {
-			t.Error("a filter naming a host should report itself as scoped")
 		}
 	})
 }

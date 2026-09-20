@@ -13,7 +13,13 @@
         </div>
       </div>
 
-      @if (expired()) {
+      @if (unavailable()) {
+        <div
+          class="mb-4 rounded-md border border-line border-l-2 border-l-warning bg-surface px-3 py-2.5 text-[13px] text-ink-dim"
+        >
+          {{ t('auth.sessionUnverifiable') }}
+        </div>
+      } @else if (expired()) {
         <div
           class="mb-4 rounded-md border border-line bg-surface px-3 py-2.5 text-[13px] text-ink-dim"
         >
@@ -38,7 +44,7 @@
             autofocus
             [ngModel]="username()"
             (ngModelChange)="username.set($event)"
-            class="mono w-full rounded-sm border border-line bg-ground px-2.5 py-2 text-[13px] text-ink outline-none transition-colors focus:border-accent"
+            class="mono w-full rounded-sm border border-line bg-ground px-2.5 py-2 text-[13px] text-ink transition-colors focus:border-accent"
           />
         </div>
 
@@ -54,7 +60,7 @@
             required
             [ngModel]="password()"
             (ngModelChange)="password.set($event)"
-            class="w-full rounded-sm border border-line bg-ground px-2.5 py-2 text-[13px] text-ink outline-none transition-colors focus:border-accent"
+            class="w-full rounded-sm border border-line bg-ground px-2.5 py-2 text-[13px] text-ink transition-colors focus:border-accent"
           />
         </div>
 

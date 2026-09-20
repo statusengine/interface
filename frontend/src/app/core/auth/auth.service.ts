@@ -17,6 +17,7 @@ export class Auth {
 
   private readonly _identity = signal<Identity | null>(null);
   private readonly _resolved = signal(false);
+  private readonly _unavailable = signal(false);
 
   /** The signed-in user, or null. */
   readonly identity = this._identity.asReadonly();
@@ -24,6 +25,14 @@ export class Auth {
   /** False until the first /auth/me has answered, so a guard can wait
    *  instead of bouncing a logged-in user to the login page on reload. */
   readonly resolved = this._resolved.asReadonly();
+
+  /**
+   * True when the server could not tell us whether the session is
+   * valid - a database outage, a timeout. Not the same as being signed
+   * out, and treating it that way sends someone to a login page that
+   * cannot work either.
+   */
+  readonly unavailable = this._unavailable.asReadonly();
 
   readonly isAuthenticated = computed(() => this._identity() !== null);
   readonly isDemo = computed(() => this._identity()?.is_demo ?? false);
@@ -36,13 +45,18 @@ export class Auth {
   async restore(): Promise<void> {
     try {
       this._identity.set(await this.api.get<Identity>('/auth/me'));
+      this._unavailable.set(false);
     } catch (err) {
-      // 401 is the normal answer for "nobody is signed in"; anything else
-      // is worth knowing about but still leaves us signed out.
-      if (!(err instanceof ApiError) || !err.isUnauthorized) {
-        console.error('could not restore the session', err);
+      const error = ApiError.from(err);
+      if (error.isUnauthorized) {
+        // The normal answer for "nobody is signed in".
+        this._identity.set(null);
+        this._unavailable.set(false);
+      } else {
+        // We could not find out. Saying "signed out" here would be a
+        // guess, and the wrong one during a database outage.
+        this._unavailable.set(true);
       }
-      this._identity.set(null);
     } finally {
       this._resolved.set(true);
     }
@@ -50,6 +64,7 @@ export class Auth {
 
   async login(username: string, password: string): Promise<void> {
     this._identity.set(await this.api.post<Identity>('/auth/login', { username, password }));
+    this._unavailable.set(false);
     this._resolved.set(true);
   }
 

@@ -1,22 +1,17 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { TranslocoDirective } from '@jsverse/transloco';
 
+/**
+ * The application root is only a router outlet.
+ *
+ * The skip link lives in the shell, not here: the login page has no
+ * main region, so a link to `#main` on every route pointed at nothing
+ * from the one page a keyboard user reaches first.
+ */
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, TranslocoDirective],
-  template: `
-    <ng-container *transloco="let t">
-      <!-- First stop for a keyboard user: past the rail, into the table. -->
-      <a
-        href="#main"
-        class="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-sm focus:bg-accent focus:px-3 focus:py-2 focus:text-[13px] focus:text-accent-ink"
-      >
-        {{ t('a11y.skipToContent') }}
-      </a>
-    </ng-container>
-    <router-outlet />
-  `,
+  imports: [RouterOutlet],
+  template: `<router-outlet />`,
 })
 export class App {}

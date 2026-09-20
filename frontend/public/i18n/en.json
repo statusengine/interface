@@ -83,7 +83,8 @@
     "enterDemo": "Continue as a guest",
     "demoExplainer": "Read-only. Every command is refused.",
     "readOnlySession": "Read-only",
-    "sessionExpired": "Your session ended. Sign in to pick up where you left off."
+    "sessionExpired": "Your session ended. Sign in to pick up where you left off.",
+    "sessionUnverifiable": "The server could not check your session — a dependency it needs is unavailable. Your session is probably still fine; try again in a moment."
   },
   "roles": {
     "admin": "Administrator",
@@ -114,7 +115,8 @@
     "forbiddenBody": "This page needs a permission your role does not hold. An administrator can grant it.",
     "notFoundTitle": "No such page",
     "notFoundBody": "That address does not match anything in this interface.",
-    "backToDashboard": "Back to the dashboard"
+    "backToDashboard": "Back to the dashboard",
+    "timeout": "That took too long to read. Narrow the time window, name a host, or ask for fewer rows."
   },
   "list": {
     "loading": "Loading",

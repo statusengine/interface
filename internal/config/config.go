@@ -32,6 +32,12 @@ type Config struct {
 	MySQLMaxOpenConns int           `yaml:"mysql_max_open_conns"`
 	MySQLConnMaxLife  time.Duration `yaml:"mysql_conn_max_lifetime"`
 
+	// QueryTimeout bounds one API request's database work. Without it a
+	// query that cannot finish holds a pooled connection and a browser
+	// tab for as long as the server is willing to wait, which is
+	// forever. The live event stream is exempt: it is meant to stay open.
+	QueryTimeout time.Duration `yaml:"query_timeout"`
+
 	// Statusengine worker
 	WorkerCommandURL string        `yaml:"worker_command_url"`
 	WorkerCommandKey string        `yaml:"worker_command_key"`
@@ -77,6 +83,7 @@ func Default() Config {
 
 		MySQLMaxOpenConns: 25,
 		MySQLConnMaxLife:  5 * time.Minute,
+		QueryTimeout:      20 * time.Second,
 
 		WorkerCommandURL: "http://127.0.0.1:8081/commands",
 		WorkerEventsURL:  "ws://127.0.0.1:8080/ws",
@@ -213,6 +220,7 @@ func (c *Config) mergeEnv() error {
 	durs := map[string]*time.Duration{
 		"SEI_SESSION_TTL":    &c.SessionTTL,
 		"SEI_WORKER_TIMEOUT": &c.WorkerTimeout,
+		"SEI_QUERY_TIMEOUT":  &c.QueryTimeout,
 	}
 	for k, p := range durs {
 		v, ok := os.LookupEnv(k)
@@ -277,6 +285,9 @@ func (c *Config) Validate() error {
 	}
 	if c.SessionTTL <= 0 {
 		errs = append(errs, errors.New("session_ttl must be positive"))
+	}
+	if c.QueryTimeout <= 0 {
+		errs = append(errs, errors.New("query_timeout must be positive"))
 	}
 	return errors.Join(errs...)
 }

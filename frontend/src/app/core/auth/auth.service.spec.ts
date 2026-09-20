@@ -106,3 +106,47 @@ describe('Auth', () => {
     expect(auth.isAuthenticated()).toBe(false);
   });
 });
+
+describe('Auth.restore during an outage', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  // The regression: a database outage used to look exactly like being
+  // signed out, which bounced everyone to a login page that could not
+  // work either.
+  it('does not report being signed out when it could not check', async () => {
+    const auth = setup({
+      get: vi.fn().mockRejectedValue(new ApiError(503, 'unavailable', 'dependency is down')),
+    });
+
+    await auth.restore();
+
+    expect(auth.resolved()).toBe(true);
+    expect(auth.unavailable()).toBe(true);
+  });
+
+  it('reports a 401 as plainly signed out', async () => {
+    const auth = setup({
+      get: vi.fn().mockRejectedValue(new ApiError(401, 'unauthorized', 'nope')),
+    });
+
+    await auth.restore();
+
+    expect(auth.isAuthenticated()).toBe(false);
+    expect(auth.unavailable()).toBe(false);
+  });
+
+  it('clears the outage flag once the server answers again', async () => {
+    const get = vi
+      .fn()
+      .mockRejectedValueOnce(new ApiError(503, 'unavailable', 'down'))
+      .mockResolvedValue(operator);
+    const auth = setup({ get });
+
+    await auth.restore();
+    expect(auth.unavailable()).toBe(true);
+
+    await auth.restore();
+    expect(auth.unavailable()).toBe(false);
+    expect(auth.isAuthenticated()).toBe(true);
+  });
+});

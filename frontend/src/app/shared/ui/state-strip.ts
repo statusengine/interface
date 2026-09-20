@@ -42,26 +42,25 @@ interface Segment {
       @if (counts().total === 0) {
         <p class="text-[13px] text-ink-dim">{{ t('dashboard.nothingMonitored') }}</p>
       } @else {
-        <div
-          class="flex h-2 w-full overflow-hidden rounded-full bg-sunken"
-          role="img"
-          [attr.aria-label]="summaryLabel()"
-        >
+        <!-- The bar is a picture of the legend below it. It carried
+             links once, which put a role="img" container around
+             focusable children - an accessibility violation - and gave a
+             keyboard user a second set of tab stops to the same places.
+             The legend is the control; this is the glance. -->
+        <div class="flex h-2 w-full overflow-hidden rounded-full bg-sunken" aria-hidden="true">
           @for (segment of segments(); track segment.key) {
             @if (segment.count > 0) {
-              <a
-                [routerLink]="link()"
-                [queryParams]="{ state: segment.value }"
-                class="block h-full transition-opacity hover:opacity-80"
+              <span
+                class="block h-full"
                 [style.width.%]="segment.percent"
                 [class]="barClass(segment.key)"
                 [title]="t('states.' + segment.key) + ': ' + segment.count"
-              ></a>
+              ></span>
             }
           }
         </div>
 
-        <ul class="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+        <ul class="mt-3 flex flex-wrap gap-x-4 gap-y-1.5" [attr.aria-label]="summaryLabel()">
           @for (segment of segments(); track segment.key) {
             <li>
               <a

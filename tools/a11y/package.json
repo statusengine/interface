@@ -1,0 +1,15 @@
+{
+  "name": "sei-a11y",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "audit": "node audit.mjs",
+    "dialogs": "node dialogs.mjs",
+    "keyboard": "node keyboard.mjs"
+  },
+  "dependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "axe-core": "^4.10.3",
+    "playwright": "^1.63.0"
+  }
+}

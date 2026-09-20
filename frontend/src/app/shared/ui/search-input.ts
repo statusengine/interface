@@ -18,7 +18,7 @@ import { Icon } from './icon';
         (input)="search.emit($any($event.target).value)"
         [attr.placeholder]="placeholder() || t('list.searchPlaceholder')"
         [attr.aria-label]="placeholder() || t('list.searchPlaceholder')"
-        class="mono w-full rounded-sm border border-line bg-ground py-1.5 pl-8 pr-2.5 text-[13px] text-ink outline-none transition-colors focus:border-accent"
+        class="mono w-full rounded-sm border border-line bg-ground py-1.5 pl-8 pr-2.5 text-[13px] text-ink transition-colors focus:border-accent"
       />
     </label>
   `,

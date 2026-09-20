@@ -10,6 +10,7 @@
 
 # Node
 node_modules/
+/tools/a11y/package-lock.json
 /frontend/.angular/
 /frontend/dist/
 

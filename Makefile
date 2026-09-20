@@ -51,6 +51,17 @@ test-integration: ## Run the repository tests against a real Statusengine schema
 test-ui: ## Run the frontend tests
 	cd frontend && npx ng test --watch=false
 
+.PHONY: test-a11y
+test-a11y: ## Audit accessibility against a running instance (see tools/a11y/README.md)
+	@test -n "$(SEI_PASS)" || { \
+		echo "SEI_PASS is not set. Example:"; \
+		echo "  make test-a11y SEI_URL=http://127.0.0.1:8090 SEI_USER=ops SEI_PASS=secret"; \
+		exit 1; }
+	cd tools/a11y && npm install --silent && \
+		SEI_URL="$(SEI_URL)" SEI_USER="$(SEI_USER)" SEI_PASS="$(SEI_PASS)" node audit.mjs && \
+		SEI_URL="$(SEI_URL)" SEI_USER="$(SEI_USER)" SEI_PASS="$(SEI_PASS)" node dialogs.mjs && \
+		SEI_URL="$(SEI_URL)" SEI_USER="$(SEI_USER)" SEI_PASS="$(SEI_PASS)" node keyboard.mjs
+
 .PHONY: lint
 lint: ## Vet the Go code and check frontend formatting
 	go vet ./...

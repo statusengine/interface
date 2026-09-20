@@ -29,9 +29,12 @@ export class Login {
   readonly busy = signal(false);
   readonly error = signal<string | null>(null);
 
-  /** Set when the interceptor bounced someone whose session ran out, so
-   *  the page explains why they are here instead of looking like a bug. */
-  readonly expired = computed(() => this.route.snapshot.queryParamMap.get('reason') === 'expired');
+  /** Why the visitor was sent here, if they were sent. Saying "your
+   *  session expired" during a database outage is a lie that sends
+   *  someone looking for the wrong problem. */
+  readonly reason = computed(() => this.route.snapshot.queryParamMap.get('reason'));
+  readonly expired = computed(() => this.reason() === 'expired');
+  readonly unavailable = computed(() => this.reason() === 'unavailable');
 
   readonly demoAvailable = computed(() => this.server.demoMode);
 

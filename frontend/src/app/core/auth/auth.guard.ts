@@ -18,8 +18,15 @@ export const authGuard: CanActivateFn = async (_route, state): Promise<boolean |
   if (auth.isAuthenticated()) {
     return true;
   }
-  // Remember where they were going, so the login lands them there.
-  return router.createUrlTree(['/login'], { queryParams: { next: state.url } });
+  // Remember where they were going, so the login lands them there. The
+  // reason matters: "we could not check" and "you are not signed in"
+  // need different things said on the other side.
+  return router.createUrlTree(['/login'], {
+    queryParams: {
+      next: state.url,
+      ...(auth.unavailable() ? { reason: 'unavailable' } : {}),
+    },
+  });
 };
 
 /** Guards a route behind one permission. */

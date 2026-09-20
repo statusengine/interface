@@ -18,13 +18,26 @@ import (
 	repo "github.com/statusengine/interface/internal/repository/mysql"
 )
 
+// Authenticator is the part of the auth service the HTTP layer uses.
+//
+// An interface rather than the concrete service so a handler test can
+// make authentication fail in a specific way - which is the only way to
+// pin down that a database outage answers 503 and not 401.
+type Authenticator interface {
+	Login(ctx context.Context, username, password, userAgent, ip string) (string, auth.Identity, error)
+	LoginDemo(ctx context.Context, userAgent, ip string) (string, auth.Identity, error)
+	Authenticate(ctx context.Context, token string) (auth.Identity, error)
+	Logout(ctx context.Context, token string) error
+	SessionTTL() time.Duration
+}
+
 // Server holds everything the handlers need. Dependencies are values, not
 // package globals, so a test can build one with fakes.
 type Server struct {
 	cfg  config.Config
 	log  *slog.Logger
 	db   *sql.DB
-	auth *auth.Service
+	auth Authenticator
 
 	// Repositories over the worker's tables. Constructed here rather
 	// than injected: they are thin and stateless, and a handler test
@@ -65,7 +78,7 @@ type Options struct {
 	Config config.Config
 	Logger *slog.Logger
 	DB     *sql.DB
-	Auth   *auth.Service
+	Auth   Authenticator
 	UI     fs.FS
 	Events *events.Hub
 }
@@ -185,7 +198,14 @@ func (s *Server) routes() http.Handler {
 		loggingMiddleware(s.log),
 		recoverMiddleware(s.log),
 		securityHeadersMiddleware,
+		timeoutMiddleware(s.cfg.QueryTimeout, isStreamingRequest),
 	)
+}
+
+// isStreamingRequest marks the responses that are meant to stay open,
+// so the request timeout does not cut them off.
+func isStreamingRequest(r *http.Request) bool {
+	return r.URL.Path == "/api/v1/events"
 }
 
 // handleEvents streams change notifications, or explains why it cannot.

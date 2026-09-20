@@ -51,35 +51,40 @@
 
   --ink: #131922;
   --ink-dim: #4d596b;
-  --ink-faint: #76829333;
+  --ink-faint: #616b7b;
 
   /* Interactive. Cyan is chosen for one reason: no monitoring state uses
    * it, so a link can never be misread as a status. */
-  --accent: #0b7d95;
-  --accent-hover: #096477;
+  --accent: #0a748b;
+  --accent-hover: #075a6c;
   --accent-ink: #ffffff;
-  --accent-wash: #0b7d9514;
+  --accent-wash: #0a748b14;
 
   /* States. Distinguishable by lightness as well as hue, because a red and
    * a green of equal lightness are one colour to a deuteranope.
+   *
+   * Every value here clears 4.5:1 against all three light surfaces -
+   * white, the ground, and the sunken rows a table alternates onto.
+   * They were computed against those three, not chosen by eye; the
+   * sunken surface is the binding one and it is easy to forget.
    *
    * UNKNOWN is violet rather than Nagios's orange. Orange next to a yellow
    * WARNING is the single most misread pair in the classic interface, and
    * the two mean very different things: one says the check succeeded and
    * the news is bad, the other says the check itself did not work. */
-  --state-ok: #1a7f52;
-  --state-warning: #9a6b00;
+  --state-ok: #19794e;
+  --state-warning: #8e6200;
   --state-critical: #c62a30;
   --state-unknown: #6d43c9;
   --state-unreachable: #a13a68;
-  --state-pending: #6a7686;
+  --state-pending: #616b7a;
 
-  --state-ok-wash: #1a7f5214;
-  --state-warning-wash: #9a6b0014;
+  --state-ok-wash: #19794e14;
+  --state-warning-wash: #8e620014;
   --state-critical-wash: #c62a3014;
   --state-unknown-wash: #6d43c914;
   --state-unreachable-wash: #a13a6814;
-  --state-pending-wash: #6a768614;
+  --state-pending-wash: #616b7a14;
 
   --shadow-raised: 0 1px 2px #13192214, 0 2px 8px #1319220a;
   --shadow-overlay: 0 4px 12px #13192226, 0 16px 40px #1319221f;
@@ -121,7 +126,7 @@
 
   --ink: #e4e9f0;
   --ink-dim: #9aa7b8;
-  --ink-faint: #6b7786;
+  --ink-faint: #828e9b;
 
   --accent: #3fb6d4;
   --accent-hover: #63c8e1;
@@ -133,14 +138,14 @@
   --state-critical: #ef5a5f;
   --state-unknown: #a98cf5;
   --state-unreachable: #d66a9d;
-  --state-pending: #7b8797;
+  --state-pending: #828e9d;
 
   --state-ok-wash: #3cb37f1f;
   --state-warning-wash: #dfa23c1f;
   --state-critical-wash: #ef5a5f1f;
   --state-unknown-wash: #a98cf51f;
   --state-unreachable-wash: #d66a9d1f;
-  --state-pending-wash: #7b87971f;
+  --state-pending-wash: #828e9d1f;
 
   --shadow-raised: 0 1px 2px #00000052, 0 2px 8px #00000038;
   --shadow-overlay: 0 4px 12px #00000066, 0 16px 40px #00000059;
@@ -171,7 +176,7 @@
 
     --ink: #e4e9f0;
     --ink-dim: #9aa7b8;
-    --ink-faint: #6b7786;
+    --ink-faint: #828e9b;
 
     --accent: #3fb6d4;
     --accent-hover: #63c8e1;
@@ -183,14 +188,14 @@
     --state-critical: #ef5a5f;
     --state-unknown: #a98cf5;
     --state-unreachable: #d66a9d;
-    --state-pending: #7b8797;
+    --state-pending: #828e9d;
 
     --state-ok-wash: #3cb37f1f;
     --state-warning-wash: #dfa23c1f;
     --state-critical-wash: #ef5a5f1f;
     --state-unknown-wash: #a98cf51f;
     --state-unreachable-wash: #d66a9d1f;
-    --state-pending-wash: #7b87971f;
+    --state-pending-wash: #828e9d1f;
 
     --shadow-raised: 0 1px 2px #00000052, 0 2px 8px #00000038;
     --shadow-overlay: 0 4px 12px #00000066, 0 16px 40px #00000059;
@@ -425,7 +430,6 @@
     padding: 0.5rem 0.625rem;
     font-size: 13px;
     color: var(--ink);
-    outline: none;
     transition: border-color 0.15s;
   }
 

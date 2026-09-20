@@ -83,7 +83,8 @@
     "enterDemo": "Als Gast fortfahren",
     "demoExplainer": "Nur lesend. Jeder Befehl wird abgelehnt.",
     "readOnlySession": "Nur lesend",
-    "sessionExpired": "Deine Sitzung ist abgelaufen. Melde dich an, um weiterzumachen."
+    "sessionExpired": "Deine Sitzung ist abgelaufen. Melde dich an, um weiterzumachen.",
+    "sessionUnverifiable": "Der Server konnte deine Sitzung nicht prüfen — eine benötigte Komponente ist nicht erreichbar. Deine Sitzung ist vermutlich in Ordnung; versuch es gleich nochmal."
   },
   "roles": {
     "admin": "Administrator",
@@ -114,7 +115,8 @@
     "forbiddenBody": "Diese Seite braucht eine Berechtigung, die deine Rolle nicht hat. Ein Administrator kann sie vergeben.",
     "notFoundTitle": "Seite gibt es nicht",
     "notFoundBody": "Diese Adresse passt zu nichts in dieser Oberfläche.",
-    "backToDashboard": "Zurück zur Übersicht"
+    "backToDashboard": "Zurück zur Übersicht",
+    "timeout": "Das hat zu lange gedauert. Grenze den Zeitraum ein, nenne einen Host, oder fordere weniger Zeilen an."
   },
   "list": {
     "loading": "Wird geladen",

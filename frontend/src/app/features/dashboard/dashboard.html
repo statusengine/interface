@@ -1,0 +1,158 @@
+<ng-container *transloco="let t">
+  <sei-page-header
+    [title]="t('pages.dashboard.title')"
+    [description]="t('pages.dashboard.description')"
+  >
+    <button
+      actions
+      type="button"
+      (click)="load()"
+      [disabled]="loading()"
+      class="inline-flex items-center gap-1.5 rounded-sm border border-line px-2.5 py-1.5 text-[13px] text-ink-dim transition-colors hover:border-line-strong hover:text-ink disabled:opacity-50"
+    >
+      <sei-icon name="refresh" [size]="14" />
+      {{ t('list.refresh') }}
+    </button>
+  </sei-page-header>
+
+  <div class="px-4 py-4 sm:px-6">
+    @if (summaryError()) {
+      <div class="max-w-prose rounded-md border-l-2 border-critical bg-surface p-4">
+        <h2 class="text-[15px]">{{ t('dashboard.errorTitle') }}</h2>
+        <p class="mt-1.5 text-[13px] text-ink-dim">{{ summaryError()!.message }}</p>
+        <button
+          type="button"
+          (click)="load()"
+          class="mt-3 rounded-sm border border-line px-2.5 py-1.5 text-[13px] transition-colors hover:border-line-strong"
+        >
+          {{ t('list.retry') }}
+        </button>
+      </div>
+    } @else if (summary(); as data) {
+      <!-- How current this is. A dashboard that cannot say when it last
+           heard from the core is a dashboard that can quietly show
+           yesterday's outage as today's calm. -->
+      <p
+        class="mb-4 flex items-center gap-1.5 text-[12px]"
+        [class.text-ink-dim]="!isStale()"
+        [class.text-warning]="isStale()"
+      >
+        <sei-icon [name]="isStale() ? 'alert' : 'clock'" [size]="13" />
+        @if (isStale()) {
+          {{ t('dashboard.stale', { since: staleness() | seiDuration }) }}
+        } @else {
+          {{ t('dashboard.fresh', { since: data.last_update | seiSince }) }}
+        }
+      </p>
+
+      <div class="grid gap-4 lg:grid-cols-2">
+        <sei-state-strip
+          [title]="t('nav.hosts')"
+          [counts]="data.hosts"
+          [states]="hostStates"
+          link="/hosts"
+        />
+        <sei-state-strip
+          [title]="t('nav.services')"
+          [counts]="data.services"
+          [states]="serviceStates"
+          link="/services"
+        />
+      </div>
+
+      <!-- The work itself. -->
+      <section class="mt-5 overflow-hidden rounded-md border border-line bg-surface">
+        <div
+          class="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-4 py-3"
+        >
+          <h2 class="text-[13px] font-medium">{{ t('dashboard.needsAttention') }}</h2>
+          @if (problemTotal() > problems().length) {
+            <a
+              routerLink="/problems"
+              [queryParams]="{ handled: 'false' }"
+              class="text-[12px] text-accent hover:underline"
+            >
+              {{ t('dashboard.seeAll', { total: problemTotal() }) }}
+            </a>
+          }
+        </div>
+
+        @if (problems().length === 0) {
+          <div class="px-4 py-8">
+            <p class="text-[13px] font-medium text-ok">{{ t('dashboard.allClearTitle') }}</p>
+            <p class="mt-1 max-w-prose text-[13px] text-ink-dim">
+              {{ t('dashboard.allClearBody') }}
+            </p>
+          </div>
+        } @else {
+          <table class="w-full border-collapse text-[13px]">
+            <tbody>
+              @for (problem of problems(); track key(problem)) {
+                <tr class="border-b border-line last:border-0 hover:bg-sunken">
+                  <td
+                    class="rail relative w-px whitespace-nowrap py-1.5 pr-3 align-top"
+                    [class]="stateClass(problem.state_text)"
+                    [class.rail-soft]="!problem.is_hard_state"
+                  >
+                    @if (problem.kind === 'host') {
+                      <a
+                        [routerLink]="['/hosts', problem.hostname]"
+                        class="mono font-medium text-ink hover:text-accent hover:underline"
+                        >{{ problem.hostname }}</a
+                      >
+                    } @else {
+                      <a
+                        [routerLink]="['/hosts', problem.hostname]"
+                        class="mono text-ink-dim hover:text-accent hover:underline"
+                        >{{ problem.hostname }}</a
+                      >
+                      <span class="text-ink-faint" aria-hidden="true">/</span>
+                      <a
+                        routerLink="/service"
+                        [queryParams]="{
+                          host: problem.hostname,
+                          service: problem.service_description,
+                        }"
+                        class="mono font-medium text-ink hover:text-accent hover:underline"
+                        >{{ problem.service_description }}</a
+                      >
+                    }
+                  </td>
+                  <td class="w-px whitespace-nowrap px-3 py-1.5 align-top">
+                    <sei-state-badge [state]="problem.state_text" [hard]="problem.is_hard_state" />
+                  </td>
+                  <td
+                    class="hidden w-px whitespace-nowrap px-3 py-1.5 align-top tabular-nums text-ink-dim sm:table-cell"
+                  >
+                    {{ duration(problem) | seiDuration }}
+                  </td>
+                  <td class="max-w-0 px-3 py-1.5 align-top">
+                    <span class="mono block truncate text-ink-dim" [title]="problem.output">{{
+                      problem.output
+                    }}</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+
+      @if (data.nodes.length > 1) {
+        <section class="mt-5 rounded-md border border-line bg-surface p-4">
+          <h2 class="mb-2 text-[13px] font-medium">{{ t('dashboard.nodes') }}</h2>
+          <ul class="flex flex-wrap gap-x-6 gap-y-1.5 text-[12px] text-ink-dim">
+            @for (node of data.nodes; track node.name) {
+              <li>
+                <span class="mono text-ink">{{ node.name || t('dashboard.unnamedNode') }}</span>
+                &mdash;
+                {{ t('dashboard.nodeCounts', { hosts: node.hosts, services: node.services }) }},
+                {{ node.last_update | seiSince }}
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    }
+  </div>
+</ng-container>

@@ -1,0 +1,69 @@
+<ng-container *transloco="let t">
+  <sei-page-header
+    [title]="t('pages.logentries.title')"
+    [description]="t('pages.logentries.description')"
+  />
+
+  <sei-toolbar [showClear]="store.hasFilters()" (clear)="store.clearFilters()">
+    <sei-search
+      [value]="$any(store.filters()['q']) ?? ''"
+      [placeholder]="t('logentries.searchPlaceholder')"
+      (search)="store.setSearch($event)"
+    />
+    <sei-range-picker
+      [from]="$any(store.filters()['from'])"
+      [to]="$any(store.filters()['to'])"
+      (change)="setRange($event)"
+    />
+  </sei-toolbar>
+
+  <sei-data-table
+    [loading]="store.loading()"
+    [empty]="store.isEmpty()"
+    [error]="store.error()?.message ?? null"
+    [emptyTitle]="t('logentries.emptyTitle')"
+    [emptyBody]="t('logentries.emptyBody')"
+    [showClear]="store.hasFilters()"
+    (clear)="store.clearFilters()"
+    (retry)="store.reload()"
+  >
+    <tr head>
+      <th
+        sei-sort
+        column="entry_time"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+      >
+        {{ t('columns.time') }}
+      </th>
+      <th class="w-full border-b border-line px-3 py-2 text-left font-medium text-ink-dim">
+        {{ t('columns.message') }}
+      </th>
+    </tr>
+
+    @for (entry of store.rows(); track entry.id) {
+      <tr body class="border-b border-line last:border-0 hover:bg-sunken">
+        <td class="whitespace-nowrap py-1.5 pl-4 pr-3 align-top tabular-nums text-ink-dim sm:pl-6">
+          {{ entry.entry_time | seiTimestamp }}
+        </td>
+        <td class="max-w-0 px-3 py-1.5 align-top">
+          <span
+            class="mono block truncate"
+            [class]="tone(entry.logentry_data)"
+            [title]="entry.logentry_data"
+            >{{ entry.logentry_data }}</span
+          >
+        </td>
+      </tr>
+    }
+  </sei-data-table>
+
+  <sei-pagination
+    [total]="store.total()"
+    [offset]="store.offset()"
+    [limit]="store.limit()"
+    (offsetChange)="store.setPage($event)"
+    (limitChange)="store.setLimit($event)"
+  />
+</ng-container>

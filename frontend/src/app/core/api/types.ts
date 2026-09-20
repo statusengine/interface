@@ -65,3 +65,165 @@ export type Permission =
   | 'commands:passiveresult'
   | 'commands:toggle'
   | 'users:manage';
+
+// --- monitoring ------------------------------------------------------------
+//
+// Timestamps are Unix seconds. Zero means "never" - the worker writes it
+// for things that have not happened yet - so never render one as a date.
+
+export type Kind = 'host' | 'service';
+
+/** Fields both status tables share. */
+interface StatusCommon {
+  state: number;
+  state_text: string;
+  is_hard_state: boolean;
+
+  output: string;
+  long_output?: string;
+  perfdata?: string;
+
+  current_check_attempt: number;
+  max_check_attempts: number;
+  last_check: number;
+  next_check: number;
+  last_state_change: number;
+  last_hard_state_change: number;
+  status_update_time: number;
+
+  acknowledged: boolean;
+  acknowledgement_type: number;
+  in_downtime: boolean;
+  scheduled_downtime_depth: number;
+  is_flapping: boolean;
+  notifications_enabled: boolean;
+  active_checks_enabled: boolean;
+  passive_checks_enabled: boolean;
+  is_passive_check: boolean;
+  event_handler_enabled: boolean;
+  flap_detection_enabled: boolean;
+
+  latency: number;
+  execution_time: number;
+
+  // Detail only.
+  check_command?: string;
+  event_handler?: string;
+  check_timeperiod?: string;
+  node_name?: string;
+  normal_check_interval?: number;
+  retry_check_interval?: number;
+  percent_state_change?: number;
+  last_notification?: number;
+  next_notification?: number;
+  current_notification_number?: number;
+}
+
+export interface HostStatus extends StatusCommon {
+  hostname: string;
+  last_time_up?: number;
+  last_time_down?: number;
+  last_time_unreachable?: number;
+}
+
+export interface ServiceStatus extends StatusCommon {
+  hostname: string;
+  service_description: string;
+  last_time_ok?: number;
+  last_time_warning?: number;
+  last_time_critical?: number;
+  last_time_unknown?: number;
+}
+
+export interface Problem {
+  kind: Kind;
+  hostname: string;
+  service_description?: string;
+  state: number;
+  state_text: string;
+  is_hard_state: boolean;
+  output: string;
+  current_check_attempt: number;
+  max_check_attempts: number;
+  last_check: number;
+  last_state_change: number;
+  acknowledged: boolean;
+  in_downtime: boolean;
+  is_flapping: boolean;
+  notifications_enabled: boolean;
+  /** The host this service runs on is itself down, so this is probably a
+   *  symptom rather than a separate incident. */
+  host_is_down?: boolean;
+}
+
+export interface Downtime {
+  kind: Kind;
+  hostname: string;
+  service_description?: string;
+  internal_id: number;
+  node_name?: string;
+  author: string;
+  comment: string;
+  entry_time: number;
+  scheduled_start_time: number;
+  scheduled_end_time: number;
+  is_fixed: boolean;
+  duration: number;
+  was_started: boolean;
+  actual_start_time: number;
+  triggered_by_id?: number;
+  /** History only. */
+  actual_end_time?: number;
+  was_cancelled?: boolean;
+}
+
+export interface Acknowledgement {
+  kind: Kind;
+  hostname: string;
+  service_description?: string;
+  entry_time: number;
+  state: number;
+  state_text: string;
+  author: string;
+  comment: string;
+  is_sticky: boolean;
+  persistent_comment: boolean;
+  notify_contacts: boolean;
+  acknowledgement_type: number;
+}
+
+export interface LogEntry {
+  id: number;
+  entry_time: number;
+  logentry_type: number;
+  logentry_data: string;
+  node_name?: string;
+}
+
+export interface StateCounts {
+  total: number;
+  pending: number;
+  by_state: Record<string, number>;
+  problems: number;
+  unhandled: number;
+  acknowledged: number;
+  in_downtime: number;
+  flapping: number;
+  notifications_disabled: number;
+  active_checks_disabled: number;
+}
+
+export interface MonitoringNode {
+  name: string;
+  hosts: number;
+  services: number;
+  last_update: number;
+}
+
+export interface Summary {
+  hosts: StateCounts;
+  services: StateCounts;
+  /** Newest status_update_time across both tables: how current this is. */
+  last_update: number;
+  nodes: MonitoringNode[];
+}

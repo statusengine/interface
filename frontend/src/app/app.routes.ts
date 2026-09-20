@@ -2,18 +2,14 @@ import type { Routes } from '@angular/router';
 import { anonymousGuard, authGuard, permissionGuard } from './core/auth/auth.guard';
 import { PlaceholderPage } from './features/placeholder-page';
 import { Shell } from './layout/shell/shell';
+import type { Permission } from './core/api/types';
 
 /**
  * Pages scheduled for a later phase are routed now, to the placeholder,
  * so the navigation rail is complete from the first build and nothing in
  * it dead-ends.
  */
-function placeholder(
-  path: string,
-  titleKey: string,
-  phase: number,
-  needs?: Parameters<typeof permissionGuard>[0],
-) {
+function placeholder(path: string, titleKey: string, phase: number, needs?: Permission) {
   return {
     path,
     component: PlaceholderPage,
@@ -35,13 +31,69 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
 
-      placeholder('dashboard', 'dashboard', 2),
-      placeholder('problems', 'problems', 2, 'problems:read'),
-      placeholder('hosts', 'hosts', 2, 'hosts:read'),
-      placeholder('services', 'services', 2, 'services:read'),
-      placeholder('downtimes', 'downtimes', 2, 'downtimes:read'),
-      placeholder('acknowledgements', 'acknowledgements', 2, 'acknowledgements:read'),
-      placeholder('logentries', 'logentries', 2, 'logentries:read'),
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
+      },
+      {
+        path: 'problems',
+        canActivate: [permissionGuard('problems:read')],
+        loadComponent: () =>
+          import('./features/problems/problems-list').then((m) => m.ProblemsList),
+      },
+      {
+        path: 'hosts',
+        canActivate: [permissionGuard('hosts:read')],
+        loadComponent: () => import('./features/hosts/hosts-list').then((m) => m.HostsList),
+      },
+      {
+        path: 'hosts/:host',
+        canActivate: [permissionGuard('hosts:read')],
+        loadComponent: () => import('./features/hosts/host-detail').then((m) => m.HostDetail),
+      },
+      {
+        path: 'services',
+        canActivate: [permissionGuard('services:read')],
+        loadComponent: () =>
+          import('./features/services/services-list').then((m) => m.ServicesList),
+      },
+      {
+        // Singular, and identified by query parameters: a Naemon service
+        // description is free text and routinely contains slashes.
+        path: 'service',
+        canActivate: [permissionGuard('services:read')],
+        loadComponent: () =>
+          import('./features/services/service-detail').then((m) => m.ServiceDetail),
+      },
+      {
+        path: 'downtimes',
+        canActivate: [permissionGuard('downtimes:read')],
+        data: { history: false },
+        loadComponent: () =>
+          import('./features/downtimes/downtimes-list').then((m) => m.DowntimesList),
+      },
+      {
+        path: 'downtimes/history',
+        canActivate: [permissionGuard('downtimes:read')],
+        data: { history: true },
+        loadComponent: () =>
+          import('./features/downtimes/downtimes-list').then((m) => m.DowntimesList),
+      },
+      {
+        path: 'acknowledgements',
+        canActivate: [permissionGuard('acknowledgements:read')],
+        loadComponent: () =>
+          import('./features/acknowledgements/acknowledgements-list').then(
+            (m) => m.AcknowledgementsList,
+          ),
+      },
+      {
+        path: 'logentries',
+        canActivate: [permissionGuard('logentries:read')],
+        loadComponent: () =>
+          import('./features/logentries/logentries-list').then((m) => m.LogEntriesList),
+      },
+
       placeholder('history/checks', 'historyChecks', 3, 'history:read'),
       placeholder('history/statechanges', 'historyStateChanges', 3, 'history:read'),
       placeholder('history/notifications', 'historyNotifications', 3, 'history:read'),

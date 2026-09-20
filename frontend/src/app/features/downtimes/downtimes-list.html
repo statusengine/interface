@@ -1,0 +1,180 @@
+<ng-container *transloco="let t">
+  <sei-page-header
+    [title]="t('pages.' + titleKey + '.title')"
+    [description]="t('pages.' + titleKey + '.description')"
+  >
+    <nav class="mt-3 flex gap-1" [attr.aria-label]="t('downtimes.viewSwitch')">
+      <a
+        routerLink="/downtimes"
+        routerLinkActive="border-accent text-accent bg-accent-wash"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="rounded-sm border border-line px-2.5 py-1 text-[12px] text-ink-dim transition-colors hover:text-ink"
+      >
+        {{ t('downtimes.current') }}
+      </a>
+      <a
+        routerLink="/downtimes/history"
+        routerLinkActive="border-accent text-accent bg-accent-wash"
+        class="rounded-sm border border-line px-2.5 py-1 text-[12px] text-ink-dim transition-colors hover:text-ink"
+      >
+        {{ t('downtimes.past') }}
+      </a>
+    </nav>
+  </sei-page-header>
+
+  <sei-toolbar [showClear]="store.hasFilters()" (clear)="store.clearFilters()">
+    <sei-search
+      [value]="$any(store.filters()['q']) ?? ''"
+      [placeholder]="t('downtimes.searchPlaceholder')"
+      (search)="store.setSearch($event)"
+    />
+    @if (!history) {
+      <sei-filter-toggle
+        [label]="t('filters.running')"
+        [value]="$any(store.filters()['running'])"
+        (valueChange)="store.setFilter('running', $event)"
+      />
+    }
+  </sei-toolbar>
+
+  <sei-data-table
+    [loading]="store.loading()"
+    [empty]="store.isEmpty()"
+    [error]="store.error()?.message ?? null"
+    [emptyTitle]="
+      history
+        ? t('downtimes.emptyHistoryTitle')
+        : store.hasFilters()
+          ? t('downtimes.emptyFilteredTitle')
+          : t('downtimes.emptyTitle')
+    "
+    [emptyBody]="
+      history
+        ? t('downtimes.emptyHistoryBody')
+        : store.hasFilters()
+          ? t('downtimes.emptyFilteredBody')
+          : t('downtimes.emptyBody')
+    "
+    [showClear]="store.hasFilters()"
+    (clear)="store.clearFilters()"
+    (retry)="store.reload()"
+  >
+    <tr head>
+      <th
+        sei-sort
+        column="hostname"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+      >
+        {{ t('columns.object') }}
+      </th>
+      <th
+        sei-sort
+        column="scheduled_start_time"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+      >
+        {{ t('columns.starts') }}
+      </th>
+      <th
+        sei-sort
+        column="scheduled_end_time"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+        class="hidden md:table-cell"
+      >
+        {{ t('columns.ends') }}
+      </th>
+      <th class="w-px border-b border-line px-3 py-2 text-left font-medium text-ink-dim">
+        {{ t('columns.duration') }}
+      </th>
+      <th
+        sei-sort
+        column="author"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+        class="hidden lg:table-cell"
+      >
+        {{ t('columns.author') }}
+      </th>
+      <th class="w-full border-b border-line px-3 py-2 text-left font-medium text-ink-dim">
+        {{ t('columns.comment') }}
+      </th>
+    </tr>
+
+    @for (downtime of store.rows(); track key(downtime)) {
+      <tr body class="border-b border-line last:border-0 hover:bg-sunken">
+        <td
+          class="rail relative whitespace-nowrap py-1.5 pr-3 align-top"
+          [class]="isRunning(downtime) ? 'state-pending' : ''"
+        >
+          <div class="flex items-center gap-1.5">
+            <a
+              [routerLink]="['/hosts', downtime.hostname]"
+              class="mono hover:text-accent hover:underline"
+              [class.text-ink]="downtime.kind === 'host'"
+              [class.font-medium]="downtime.kind === 'host'"
+              [class.text-ink-dim]="downtime.kind === 'service'"
+              >{{ downtime.hostname }}</a
+            >
+            @if (downtime.kind === 'service') {
+              <span class="text-ink-faint" aria-hidden="true">/</span>
+              <a
+                routerLink="/service"
+                [queryParams]="{ host: downtime.hostname, service: downtime.service_description }"
+                class="mono font-medium text-ink hover:text-accent hover:underline"
+                >{{ downtime.service_description }}</a
+              >
+            }
+            @if (isRunning(downtime)) {
+              <span class="rounded-xs border border-accent px-1.5 py-0.5 text-[11px] text-accent">{{
+                t('downtimes.runningNow')
+              }}</span>
+            }
+            @if (downtime.was_cancelled) {
+              <span class="rounded-xs border border-line px-1.5 py-0.5 text-[11px] text-ink-dim">{{
+                t('downtimes.cancelled')
+              }}</span>
+            }
+          </div>
+        </td>
+        <td class="whitespace-nowrap px-3 py-1.5 align-top tabular-nums text-ink-dim">
+          {{ downtime.scheduled_start_time | seiTimestamp }}
+        </td>
+        <td
+          class="hidden whitespace-nowrap px-3 py-1.5 align-top tabular-nums text-ink-dim md:table-cell"
+        >
+          {{ downtime.scheduled_end_time | seiTimestamp }}
+        </td>
+        <td class="whitespace-nowrap px-3 py-1.5 align-top tabular-nums text-ink-dim">
+          {{ span(downtime) | seiDuration }}
+          @if (!downtime.is_fixed) {
+            <span class="ml-1 text-[11px]" [title]="t('downtimes.flexibleTitle')">{{
+              t('downtimes.flexible')
+            }}</span>
+          }
+        </td>
+        <td class="hidden whitespace-nowrap px-3 py-1.5 align-top text-ink-dim lg:table-cell">
+          {{ downtime.author }}
+        </td>
+        <td class="max-w-0 px-3 py-1.5 align-top">
+          <span class="block truncate text-ink-dim" [title]="downtime.comment">{{
+            downtime.comment
+          }}</span>
+        </td>
+      </tr>
+    }
+  </sei-data-table>
+
+  <sei-pagination
+    [total]="store.total()"
+    [offset]="store.offset()"
+    [limit]="store.limit()"
+    (offsetChange)="store.setPage($event)"
+    (limitChange)="store.setLimit($event)"
+  />
+</ng-container>

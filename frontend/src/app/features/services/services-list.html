@@ -1,0 +1,184 @@
+<ng-container *transloco="let t">
+  <sei-page-header
+    [title]="t('pages.services.title')"
+    [description]="t('pages.services.description')"
+  />
+
+  <sei-toolbar [showClear]="store.hasFilters()" (clear)="store.clearFilters()">
+    <sei-search
+      [value]="$any(store.filters()['q']) ?? ''"
+      [placeholder]="t('services.searchPlaceholder')"
+      (search)="store.setSearch($event)"
+    />
+    <sei-state-filter
+      [options]="serviceStates"
+      [value]="$any(store.filters()['state'])"
+      (valueChange)="store.setFilter('state', $event)"
+    />
+    <sei-filter-toggle
+      [label]="t('filters.handled')"
+      [value]="$any(store.filters()['handled'])"
+      (valueChange)="store.setFilter('handled', $event)"
+    />
+    <sei-filter-toggle
+      [label]="t('filters.acknowledged')"
+      [value]="$any(store.filters()['acknowledged'])"
+      (valueChange)="store.setFilter('acknowledged', $event)"
+    />
+    <sei-filter-toggle
+      [label]="t('filters.inDowntime')"
+      [value]="$any(store.filters()['in_downtime'])"
+      (valueChange)="store.setFilter('in_downtime', $event)"
+    />
+    <sei-filter-toggle
+      [label]="t('filters.notifications')"
+      [value]="$any(store.filters()['notifications_enabled'])"
+      (valueChange)="store.setFilter('notifications_enabled', $event)"
+    />
+  </sei-toolbar>
+
+  <sei-data-table
+    [loading]="store.loading()"
+    [empty]="store.isEmpty()"
+    [error]="store.error()?.message ?? null"
+    [emptyTitle]="store.hasFilters() ? t('services.emptyFilteredTitle') : t('services.emptyTitle')"
+    [emptyBody]="store.hasFilters() ? t('services.emptyFilteredBody') : t('services.emptyBody')"
+    [showClear]="store.hasFilters()"
+    (clear)="store.clearFilters()"
+    (retry)="store.reload()"
+  >
+    <tr head>
+      <th
+        sei-sort
+        column="hostname"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+      >
+        {{ t('columns.host') }}
+      </th>
+      <th
+        sei-sort
+        column="service_description"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+      >
+        {{ t('columns.service') }}
+      </th>
+      <th
+        sei-sort
+        column="severity"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+        class="hidden sm:table-cell"
+      >
+        {{ t('columns.state') }}
+      </th>
+      <th
+        sei-sort
+        column="last_state_change"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+        class="hidden sm:table-cell"
+      >
+        {{ t('columns.duration') }}
+      </th>
+      <th
+        sei-sort
+        column="current_check_attempt"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+        class="hidden lg:table-cell"
+      >
+        {{ t('columns.attempt') }}
+      </th>
+      <th
+        sei-sort
+        column="last_check"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+        class="hidden md:table-cell"
+      >
+        {{ t('columns.lastCheck') }}
+      </th>
+      <th
+        class="hidden w-full border-b border-line px-3 py-2 text-left font-medium text-ink-dim sm:table-cell"
+      >
+        {{ t('columns.output') }}
+      </th>
+    </tr>
+
+    @for (service of store.rows(); track key(service)) {
+      <tr body class="border-b border-line last:border-0 hover:bg-sunken">
+        <td
+          class="rail relative py-1.5 pr-3 align-top whitespace-normal sm:whitespace-nowrap"
+          [class]="stateClass(service.state_text)"
+          [class.rail-soft]="!service.is_hard_state"
+        >
+          <a
+            [routerLink]="['/hosts', service.hostname]"
+            class="mono text-ink-dim hover:text-accent hover:underline"
+            >{{ service.hostname }}</a
+          >
+        </td>
+        <td class="whitespace-nowrap px-3 py-1.5 align-top">
+          <div class="flex items-center gap-1.5">
+            <a
+              routerLink="/service"
+              [queryParams]="{ host: service.hostname, service: service.service_description }"
+              class="mono font-medium text-ink hover:text-accent hover:underline"
+            >
+              {{ service.service_description }}
+            </a>
+            <span class="sm:hidden">
+              <sei-state-badge [state]="service.state_text" [hard]="service.is_hard_state" />
+            </span>
+            <sei-row-flags
+              [acknowledged]="service.acknowledged"
+              [inDowntime]="service.in_downtime"
+              [flapping]="service.is_flapping"
+              [notificationsEnabled]="service.notifications_enabled"
+              [activeChecksEnabled]="service.active_checks_enabled"
+            />
+          </div>
+        </td>
+        <td class="hidden px-3 py-1.5 align-top sm:table-cell">
+          <sei-state-badge [state]="service.state_text" [hard]="service.is_hard_state" />
+        </td>
+        <td
+          class="hidden whitespace-nowrap px-3 py-1.5 align-top tabular-nums text-ink-dim sm:table-cell"
+        >
+          {{ duration(service) | seiDuration }}
+        </td>
+        <td
+          class="hidden whitespace-nowrap px-3 py-1.5 align-top tabular-nums text-ink-dim lg:table-cell"
+        >
+          {{ service.current_check_attempt }}/{{ service.max_check_attempts }}
+        </td>
+        <td
+          class="hidden whitespace-nowrap px-3 py-1.5 align-top tabular-nums text-ink-dim md:table-cell"
+        >
+          {{ service.last_check | seiSince }}
+        </td>
+        <td class="hidden max-w-0 px-3 py-1.5 align-top sm:table-cell">
+          <span class="mono block truncate text-ink-dim" [title]="service.output">{{
+            service.output
+          }}</span>
+        </td>
+      </tr>
+    }
+  </sei-data-table>
+
+  <sei-pagination
+    [total]="store.total()"
+    [offset]="store.offset()"
+    [limit]="store.limit()"
+    (offsetChange)="store.setPage($event)"
+    (limitChange)="store.setLimit($event)"
+  />
+</ng-container>

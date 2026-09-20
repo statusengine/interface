@@ -1,0 +1,194 @@
+<ng-container *transloco="let t">
+  @if (error()) {
+    <div class="px-4 py-12 sm:px-6">
+      <div class="max-w-prose">
+        <h1>{{ t('detail.hostNotFoundTitle') }}</h1>
+        <p class="mt-2 text-[13px] text-ink-dim">
+          {{
+            error()!.status === 404
+              ? t('detail.hostNotFoundBody', { host: hostname })
+              : error()!.message
+          }}
+        </p>
+        <p class="mt-5">
+          <a routerLink="/hosts" class="text-[13px] text-accent hover:underline">{{
+            t('detail.backToHosts')
+          }}</a>
+        </p>
+      </div>
+    </div>
+  } @else if (host(); as data) {
+    <!-- The rail runs the full height of the header, so the state is the
+         first thing on the page in exactly the same visual language the
+         tables use. -->
+    <header
+      class="rail border-b border-line bg-surface px-4 py-4 sm:px-6"
+      [class]="stateClass(data.state_text)"
+      [class.rail-soft]="!data.is_hard_state"
+    >
+      <nav class="mb-1.5 text-[12px] text-ink-dim" [attr.aria-label]="t('detail.breadcrumb')">
+        <a routerLink="/hosts" class="hover:text-ink hover:underline">{{ t('nav.hosts') }}</a>
+      </nav>
+
+      <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h1 class="mono">{{ data.hostname }}</h1>
+        <sei-state-badge [state]="data.state_text" [hard]="data.is_hard_state" />
+        <span class="text-[13px] text-ink-dim">{{
+          t('detail.forDuration', { duration: duration() | seiDuration })
+        }}</span>
+        <sei-row-flags
+          [acknowledged]="data.acknowledged"
+          [inDowntime]="data.in_downtime"
+          [flapping]="data.is_flapping"
+          [notificationsEnabled]="data.notifications_enabled"
+          [activeChecksEnabled]="data.active_checks_enabled"
+        />
+      </div>
+
+      <p class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-ink-dim">
+        <span [title]="data.last_check | seiTimestamp">
+          {{ t('detail.checkedAgo', { ago: data.last_check | seiSince }) }}
+        </span>
+        <span [title]="data.next_check | seiTimestamp">
+          {{ t('detail.nextCheck', { when: data.next_check | seiSince }) }}
+        </span>
+      </p>
+    </header>
+
+    <div class="px-4 py-4 sm:px-6">
+      <section class="rounded-md border border-line bg-surface p-4">
+        <h2 class="mb-2.5 text-[13px] font-medium">{{ t('detail.output') }}</h2>
+        <sei-plugin-output
+          [output]="data.output"
+          [longOutput]="data.long_output ?? ''"
+          [perfdata]="data.perfdata ?? ''"
+        />
+      </section>
+
+      <section class="mt-4 rounded-md border border-line bg-surface p-4">
+        <h2 class="mb-3 text-[13px] font-medium">{{ t('detail.check') }}</h2>
+        <sei-fact-list [facts]="facts()" />
+      </section>
+
+      <section class="mt-4 rounded-md border border-line bg-surface p-4">
+        <h2 class="mb-3 text-[13px] font-medium">{{ t('detail.stateTimes') }}</h2>
+        <dl class="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
+          <div>
+            <dt class="text-[11px] text-ink-dim">{{ t('detail.lastStateChange') }}</dt>
+            <dd class="text-[13px]">{{ data.last_state_change | seiTimestamp }}</dd>
+          </div>
+          <div>
+            <dt class="text-[11px] text-ink-dim">{{ t('detail.lastUp') }}</dt>
+            <dd class="text-[13px]">{{ data.last_time_up | seiTimestamp }}</dd>
+          </div>
+          <div>
+            <dt class="text-[11px] text-ink-dim">{{ t('detail.lastDown') }}</dt>
+            <dd class="text-[13px]">{{ data.last_time_down | seiTimestamp }}</dd>
+          </div>
+          <div>
+            <dt class="text-[11px] text-ink-dim">{{ t('detail.lastUnreachable') }}</dt>
+            <dd class="text-[13px]">{{ data.last_time_unreachable | seiTimestamp }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="mt-4 overflow-hidden rounded-md border border-line bg-surface">
+        <div
+          class="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-4 py-3"
+        >
+          <h2 class="text-[13px] font-medium">{{ t('detail.servicesOnHost') }}</h2>
+          <a
+            routerLink="/services"
+            [queryParams]="{ host: hostname }"
+            class="inline-flex items-center gap-1 text-[12px] text-accent hover:underline"
+          >
+            {{ t('detail.openInServices') }}
+            <sei-icon name="external" [size]="12" />
+          </a>
+        </div>
+
+        <sei-data-table
+          [loading]="services.loading()"
+          [empty]="services.isEmpty()"
+          [error]="services.error()?.message ?? null"
+          [emptyTitle]="t('detail.noServicesTitle')"
+          [emptyBody]="t('detail.noServicesBody')"
+          (retry)="services.reload()"
+        >
+          <tr head>
+            <th
+              sei-sort
+              column="service_description"
+              [active]="services.sort()"
+              [desc]="services.desc()"
+              (sort)="services.toggleSort($event)"
+            >
+              {{ t('columns.service') }}
+            </th>
+            <th
+              sei-sort
+              column="severity"
+              [active]="services.sort()"
+              [desc]="services.desc()"
+              (sort)="services.toggleSort($event)"
+            >
+              {{ t('columns.state') }}
+            </th>
+            <th
+              sei-sort
+              column="last_state_change"
+              [active]="services.sort()"
+              [desc]="services.desc()"
+              (sort)="services.toggleSort($event)"
+              class="hidden sm:table-cell"
+            >
+              {{ t('columns.duration') }}
+            </th>
+            <th class="w-full border-b border-line px-3 py-2 text-left font-medium text-ink-dim">
+              {{ t('columns.output') }}
+            </th>
+          </tr>
+
+          @for (service of services.rows(); track service.service_description) {
+            <tr body class="border-b border-line last:border-0 hover:bg-sunken">
+              <td
+                class="rail relative whitespace-nowrap py-1.5 pr-3 align-top"
+                [class]="stateClass(service.state_text)"
+                [class.rail-soft]="!service.is_hard_state"
+              >
+                <div class="flex items-center gap-1.5">
+                  <a
+                    routerLink="/service"
+                    [queryParams]="{ host: service.hostname, service: service.service_description }"
+                    class="mono font-medium text-ink hover:text-accent hover:underline"
+                    >{{ service.service_description }}</a
+                  >
+                  <sei-row-flags
+                    [acknowledged]="service.acknowledged"
+                    [inDowntime]="service.in_downtime"
+                    [flapping]="service.is_flapping"
+                    [notificationsEnabled]="service.notifications_enabled"
+                    [activeChecksEnabled]="service.active_checks_enabled"
+                  />
+                </div>
+              </td>
+              <td class="px-3 py-1.5 align-top">
+                <sei-state-badge [state]="service.state_text" [hard]="service.is_hard_state" />
+              </td>
+              <td
+                class="hidden whitespace-nowrap px-3 py-1.5 align-top tabular-nums text-ink-dim sm:table-cell"
+              >
+                {{ serviceDuration(service) | seiDuration }}
+              </td>
+              <td class="max-w-0 px-3 py-1.5 align-top">
+                <span class="mono block truncate text-ink-dim" [title]="service.output">{{
+                  service.output
+                }}</span>
+              </td>
+            </tr>
+          }
+        </sei-data-table>
+      </section>
+    </div>
+  }
+</ng-container>

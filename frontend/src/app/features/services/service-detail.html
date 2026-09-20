@@ -1,0 +1,106 @@
+<ng-container *transloco="let t">
+  @if (error()) {
+    <div class="px-4 py-12 sm:px-6">
+      <div class="max-w-prose">
+        <h1>{{ t('detail.serviceNotFoundTitle') }}</h1>
+        <p class="mt-2 text-[13px] text-ink-dim">
+          {{
+            error()!.status === 404
+              ? t('detail.serviceNotFoundBody', { service: description, host: hostname })
+              : error()!.message
+          }}
+        </p>
+        <p class="mt-5">
+          <a routerLink="/services" class="text-[13px] text-accent hover:underline">{{
+            t('detail.backToServices')
+          }}</a>
+        </p>
+      </div>
+    </div>
+  } @else if (service(); as data) {
+    <header
+      class="rail border-b border-line bg-surface px-4 py-4 sm:px-6"
+      [class]="stateClass(data.state_text)"
+      [class.rail-soft]="!data.is_hard_state"
+    >
+      <nav class="mb-1.5 text-[12px] text-ink-dim" [attr.aria-label]="t('detail.breadcrumb')">
+        <a routerLink="/services" class="hover:text-ink hover:underline">{{ t('nav.services') }}</a>
+        <span class="px-1.5 text-ink-faint" aria-hidden="true">/</span>
+        <a [routerLink]="['/hosts', data.hostname]" class="mono hover:text-ink hover:underline">{{
+          data.hostname
+        }}</a>
+      </nav>
+
+      <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h1 class="mono">{{ data.service_description }}</h1>
+        <sei-state-badge [state]="data.state_text" [hard]="data.is_hard_state" />
+        <span class="text-[13px] text-ink-dim">{{
+          t('detail.forDuration', { duration: duration() | seiDuration })
+        }}</span>
+        <sei-row-flags
+          [acknowledged]="data.acknowledged"
+          [inDowntime]="data.in_downtime"
+          [flapping]="data.is_flapping"
+          [notificationsEnabled]="data.notifications_enabled"
+          [activeChecksEnabled]="data.active_checks_enabled"
+        />
+      </div>
+
+      <p class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-ink-dim">
+        <span [title]="data.last_check | seiTimestamp">
+          {{ t('detail.checkedAgo', { ago: data.last_check | seiSince }) }}
+        </span>
+        <span [title]="data.next_check | seiTimestamp">
+          {{ t('detail.nextCheck', { when: data.next_check | seiSince }) }}
+        </span>
+      </p>
+    </header>
+
+    <div class="px-4 py-4 sm:px-6">
+      <section class="rounded-md border border-line bg-surface p-4">
+        <h2 class="mb-2.5 text-[13px] font-medium">{{ t('detail.output') }}</h2>
+        <sei-plugin-output
+          [output]="data.output"
+          [longOutput]="data.long_output ?? ''"
+          [perfdata]="data.perfdata ?? ''"
+        />
+        @if (data.perfdata) {
+          <p class="mt-2.5 border-t border-line pt-2.5 text-[12px] text-ink-dim">
+            {{ t('detail.chartsComingInPhase3') }}
+          </p>
+        }
+      </section>
+
+      <section class="mt-4 rounded-md border border-line bg-surface p-4">
+        <h2 class="mb-3 text-[13px] font-medium">{{ t('detail.check') }}</h2>
+        <sei-fact-list [facts]="facts()" />
+      </section>
+
+      <section class="mt-4 rounded-md border border-line bg-surface p-4">
+        <h2 class="mb-3 text-[13px] font-medium">{{ t('detail.stateTimes') }}</h2>
+        <dl class="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-5">
+          <div>
+            <dt class="text-[11px] text-ink-dim">{{ t('detail.lastStateChange') }}</dt>
+            <dd class="text-[13px]">{{ data.last_state_change | seiTimestamp }}</dd>
+          </div>
+          <div>
+            <dt class="text-[11px] text-ink-dim">{{ t('states.ok') }}</dt>
+            <dd class="text-[13px]">{{ data.last_time_ok | seiTimestamp }}</dd>
+          </div>
+          <div>
+            <dt class="text-[11px] text-ink-dim">{{ t('states.warning') }}</dt>
+            <dd class="text-[13px]">{{ data.last_time_warning | seiTimestamp }}</dd>
+          </div>
+          <div>
+            <dt class="text-[11px] text-ink-dim">{{ t('states.critical') }}</dt>
+            <dd class="text-[13px]">{{ data.last_time_critical | seiTimestamp }}</dd>
+          </div>
+          <div>
+            <dt class="text-[11px] text-ink-dim">{{ t('states.unknown') }}</dt>
+            <dd class="text-[13px]">{{ data.last_time_unknown | seiTimestamp }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+  }
+</ng-container>

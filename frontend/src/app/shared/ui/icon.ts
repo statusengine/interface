@@ -31,7 +31,19 @@ export type IconName =
   | 'user'
   | 'globe'
   | 'collapse'
-  | 'expand';
+  | 'expand'
+  | 'arrow-up'
+  | 'arrow-down'
+  | 'sort'
+  | 'filter'
+  | 'refresh'
+  | 'external'
+  | 'clock'
+  | 'alert'
+  | 'check-circle'
+  | 'pause'
+  | 'bell-off'
+  | 'wave';
 
 const PATHS: Record<IconName, string> = {
   dashboard: 'M3 3h7v7H3zM14 3h7v4h-7zM14 10h7v11h-7zM3 13h7v8H3z',
@@ -57,6 +69,19 @@ const PATHS: Record<IconName, string> = {
     'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z',
   collapse: 'M15.5 5l-7 7 7 7M20 5v14',
   expand: 'M8.5 5l7 7-7 7M4 5v14',
+  'arrow-up': 'M12 19V5M6 11l6-6 6 6',
+  'arrow-down': 'M12 5v14M6 13l6 6 6-6',
+  sort: 'M8 8.5L11 5l3 3.5M8 15.5l3 3.5 3-3.5',
+  filter: 'M3 5h18l-7 8v6l-4 2v-8z',
+  refresh: 'M20.5 12a8.5 8.5 0 1 1-2.5-6M20.5 4v5H15.5',
+  external: 'M14 4h6v6M20 4l-8 8M18 14v5.5H4.5V6H10',
+  clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5.2l3.4 2',
+  alert: 'M12 3 2.5 20h19zM12 10v4M12 17.2v.05',
+  'check-circle': 'M21 12a9 9 0 1 1-4.2-7.6M8.5 12l2.7 2.7L21 5',
+  pause: 'M9 5v14M15 5v14',
+  'bell-off':
+    'M9 19a3 3 0 0 0 6 0M18 15V11a6 6 0 0 0-8-5.7M6.2 8.6A6 6 0 0 0 6 11v4l-2 3h14M3 3l18 18',
+  wave: 'M2 12c2.5 0 2.5-6 5-6s2.5 12 5 12 2.5-6 5-6 2.5 3 5 3',
 };
 
 @Component({

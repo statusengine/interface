@@ -1,0 +1,193 @@
+<ng-container *transloco="let t">
+  <sei-page-header
+    [title]="t('pages.problems.title')"
+    [description]="t('pages.problems.description')"
+  />
+
+  <sei-toolbar [showClear]="store.hasFilters()" (clear)="store.clearFilters()">
+    <sei-search
+      [value]="$any(store.filters()['q']) ?? ''"
+      [placeholder]="t('problems.searchPlaceholder')"
+      (search)="store.setSearch($event)"
+    />
+
+    <button
+      type="button"
+      (click)="cycleKind()"
+      class="whitespace-nowrap rounded-sm border px-2 py-1 text-[12px] transition-colors"
+      [class.border-accent]="store.filters()['kind'] !== undefined"
+      [class.text-accent]="store.filters()['kind'] !== undefined"
+      [class.bg-accent-wash]="store.filters()['kind'] !== undefined"
+      [class.border-line]="store.filters()['kind'] === undefined"
+      [class.text-ink-dim]="store.filters()['kind'] === undefined"
+    >
+      {{ t('filters.kind') }} <span class="font-medium">{{ t(kindLabelKey()) }}</span>
+    </button>
+
+    <sei-filter-toggle
+      [label]="t('filters.handled')"
+      [value]="$any(store.filters()['handled'])"
+      (valueChange)="store.setFilter('handled', $event)"
+    />
+    <sei-filter-toggle
+      [label]="t('filters.hardState')"
+      [value]="$any(store.filters()['hard_state'])"
+      (valueChange)="store.setFilter('hard_state', $event)"
+    />
+
+    <!-- On this installation that turns 18 rows into 5: thirteen of them
+         were services of three hosts that are down. -->
+    <button
+      type="button"
+      (click)="
+        store.setFilter(
+          'hide_services_of_down_hosts',
+          store.filters()['hide_services_of_down_hosts'] ? undefined : 'true'
+        )
+      "
+      class="whitespace-nowrap rounded-sm border px-2 py-1 text-[12px] transition-colors"
+      [class.border-accent]="store.filters()['hide_services_of_down_hosts']"
+      [class.text-accent]="store.filters()['hide_services_of_down_hosts']"
+      [class.bg-accent-wash]="store.filters()['hide_services_of_down_hosts']"
+      [class.border-line]="!store.filters()['hide_services_of_down_hosts']"
+      [class.text-ink-dim]="!store.filters()['hide_services_of_down_hosts']"
+      [attr.aria-pressed]="!!store.filters()['hide_services_of_down_hosts']"
+      [title]="t('problems.hideSymptomsTitle')"
+    >
+      {{ t('problems.hideSymptoms') }}
+    </button>
+  </sei-toolbar>
+
+  <sei-data-table
+    [loading]="store.loading()"
+    [empty]="store.isEmpty()"
+    [error]="store.error()?.message ?? null"
+    [emptyTitle]="store.hasFilters() ? t('problems.emptyFilteredTitle') : t('problems.emptyTitle')"
+    [emptyBody]="store.hasFilters() ? t('problems.emptyFilteredBody') : t('problems.emptyBody')"
+    [showClear]="store.hasFilters()"
+    (clear)="store.clearFilters()"
+    (retry)="store.reload()"
+  >
+    <tr head>
+      <th
+        sei-sort
+        column="hostname"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+      >
+        {{ t('columns.object') }}
+      </th>
+      <th
+        sei-sort
+        column="severity"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+        class="hidden sm:table-cell"
+      >
+        {{ t('columns.state') }}
+      </th>
+      <th
+        sei-sort
+        column="last_state_change"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+        class="hidden sm:table-cell"
+      >
+        {{ t('columns.duration') }}
+      </th>
+      <th
+        sei-sort
+        column="last_check"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+        class="hidden md:table-cell"
+      >
+        {{ t('columns.lastCheck') }}
+      </th>
+      <th
+        class="hidden w-full border-b border-line px-3 py-2 text-left font-medium text-ink-dim sm:table-cell"
+      >
+        {{ t('columns.output') }}
+      </th>
+    </tr>
+
+    @for (problem of store.rows(); track key(problem)) {
+      <tr body class="border-b border-line last:border-0 hover:bg-sunken">
+        <td
+          class="rail relative py-1.5 pr-3 align-top whitespace-normal sm:whitespace-nowrap"
+          [class]="stateClass(problem.state_text)"
+          [class.rail-soft]="!problem.is_hard_state"
+        >
+          <div class="flex items-center gap-1.5">
+            @if (problem.kind === 'host') {
+              <a
+                [routerLink]="['/hosts', problem.hostname]"
+                class="mono font-medium text-ink hover:text-accent hover:underline"
+                >{{ problem.hostname }}</a
+              >
+            } @else {
+              <a
+                [routerLink]="['/hosts', problem.hostname]"
+                class="mono text-ink-dim hover:text-accent hover:underline"
+                >{{ problem.hostname }}</a
+              >
+              <span class="text-ink-faint" aria-hidden="true">/</span>
+              <a
+                routerLink="/service"
+                [queryParams]="{ host: problem.hostname, service: problem.service_description }"
+                class="mono font-medium text-ink hover:text-accent hover:underline"
+                >{{ problem.service_description }}</a
+              >
+            }
+            <span class="sm:hidden">
+              <sei-state-badge [state]="problem.state_text" [hard]="problem.is_hard_state" />
+            </span>
+            <sei-row-flags
+              [acknowledged]="problem.acknowledged"
+              [inDowntime]="problem.in_downtime"
+              [flapping]="problem.is_flapping"
+              [notificationsEnabled]="problem.notifications_enabled"
+            />
+            @if (problem.host_is_down) {
+              <span
+                class="whitespace-nowrap rounded-xs border border-line px-1.5 py-0.5 text-[11px] text-ink-dim"
+                [title]="t('problems.hostDownTitle')"
+                >{{ t('problems.hostDown') }}</span
+              >
+            }
+          </div>
+        </td>
+        <td class="hidden px-3 py-1.5 align-top sm:table-cell">
+          <sei-state-badge [state]="problem.state_text" [hard]="problem.is_hard_state" />
+        </td>
+        <td
+          class="hidden whitespace-nowrap px-3 py-1.5 align-top tabular-nums text-ink-dim sm:table-cell"
+        >
+          {{ duration(problem) | seiDuration }}
+        </td>
+        <td
+          class="hidden whitespace-nowrap px-3 py-1.5 align-top tabular-nums text-ink-dim md:table-cell"
+        >
+          {{ problem.last_check | seiSince }}
+        </td>
+        <td class="hidden max-w-0 px-3 py-1.5 align-top sm:table-cell">
+          <span class="mono block truncate text-ink-dim" [title]="problem.output">{{
+            problem.output
+          }}</span>
+        </td>
+      </tr>
+    }
+  </sei-data-table>
+
+  <sei-pagination
+    [total]="store.total()"
+    [offset]="store.offset()"
+    [limit]="store.limit()"
+    (offsetChange)="store.setPage($event)"
+    (limitChange)="store.setLimit($event)"
+  />
+</ng-container>

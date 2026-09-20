@@ -12,8 +12,8 @@ systems. This repository is the web interface and its API.
 | Phase | Scope | State |
 |---|---|---|
 | 1 | Scaffolding, authentication, roles, demo mode, responsive shell | done |
-| 2 | Dashboard, hosts, services, problems, downtimes, acknowledgements, log entries | next |
-| 3 | History pages, performance charts, metrics provider abstraction | planned |
+| 2 | Dashboard, hosts, services, problems, downtimes, acknowledgements, log entries | done |
+| 3 | History pages, performance charts, metrics provider abstraction | next |
 | 4 | External commands, live updates with polling fallback | planned |
 | 5 | Accessibility pass, edge cases, hardening | planned |
 

@@ -1,0 +1,134 @@
+<ng-container *transloco="let t">
+  <sei-page-header
+    [title]="t('pages.acknowledgements.title')"
+    [description]="t('pages.acknowledgements.description')"
+  />
+
+  <sei-toolbar [showClear]="store.hasFilters()" (clear)="store.clearFilters()">
+    <sei-search
+      [value]="$any(store.filters()['q']) ?? ''"
+      [placeholder]="t('acknowledgements.searchPlaceholder')"
+      (search)="store.setSearch($event)"
+    />
+  </sei-toolbar>
+
+  <sei-data-table
+    [loading]="store.loading()"
+    [empty]="store.isEmpty()"
+    [error]="store.error()?.message ?? null"
+    [emptyTitle]="
+      store.hasFilters()
+        ? t('acknowledgements.emptyFilteredTitle')
+        : t('acknowledgements.emptyTitle')
+    "
+    [emptyBody]="
+      store.hasFilters() ? t('acknowledgements.emptyFilteredBody') : t('acknowledgements.emptyBody')
+    "
+    [showClear]="store.hasFilters()"
+    (clear)="store.clearFilters()"
+    (retry)="store.reload()"
+  >
+    <tr head>
+      <th
+        sei-sort
+        column="hostname"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+      >
+        {{ t('columns.object') }}
+      </th>
+      <th
+        sei-sort
+        column="state"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+        class="hidden sm:table-cell"
+      >
+        {{ t('columns.state') }}
+      </th>
+      <th
+        sei-sort
+        column="entry_time"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+      >
+        {{ t('columns.entered') }}
+      </th>
+      <th
+        sei-sort
+        column="author"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+        class="hidden md:table-cell"
+      >
+        {{ t('columns.author') }}
+      </th>
+      <th class="w-full border-b border-line px-3 py-2 text-left font-medium text-ink-dim">
+        {{ t('columns.comment') }}
+      </th>
+    </tr>
+
+    @for (ack of store.rows(); track key(ack)) {
+      <tr body class="border-b border-line last:border-0 hover:bg-sunken">
+        <td
+          class="rail relative whitespace-nowrap py-1.5 pr-3 align-top"
+          [class]="stateClass(ack.state_text)"
+        >
+          <div class="flex items-center gap-1.5">
+            <a
+              [routerLink]="['/hosts', ack.hostname]"
+              class="mono hover:text-accent hover:underline"
+              [class.text-ink]="ack.kind === 'host'"
+              [class.font-medium]="ack.kind === 'host'"
+              [class.text-ink-dim]="ack.kind === 'service'"
+              >{{ ack.hostname }}</a
+            >
+            @if (ack.kind === 'service') {
+              <span class="text-ink-faint" aria-hidden="true">/</span>
+              <a
+                routerLink="/service"
+                [queryParams]="{ host: ack.hostname, service: ack.service_description }"
+                class="mono font-medium text-ink hover:text-accent hover:underline"
+                >{{ ack.service_description }}</a
+              >
+            }
+            @if (ack.is_sticky) {
+              <span
+                class="rounded-xs border border-line px-1.5 py-0.5 text-[11px] text-ink-dim"
+                [title]="t('acknowledgements.stickyTitle')"
+                >{{ t('acknowledgements.sticky') }}</span
+              >
+            }
+          </div>
+        </td>
+        <td class="hidden px-3 py-1.5 align-top sm:table-cell">
+          <sei-state-badge [state]="ack.state_text" />
+        </td>
+        <td
+          class="whitespace-nowrap px-3 py-1.5 align-top tabular-nums text-ink-dim"
+          [title]="ack.entry_time | seiTimestamp"
+        >
+          {{ ack.entry_time | seiSince }}
+        </td>
+        <td class="hidden whitespace-nowrap px-3 py-1.5 align-top text-ink-dim md:table-cell">
+          {{ ack.author }}
+        </td>
+        <td class="max-w-0 px-3 py-1.5 align-top">
+          <span class="block truncate text-ink-dim" [title]="ack.comment">{{ ack.comment }}</span>
+        </td>
+      </tr>
+    }
+  </sei-data-table>
+
+  <sei-pagination
+    [total]="store.total()"
+    [offset]="store.offset()"
+    [limit]="store.limit()"
+    (offsetChange)="store.setPage($event)"
+    (limitChange)="store.setLimit($event)"
+  />
+</ng-container>

@@ -1,7 +1,6 @@
 import { Pipe, type PipeTransform } from '@angular/core';
-import { DurationPipe } from './duration.pipe';
-
-const duration = new DurationPipe();
+import { formatSince } from './time-format';
+import { injectTimeContext } from './time-words';
 
 /**
  * The elapsed time since a Unix timestamp.
@@ -12,16 +11,9 @@ const duration = new DurationPipe();
  */
 @Pipe({ name: 'seiSince' })
 export class SincePipe implements PipeTransform {
+  private readonly context = injectTimeContext();
+
   transform(unixSeconds: number | null | undefined, now?: number): string {
-    if (!unixSeconds) {
-      return 'never';
-    }
-    const reference = now ?? Math.floor(Date.now() / 1000);
-    const elapsed = reference - unixSeconds;
-    if (elapsed < 0) {
-      // A next_check in the future is the normal case for that column.
-      return 'in ' + duration.transform(-elapsed);
-    }
-    return duration.transform(elapsed);
+    return formatSince(unixSeconds, this.context().words, now);
   }
 }

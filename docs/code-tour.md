@@ -152,8 +152,15 @@ against a missing directory — a clean clone must still build.
 **Serving.** `internal/httpapi/ui.go` handles everything that is not
 `/api/`:
 
-- a path that exists → served from the embedded FS, and fingerprinted
-  assets get `Cache-Control: public, max-age=31536000, immutable`;
+- a path that exists **and carries a content hash** (`main-3X6UOOBT.js`,
+  `styles-X4HKQZJG.css`, the fonts under `media/`) →
+  `Cache-Control: public, max-age=31536000, immutable`;
+- a path that exists **without** one — `i18n/de.json`, `favicon.svg` —
+  → `Cache-Control: no-cache` plus an ETag over the content. Those names
+  do not change between builds, so caching them hard freezes whatever a
+  browser loaded first. It did: the language files were served immutably
+  for a while, and every page added afterwards rendered bare translation
+  keys in any browser that had been there before;
 - `index.html` → `Cache-Control: no-cache`, so it is always revalidated;
   otherwise a deploy never reaches an open tab (`ui.go:77`);
 - a path that does not exist **and has no file extension** → `index.html`,
@@ -318,7 +325,7 @@ verbs only appear in `internal/auth/store.go` and
 | CSP and headers | `internal/httpapi/middleware.go:144` |
 | Secrets | `internal/config/config.go` — `mysql_dsn`, `worker_command_key`, `worker_events_key`. Check `handleMeta` (`handlers_health.go:73`): it is the only thing an anonymous caller reads, and it carries no secret |
 | Denial of service | `max_page_size`, `query_timeout`, `MaxBulkCommands`, `maxVerifyTargets`, SSE client buffers in `internal/events/hub.go` |
-| Static assets and caching | `internal/httpapi/ui.go` |
+| Static assets and caching | `internal/httpapi/ui.go` — `fingerprinted` decides immutable vs. revalidate |
 | Frontend XSS | No `innerHTML`, no `bypassSecurityTrust*` anywhere in `frontend/src` — Angular's interpolation escapes everything. Worth re-grepping after any change |
 | Who can read the command log | `audit:read`: admin and operator, not guest (`internal/auth/bootstrap.go`) |
 
@@ -351,9 +358,13 @@ grep -rn "fmt.Sprintf" internal/repository/mysql/*.go | grep -v _test
 6. **A `202` is never reported as success**; confirmation is observed.
 7. **A bulk is all or nothing.**
 8. **Both language files stay symmetric** and every key a template uses
-   resolves (section 10 has the check).
-9. **State is never carried by colour alone** — a rail, a label and the
-   sort order carry it too.
+   resolves (section 10 has the check). Nothing user-facing is an
+   English literal in code: the time pipes take their wording and their
+   locale from the active language, and a date is written the way that
+   language writes dates.
+9. **Only a fingerprinted file may be cached immutably.**
+10. **State is never carried by colour alone** — a rail, a label and the
+    sort order carry it too.
 
 ## 10. Running the checks
 

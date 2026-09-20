@@ -261,6 +261,11 @@
     "30d": "30 Tage",
     "tooWide": "Weiter als diese Ansicht erlaubt. Ein Host hebt die Grenze an."
   },
+  "time": {
+    "never": "nie",
+    "justNow": "gerade eben",
+    "ahead": "in {{duration}}"
+  },
   "dashboard": {
     "totalCount": "{{count}} gesamt",
     "nothingMonitored": "Es wird noch nichts überwacht.",

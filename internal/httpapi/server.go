@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/statusengine/interface/internal/auth"
@@ -69,6 +70,10 @@ type Server struct {
 	// ui is the built frontend. It may be nil during development, when
 	// the Angular dev server serves the UI and proxies /api here.
 	ui fs.FS
+
+	// etags holds a content hash per unfingerprinted UI file, computed
+	// on first use. See uiHandler.
+	etags sync.Map
 
 	handler http.Handler
 }

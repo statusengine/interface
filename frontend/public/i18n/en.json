@@ -261,6 +261,11 @@
     "30d": "30d",
     "tooWide": "Wider than this view allows. Name a host to raise the limit."
   },
+  "time": {
+    "never": "never",
+    "justNow": "just now",
+    "ahead": "in {{duration}}"
+  },
   "dashboard": {
     "totalCount": "{{count}} total",
     "nothingMonitored": "Nothing is being monitored yet.",

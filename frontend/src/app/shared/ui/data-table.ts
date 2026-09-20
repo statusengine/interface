@@ -93,7 +93,9 @@ export class DataTable {
   readonly loading = input(false);
   readonly empty = input(false);
   readonly error = input<string | null>(null);
-  readonly emptyTitle = input('Nothing here');
+  // Required, not defaulted: a default is a sentence in one language
+  // that nobody notices until it renders in the other one.
+  readonly emptyTitle = input.required<string>();
   readonly emptyBody = input('');
   readonly showClear = input(false);
 

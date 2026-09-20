@@ -1,0 +1,361 @@
+<ng-container *transloco="let t">
+  @if (anyAction()) {
+    @if (!commandsEnabled()) {
+      <!-- The worker leaves /commands unserved without a key, so every
+           button here would fail. Saying so once beats five refusals. -->
+      <p class="flex items-center gap-1.5 text-[12px] text-ink-dim">
+        <sei-icon name="alert" [size]="13" />
+        {{ t('commands.disabled') }}
+      </p>
+    } @else {
+      <div class="flex flex-wrap items-center gap-2">
+        @if (canReschedule()) {
+          <button type="button" (click)="checkNow()" [disabled]="busy()" class="sei-action">
+            <sei-icon name="refresh" [size]="14" />
+            {{ t('commands.checkNow') }}
+          </button>
+        }
+
+        @if (canAcknowledge()) {
+          @if (status().acknowledged) {
+            <button
+              type="button"
+              (click)="removeAcknowledgement()"
+              [disabled]="busy()"
+              class="sei-action"
+            >
+              <sei-icon name="close" [size]="14" />
+              {{ t('commands.removeAck') }}
+            </button>
+          } @else {
+            <button
+              type="button"
+              (click)="open('acknowledge')"
+              [disabled]="busy() || !canBeAcknowledged()"
+              class="sei-action"
+              [attr.title]="canBeAcknowledged() ? null : t('commands.nothingToAcknowledge')"
+            >
+              <sei-icon name="acknowledge" [size]="14" />
+              {{ t('commands.acknowledge') }}
+            </button>
+          }
+        }
+
+        @if (canDowntime()) {
+          <button type="button" (click)="open('downtime')" [disabled]="busy()" class="sei-action">
+            <sei-icon name="downtime" [size]="14" />
+            {{ t('commands.downtime') }}
+          </button>
+        }
+
+        @if (canSubmitResult()) {
+          <button type="button" (click)="open('result')" [disabled]="busy()" class="sei-action">
+            <sei-icon name="service" [size]="14" />
+            {{ t('commands.passiveResult') }}
+          </button>
+        }
+
+        @if (canNotify()) {
+          <button type="button" (click)="open('notify')" [disabled]="busy()" class="sei-action">
+            <sei-icon name="bell-off" [size]="14" />
+            {{ t('commands.notify') }}
+          </button>
+        }
+
+        @if (canToggle()) {
+          <button
+            type="button"
+            (click)="toggleNotifications()"
+            [disabled]="busy()"
+            class="sei-action"
+          >
+            {{
+              status().notifications_enabled
+                ? t('commands.disableNotifications')
+                : t('commands.enableNotifications')
+            }}
+          </button>
+          <button
+            type="button"
+            (click)="toggleActiveChecks()"
+            [disabled]="busy()"
+            class="sei-action"
+          >
+            {{
+              status().active_checks_enabled
+                ? t('commands.disableChecks')
+                : t('commands.enableChecks')
+            }}
+          </button>
+        }
+      </div>
+    }
+  }
+
+  <!-- One dialog, four forms. The shell, its focus trap and its footer
+       are identical; only the body differs. -->
+  <sei-dialog
+    [open]="mode() !== 'none'"
+    [title]="mode() === 'none' ? '' : t('commands.' + mode() + 'Title')"
+    [subtitle]="label()"
+    (closed)="close()"
+  >
+    @switch (mode()) {
+      @case ('acknowledge') {
+        <p class="mb-3 text-[13px] text-ink-dim">{{ t('commands.acknowledgeExplainer') }}</p>
+
+        <label class="mb-1.5 block text-[13px] font-medium" for="ack-comment">
+          {{ t('commands.comment') }}
+        </label>
+        <textarea
+          id="ack-comment"
+          rows="3"
+          required
+          [ngModel]="comment()"
+          (ngModelChange)="comment.set($event)"
+          [attr.placeholder]="t('commands.commentPlaceholder')"
+          class="sei-input"
+        ></textarea>
+        <p class="mt-1 text-[11px] text-ink-dim">{{ t('commands.noSemicolons') }}</p>
+
+        <div class="mt-3 space-y-2">
+          <label class="flex items-start gap-2 text-[13px]">
+            <input
+              type="checkbox"
+              [ngModel]="sticky()"
+              (ngModelChange)="sticky.set($event)"
+              class="mt-0.5"
+            />
+            <span>
+              {{ t('commands.sticky') }}
+              <span class="block text-[12px] text-ink-dim">{{ t('commands.stickyHelp') }}</span>
+            </span>
+          </label>
+          <label class="flex items-start gap-2 text-[13px]">
+            <input
+              type="checkbox"
+              [ngModel]="notifyContacts()"
+              (ngModelChange)="notifyContacts.set($event)"
+              class="mt-0.5"
+            />
+            <span>
+              {{ t('commands.notifyContacts') }}
+              <span class="block text-[12px] text-ink-dim">{{
+                t('commands.notifyContactsHelp')
+              }}</span>
+            </span>
+          </label>
+          <label class="flex items-start gap-2 text-[13px]">
+            <input
+              type="checkbox"
+              [ngModel]="persistent()"
+              (ngModelChange)="persistent.set($event)"
+              class="mt-0.5"
+            />
+            <span>
+              {{ t('commands.persistent') }}
+              <span class="block text-[12px] text-ink-dim">{{ t('commands.persistentHelp') }}</span>
+            </span>
+          </label>
+        </div>
+      }
+
+      @case ('downtime') {
+        <p class="mb-3 text-[13px] text-ink-dim">{{ t('commands.downtimeExplainer') }}</p>
+
+        <span class="mb-1.5 block text-[13px] font-medium">{{ t('commands.duration') }}</span>
+        <div class="flex flex-wrap gap-1">
+          @for (minutes of downtimePresets; track minutes) {
+            <button
+              type="button"
+              (click)="downtimeMinutes.set(minutes)"
+              class="rounded-sm border px-2.5 py-1 text-[12px] transition-colors"
+              [class.border-accent]="downtimeMinutes() === minutes"
+              [class.text-accent]="downtimeMinutes() === minutes"
+              [class.bg-accent-wash]="downtimeMinutes() === minutes"
+              [class.border-line]="downtimeMinutes() !== minutes"
+              [class.text-ink-dim]="downtimeMinutes() !== minutes"
+              [attr.aria-pressed]="downtimeMinutes() === minutes"
+            >
+              {{ minutes < 60 ? minutes + 'm' : minutes / 60 + 'h' }}
+            </button>
+          }
+        </div>
+
+        <label class="mb-1.5 mt-3 block text-[13px] font-medium" for="downtime-comment">
+          {{ t('commands.comment') }}
+        </label>
+        <textarea
+          id="downtime-comment"
+          rows="2"
+          required
+          [ngModel]="comment()"
+          (ngModelChange)="comment.set($event)"
+          [attr.placeholder]="t('commands.downtimeCommentPlaceholder')"
+          class="sei-input"
+        ></textarea>
+
+        @if (kind() === 'host') {
+          <label class="mt-3 flex items-start gap-2 text-[13px]">
+            <input
+              type="checkbox"
+              [ngModel]="downtimeAllServices()"
+              (ngModelChange)="downtimeAllServices.set($event)"
+              class="mt-0.5"
+            />
+            <span>
+              {{ t('commands.allServices') }}
+              <span class="block text-[12px] text-ink-dim">{{
+                t('commands.allServicesHelp')
+              }}</span>
+            </span>
+          </label>
+        }
+      }
+
+      @case ('result') {
+        <p class="mb-3 text-[13px] text-ink-dim">{{ t('commands.resultExplainer') }}</p>
+
+        <span class="mb-1.5 block text-[13px] font-medium">{{ t('commands.resultState') }}</span>
+        <div class="flex flex-wrap gap-1">
+          @for (option of resultCodes(); track option.code) {
+            <button
+              type="button"
+              (click)="resultCode.set(option.code)"
+              class="rounded-sm border px-2.5 py-1 text-[12px] font-medium transition-colors"
+              [class.border-accent]="resultCode() === option.code"
+              [class.bg-accent-wash]="resultCode() === option.code"
+              [class.border-line]="resultCode() !== option.code"
+              [class.text-ink-dim]="resultCode() !== option.code"
+              [attr.aria-pressed]="resultCode() === option.code"
+            >
+              {{ t('states.' + option.key) }}
+            </button>
+          }
+        </div>
+
+        <label class="mb-1.5 mt-3 block text-[13px] font-medium" for="result-output">
+          {{ t('commands.output') }}
+        </label>
+        <input
+          id="result-output"
+          type="text"
+          required
+          [ngModel]="resultOutput()"
+          (ngModelChange)="resultOutput.set($event)"
+          [attr.placeholder]="t('commands.outputPlaceholder')"
+          class="sei-input mono"
+        />
+
+        <label class="mb-1.5 mt-3 block text-[13px] font-medium" for="result-perfdata">
+          {{ t('commands.perfdata') }}
+          <span class="font-normal text-ink-dim">{{ t('commands.optional') }}</span>
+        </label>
+        <input
+          id="result-perfdata"
+          type="text"
+          [ngModel]="resultPerfdata()"
+          (ngModelChange)="resultPerfdata.set($event)"
+          placeholder="rta=0.5ms;100;500;0 pl=0%;20;60;0"
+          class="sei-input mono"
+        />
+      }
+
+      @case ('notify') {
+        <p class="mb-3 text-[13px] text-ink-dim">{{ t('commands.notifyExplainer') }}</p>
+
+        <label class="mb-1.5 block text-[13px] font-medium" for="notify-comment">
+          {{ t('commands.message') }}
+        </label>
+        <textarea
+          id="notify-comment"
+          rows="3"
+          required
+          [ngModel]="comment()"
+          (ngModelChange)="comment.set($event)"
+          [attr.placeholder]="t('commands.notifyPlaceholder')"
+          class="sei-input"
+        ></textarea>
+        <p class="mt-1 text-[11px] text-ink-dim">{{ t('commands.noSemicolons') }}</p>
+
+        <div class="mt-3 space-y-2">
+          <label class="flex items-start gap-2 text-[13px]">
+            <input
+              type="checkbox"
+              [ngModel]="notifyForced()"
+              (ngModelChange)="notifyForced.set($event)"
+              class="mt-0.5"
+            />
+            <span>
+              {{ t('commands.forced') }}
+              <span class="block text-[12px] text-ink-dim">{{ t('commands.forcedHelp') }}</span>
+            </span>
+          </label>
+          <label class="flex items-start gap-2 text-[13px]">
+            <input
+              type="checkbox"
+              [ngModel]="notifyBroadcast()"
+              (ngModelChange)="notifyBroadcast.set($event)"
+              class="mt-0.5"
+            />
+            <span>
+              {{ t('commands.broadcast') }}
+              <span class="block text-[12px] text-ink-dim">{{ t('commands.broadcastHelp') }}</span>
+            </span>
+          </label>
+        </div>
+      }
+    }
+
+    <button footer type="button" (click)="close()" class="sei-action">
+      {{ t('commands.cancel') }}
+    </button>
+
+    @switch (mode()) {
+      @case ('acknowledge') {
+        <button
+          footer
+          type="button"
+          (click)="acknowledge()"
+          [disabled]="busy() || !comment().trim()"
+          class="sei-action-primary"
+        >
+          {{ t('commands.acknowledge') }}
+        </button>
+      }
+      @case ('downtime') {
+        <button
+          footer
+          type="button"
+          (click)="scheduleDowntime()"
+          [disabled]="busy() || !comment().trim()"
+          class="sei-action-primary"
+        >
+          {{ t('commands.schedule') }}
+        </button>
+      }
+      @case ('result') {
+        <button
+          footer
+          type="button"
+          (click)="submitResult()"
+          [disabled]="busy() || !resultOutput().trim()"
+          class="sei-action-primary"
+        >
+          {{ t('commands.submit') }}
+        </button>
+      }
+      @case ('notify') {
+        <button
+          footer
+          type="button"
+          (click)="sendNotification()"
+          [disabled]="busy() || !comment().trim()"
+          class="sei-action-primary"
+        >
+          {{ t('commands.send') }}
+        </button>
+      }
+    }
+  </sei-dialog>
+</ng-container>

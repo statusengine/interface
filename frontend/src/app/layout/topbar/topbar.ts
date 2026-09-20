@@ -9,6 +9,7 @@ import {
 import { Router } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { Auth } from '../../core/auth/auth.service';
+import { Live } from '../../core/events/live.service';
 import { LanguageService, type Language } from '../../core/i18n/language.service';
 import { Theme } from '../../core/theme/theme.service';
 import { Icon } from '../../shared/ui/icon';
@@ -23,6 +24,7 @@ export class Topbar {
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
   readonly theme = inject(Theme);
+  readonly live = inject(Live);
   readonly language = inject(LanguageService);
 
   readonly openDrawer = output<void>();
@@ -40,6 +42,21 @@ export class Topbar {
         return 'moon' as const;
       default:
         return 'monitor' as const;
+    }
+  });
+
+  /** The dot next to the clock: live, polling, or nothing getting
+   *  through. Polling is a working state, not a warning. */
+  readonly liveTone = computed(() => {
+    switch (this.live.mode()) {
+      case 'live':
+        return 'bg-ok';
+      case 'polling':
+        return 'bg-ink-faint';
+      case 'offline':
+        return 'bg-warning';
+      default:
+        return 'bg-line-strong';
     }
   });
 

@@ -1,9 +1,11 @@
-import { Injector, runInInjectionContext } from '@angular/core';
+import { Injector, runInInjectionContext, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Api } from '../api/api.service';
 import { ApiError } from '../api/api.error';
+import { Commands } from '../commands/commands.service';
+import { Live } from '../events/live.service';
 import { ListStore } from './list-store';
 
 interface Row {
@@ -20,10 +22,17 @@ function setup(options: { queryParams?: Record<string, string>; list?: ReturnTyp
 
   const params = new Map(Object.entries(options.queryParams ?? {}));
 
+  // The store refreshes itself on a live tick and on a confirmed
+  // command; both are stubbed at a fixed value so they never fire here.
+  const tick = signal(0);
+  const submitted = signal(0);
+
   TestBed.configureTestingModule({
     providers: [
       { provide: Api, useValue: { list } },
       { provide: Router, useValue: { navigate } },
+      { provide: Live, useValue: { tick: tick.asReadonly() } },
+      { provide: Commands, useValue: { submitted: submitted.asReadonly() } },
       {
         provide: ActivatedRoute,
         useValue: {
@@ -49,7 +58,7 @@ function setup(options: { queryParams?: Record<string, string>; list?: ReturnTyp
       }),
   );
 
-  return { store, list, navigate };
+  return { store, list, navigate, tick };
 }
 
 /** Lets the effect and its fetch settle. */
@@ -212,6 +221,18 @@ describe('ListStore', () => {
     const options = navigate.mock.calls.at(-1)?.[1];
     expect(options.replaceUrl).toBe(true);
     expect(options.queryParams.offset).toBe('50');
+  });
+
+  it('refetches when the live stream reports a change', async () => {
+    const { store, list, tick } = setup({});
+    await settle();
+    const before = list.mock.calls.length;
+
+    tick.update((n) => n + 1);
+    await settle();
+
+    expect(list.mock.calls.length).toBeGreaterThan(before);
+    expect(store.offset()).toBe(0);
   });
 
   it('omits defaults from the URL so a plain link stays plain', async () => {

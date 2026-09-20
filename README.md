@@ -14,8 +14,8 @@ systems. This repository is the web interface and its API.
 | 1 | Scaffolding, authentication, roles, demo mode, responsive shell | done |
 | 2 | Dashboard, hosts, services, problems, downtimes, acknowledgements, log entries | done |
 | 3 | History pages, performance charts, metrics provider abstraction | done |
-| 4 | External commands, live updates with polling fallback | next |
-| 5 | Accessibility pass, edge cases, hardening | planned |
+| 4 | External commands, live updates with polling fallback | done |
+| 5 | Accessibility pass, edge cases, hardening | next |
 
 Pages from a later phase are already routed and permission-guarded; they
 say which phase they belong to rather than showing a spinner.
@@ -113,6 +113,43 @@ Setting `demo_mode: true` creates a `guest` account and offers it on the
 login page as one click. It signs in through the ordinary session path, and
 the server refuses every command it submits - the UI hides those controls
 as a courtesy, but the refusal is what enforces it.
+
+## External commands
+
+Operator actions go to the worker's `/commands` endpoint, which hands
+them to the broker and on to Naemon. Supported: acknowledge and remove
+an acknowledgement, schedule and delete a downtime, force a check,
+submit a passive result, send a custom notification, and toggle
+notifications or active checks per object.
+
+Two things worth knowing:
+
+- **A `202` means the command reached the broker, not that Naemon ran
+  it.** The queue acknowledges the publish, the broker module has no
+  reply path. So the UI says "submitted", then watches the object for
+  about twelve seconds and only then says "confirmed" - and says
+  "submitted, not confirmed" when it cannot see the change.
+- **Comments cannot contain a semicolon.** Naemon splits command fields
+  on it with no escape, so one inside a comment would truncate the field
+  and shift everything after it. The interface refuses rather than
+  silently rewriting what you typed.
+
+Every submission is recorded in `sei_command_audit`, including the ones
+that were refused, with the submitting account and the response.
+
+## Live updates
+
+With `worker_events_key` set, the daemon holds one WebSocket to the
+worker and fans changes out to browsers over Server-Sent Events. The
+browser never talks to the worker directly: its key would have to reach
+the page, and browser JavaScript cannot set a header on a WebSocket
+handshake.
+
+The stream says *what* changed, not what it changed to - the UI refetches
+the endpoint it is already rendering, so there is one source of truth.
+Without the key, or when the stream drops, the UI polls every 30 seconds
+and the indicator in the top bar says which mode it is in. Polling is a
+working state, not an error.
 
 ## Database
 

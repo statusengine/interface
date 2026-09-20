@@ -364,6 +364,75 @@
     );
   }
 
+  /* The controls that submit something. Repeated on every dialog and
+   * action bar, so they live here rather than as a copied class list. */
+  .sei-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    white-space: nowrap;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    padding: 0.375rem 0.625rem;
+    font-size: 13px;
+    color: var(--ink-dim);
+    transition:
+      color 0.15s,
+      border-color 0.15s,
+      background-color 0.15s;
+  }
+
+  .sei-action:hover:not(:disabled) {
+    border-color: var(--line-strong);
+    color: var(--ink);
+  }
+
+  .sei-action:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  .sei-action-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    white-space: nowrap;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    background: var(--accent);
+    padding: 0.375rem 0.75rem;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent-ink);
+    transition: background-color 0.15s;
+  }
+
+  .sei-action-primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+
+  .sei-action-primary:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  .sei-input {
+    display: block;
+    width: 100%;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    background: var(--ground);
+    padding: 0.5rem 0.625rem;
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .sei-input:focus {
+    border-color: var(--accent);
+  }
+
   /* Set --rail-color from the state, so one class does every state. */
   .state-ok {
     --rail-color: var(--state-ok);

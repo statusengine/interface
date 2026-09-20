@@ -2,6 +2,8 @@ import { DestroyRef, computed, effect, inject, signal, untracked } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { Api, type ListQuery } from '../api/api.service';
 import { ApiError } from '../api/api.error';
+import { Commands } from '../commands/commands.service';
+import { Live } from '../events/live.service';
 import type { ListMeta } from '../api/types';
 
 /** A value a filter can hold. Undefined means the filter is off. */
@@ -32,6 +34,8 @@ export class ListStore<T> {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly live = inject(Live);
+  private readonly commands = inject(Commands);
 
   private readonly _rows = signal<T[]>([]);
   private readonly _meta = signal<ListMeta>({ total: 0, limit: 0, offset: 0 });
@@ -84,6 +88,20 @@ export class ListStore<T> {
       this._offset();
       this._limit();
       untracked(() => void this.fetch());
+    });
+
+    // Refresh when the event stream says something moved, when the
+    // polling fallback ticks, or when a command this session submitted
+    // was confirmed. The list does not care which: all three mean
+    // "what you are showing may be out of date".
+    effect(() => {
+      this.live.tick();
+      this.commands.submitted();
+      untracked(() => {
+        if (!this._loading()) {
+          void this.fetch();
+        }
+      });
     });
 
     this.destroyRef.onDestroy(() => clearTimeout(this.searchDebounce));

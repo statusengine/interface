@@ -1,7 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { Api } from '../../core/api/api.service';
+import { Commands } from '../../core/commands/commands.service';
+import { Live } from '../../core/events/live.service';
 import { ApiError } from '../../core/api/api.error';
 import { ListStore } from '../../core/list/list-store';
 import type { HostStatus, ServiceStatus } from '../../core/api/types';
@@ -16,6 +26,7 @@ import { DurationPipe } from '../../shared/pipes/duration.pipe';
 import { SincePipe } from '../../shared/pipes/since.pipe';
 import { TimestampPipe } from '../../shared/pipes/timestamp.pipe';
 import { stateClass, stateTextClass } from '../../shared/state/state';
+import { ObjectActions } from '../commands/object-actions';
 
 /** One host: its current state, what the plugin said, and its services. */
 @Component({
@@ -31,6 +42,7 @@ import { stateClass, stateTextClass } from '../../shared/state/state';
     DataTable,
     SortHeader,
     Icon,
+    ObjectActions,
     DurationPipe,
     SincePipe,
     TimestampPipe,
@@ -95,8 +107,19 @@ export class HostDetail {
     ];
   });
 
+  private readonly live = inject(Live);
+  private readonly commands = inject(Commands);
+
   constructor() {
-    void this.load();
+    // Refresh on a live change, a polling tick, or a command this
+    // session got confirmed - the last one matters because the event
+    // stream may deliver its batch before the core has applied the
+    // command, leaving the page showing the state from just before.
+    effect(() => {
+      this.live.tick();
+      this.commands.submitted();
+      untracked(() => void this.load());
+    });
   }
 
   async load(): Promise<void> {

@@ -13,6 +13,20 @@
 
   <div class="min-w-0 flex-1"></div>
 
+  @if (live.mode() !== 'idle') {
+    <span
+      class="hidden items-center gap-1.5 text-[11px] text-ink-dim sm:inline-flex"
+      [attr.title]="t('live.' + live.mode() + 'Title')"
+    >
+      <span
+        class="inline-block h-1.5 w-1.5 rounded-full"
+        [class]="liveTone()"
+        aria-hidden="true"
+      ></span>
+      {{ t('live.' + live.mode()) }}
+    </span>
+  }
+
   @if (isDemo()) {
     <!-- Not a warning banner: the demo account works, it just cannot
          change anything. Said once, quietly, where the account lives. -->

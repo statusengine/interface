@@ -457,5 +457,23 @@
     "acknowledged": "{{count}} objects acknowledged",
     "schedulingDowntime": "Scheduling downtimes for {{count}} objects",
     "downtimeScheduled": "{{count}} objects are in a downtime"
+  },
+  "context": {
+    "downtimeRegion": "Maintenance window",
+    "acknowledgementRegion": "Acknowledgement",
+    "inDowntime": "In a maintenance window — {{remaining}} left",
+    "downtimeScheduled": "Maintenance window scheduled, starts {{when}}",
+    "cancelDowntime": "Cancel window",
+    "cancellingDowntime": "Cancelling the window on {{target}}",
+    "downtimeCancelled": "The window on {{target}} was cancelled",
+    "overlapping": "{{count}} windows overlap here. Notifications stay suppressed until the last of them ends.",
+    "acknowledged": "Acknowledged",
+    "ackState": "set while {{state}}",
+    "notSticky": "not sticky",
+    "notStickyTitle": "The acknowledgement clears by itself if the state gets worse.",
+    "setBy": "by {{author}}",
+    "setAgo": "{{ago}} ago",
+    "window": "{{from}} → {{to}}",
+    "ackWithoutRecord": "The monitoring core reports this as acknowledged, but no record of who set it reached the database."
   }
 }

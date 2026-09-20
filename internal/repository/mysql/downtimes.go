@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/statusengine/interface/internal/domain"
 )
@@ -20,6 +21,10 @@ func NewDowntimes(db *sql.DB) *Downtimes { return &Downtimes{db: db} }
 type DowntimeFilter struct {
 	Search string
 	Host   string
+	// Service narrows to one service on that host. Only meaningful
+	// together with Host: a service description is not unique on its
+	// own.
+	Service string
 
 	// Kind restricts to "host" or "service"; empty means both.
 	Kind domain.Kind
@@ -78,7 +83,10 @@ func (f DowntimeFilter) union(history bool) (string, []any) {
 	var parts []string
 	var args []any
 
-	if f.Kind != domain.KindService {
+	// A service filter excludes host downtimes outright: the host table
+	// has no service_description column to match against, and a host
+	// downtime is not a downtime on one of its services anyway.
+	if f.Kind != domain.KindService && f.Service == "" {
 		var c conditions
 		f.applyCommon(&c, []string{"hostname"})
 		parts = append(parts, "SELECT 'host' AS kind, hostname, '' AS service_description, "+
@@ -111,6 +119,9 @@ func (f DowntimeFilter) union(history bool) (string, []any) {
 func (f DowntimeFilter) applyCommon(c *conditions, searchColumns []string) {
 	if f.Host != "" {
 		c.add("hostname = ?", f.Host)
+	}
+	if f.Service != "" {
+		c.add("service_description = ?", f.Service)
 	}
 	if f.Search != "" {
 		pattern := likeEscape(f.Search)
@@ -171,4 +182,23 @@ func (r *Downtimes) query(ctx context.Context, body string, args []any, p Page, 
 		return nil, 0, fmt.Errorf("listing downtimes: %w", err)
 	}
 	return out, total, nil
+}
+
+// ForObject returns the downtimes the core is currently holding on one
+// object, newest first.
+//
+// A host downtime does not cover the host's services - Naemon has a
+// separate command for that - so a service's windows come only from the
+// service table.
+func (r *Downtimes) ForObject(ctx context.Context, kind domain.Kind, host, service string) ([]domain.Downtime, error) {
+	f := DowntimeFilter{Kind: kind, Host: host, Now: time.Now().Unix()}
+	if kind == domain.KindService {
+		f.Service = service
+	}
+
+	rows, _, err := r.Current(ctx, f, Page{Limit: 25, Sort: "scheduled_start_time", Desc: true})
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
 }

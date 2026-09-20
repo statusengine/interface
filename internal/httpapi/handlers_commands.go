@@ -369,27 +369,36 @@ func (s *Server) handleScheduleDowntime(w http.ResponseWriter, r *http.Request) 
 }
 
 type deleteDowntimeBody struct {
-	Kind       string `json:"kind"`
-	Host       string `json:"host"`
-	Service    string `json:"service,omitempty"`
+	targetsRequest
 	InternalID uint32 `json:"internal_id"`
 }
 
-// Deleting is by Naemon's own downtime id, which names one window
-// rather than one object, so this one keeps its singular shape.
+func (b *deleteDowntimeBody) resolved() targetsRequest { return b.targetsRequest }
+
+// handleDeleteDowntime keeps the shared `targets` shape, but takes
+// exactly one.
+//
+// Naemon removes a downtime by its own id, which names one window - not
+// one object, and not a set of them. A list of objects sharing a single
+// id would either mean nothing or delete the wrong window, so it is
+// refused rather than interpreted.
 func (s *Server) handleDeleteDowntime(w http.ResponseWriter, r *http.Request) {
 	var body deleteDowntimeBody
-	if err := decodeJSON(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, CodeBadRequest, err.Error())
+	targets, ok := decodeTargets(w, r, &body)
+	if !ok {
 		return
 	}
-	target, apiErr := targetRequest{Kind: body.Kind, Host: body.Host, Service: body.Service}.target()
-	if apiErr != nil {
-		fail(w, apiErr)
+	if len(targets) != 1 {
+		fail(w, &apiError{
+			Code: CodeBadRequest,
+			Message: "deleting a downtime names one window by its id, so it takes exactly one target; " +
+				"cancel them one at a time",
+			Field: "targets",
+		})
 		return
 	}
 
-	s.submit(w, r, commands.ActionDeleteDowntime, []commands.Target{target}, body,
+	s.submit(w, r, commands.ActionDeleteDowntime, targets, body,
 		func(t commands.Target) (commands.Envelope, error) {
 			return commands.DeleteDowntime(t.Kind, body.InternalID)
 		})

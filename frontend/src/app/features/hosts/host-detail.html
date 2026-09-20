@@ -60,6 +60,16 @@
     </header>
 
     <div class="px-4 py-4 sm:px-6">
+      <sei-object-context
+        kind="host"
+        [host]="data.hostname"
+        [downtimes]="data.downtimes"
+        [acknowledged]="data.acknowledged"
+        [acknowledgement]="data.acknowledgement"
+        (changed)="load()"
+        class="mb-4 block"
+      />
+
       <section class="rounded-md border border-line bg-surface p-4">
         <h2 class="mb-2.5 text-[13px] font-medium">{{ t('detail.output') }}</h2>
         <sei-plugin-output

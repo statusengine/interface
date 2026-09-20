@@ -16,29 +16,17 @@
           </button>
         }
 
-        @if (canAcknowledge()) {
-          @if (status().acknowledged) {
-            <button
-              type="button"
-              (click)="removeAcknowledgement()"
-              [disabled]="busy()"
-              class="sei-action"
-            >
-              <sei-icon name="close" [size]="14" />
-              {{ t('commands.removeAck') }}
-            </button>
-          } @else {
-            <button
-              type="button"
-              (click)="open('acknowledge')"
-              [disabled]="busy() || !canBeAcknowledged()"
-              class="sei-action"
-              [attr.title]="canBeAcknowledged() ? null : t('commands.nothingToAcknowledge')"
-            >
-              <sei-icon name="acknowledge" [size]="14" />
-              {{ t('commands.acknowledge') }}
-            </button>
-          }
+        @if (canAcknowledge() && !status().acknowledged) {
+          <button
+            type="button"
+            (click)="open('acknowledge')"
+            [disabled]="busy() || !canBeAcknowledged()"
+            class="sei-action"
+            [attr.title]="canBeAcknowledged() ? null : t('commands.nothingToAcknowledge')"
+          >
+            <sei-icon name="acknowledge" [size]="14" />
+            {{ t('commands.acknowledge') }}
+          </button>
         }
 
         @if (canDowntime()) {

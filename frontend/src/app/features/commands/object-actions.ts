@@ -161,17 +161,6 @@ export class ObjectActions {
     }
   }
 
-  async removeAcknowledgement(): Promise<void> {
-    await this.commands.run({
-      action: 'remove-acknowledgement',
-      targets: this.targets(),
-      body: {},
-      pending: this.t('commands.removingAck', { target: this.label() }),
-      success: this.t('commands.removedAck', { target: this.label() }),
-      verify: (status) => !status.acknowledged,
-    });
-  }
-
   async scheduleDowntime(): Promise<void> {
     const start = Math.floor(Date.now() / 1000);
     const end = start + this.downtimeMinutes() * 60;

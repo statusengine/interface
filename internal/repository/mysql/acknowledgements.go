@@ -20,8 +20,11 @@ func NewAcknowledgements(db *sql.DB) *Acknowledgements { return &Acknowledgement
 type AckFilter struct {
 	Search string
 	Host   string
-	Author string
-	Kind   domain.Kind
+	// Service narrows to one service on that host. Only meaningful
+	// together with Host.
+	Service string
+	Author  string
+	Kind    domain.Kind
 
 	// From and To bound entry_time. Both zero means no bound.
 	From int64
@@ -93,7 +96,8 @@ func (f AckFilter) union() (string, []any) {
 	var parts []string
 	var args []any
 
-	if f.Kind != domain.KindService {
+	// The host table has no service_description column to match against.
+	if f.Kind != domain.KindService && f.Service == "" {
 		var c conditions
 		f.applyCommon(&c, []string{"hostname"})
 		parts = append(parts, "SELECT 'host' AS kind, hostname, '' AS service_description, "+
@@ -126,6 +130,9 @@ func (f AckFilter) applyCommon(c *conditions, searchColumns []string) {
 	if f.Host != "" {
 		c.add("hostname = ?", f.Host)
 	}
+	if f.Service != "" {
+		c.add("service_description = ?", f.Service)
+	}
 	if f.Author != "" {
 		c.add("author_name = ?", f.Author)
 	}
@@ -149,4 +156,26 @@ func (f AckFilter) applyCommon(c *conditions, searchColumns []string) {
 		args = append(args, pattern, pattern)
 		c.add("("+joinOr(exprs)+")", args...)
 	}
+}
+
+// LatestFor returns the most recent acknowledgement on one object, or
+// nil when there is none.
+//
+// The table keeps every acknowledgement ever set, including ones that
+// were later removed, so this is only meaningful for an object whose
+// status says it is acknowledged now.
+func (r *Acknowledgements) LatestFor(ctx context.Context, kind domain.Kind, host, service string) (*domain.Acknowledgement, error) {
+	f := AckFilter{Kind: kind, Host: host}
+	if kind == domain.KindService {
+		f.Service = service
+	}
+
+	rows, _, err := r.List(ctx, f, Page{Limit: 1, Sort: "entry_time", Desc: true})
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, nil
+	}
+	return &rows[0], nil
 }

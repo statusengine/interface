@@ -133,6 +133,12 @@ an acknowledgement, schedule and delete a downtime, force a check,
 submit a passive result, send a custom notification, and toggle
 notifications or active checks per object.
 
+A host or service that is in a downtime or acknowledged says so on its
+detail page, with the record behind it: who set it, what they wrote,
+and how long it lasts - plus the way to cancel the window or remove the
+acknowledgement. Both suppress notifications, and the reason is the
+part an operator needs.
+
 Hosts, services and problems can be ticked and acted on together:
 select rows, then acknowledge, schedule a downtime, or force a check on
 all of them. The three that read the same for one object and for fifty -

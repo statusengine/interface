@@ -127,6 +127,21 @@ func (s *Server) handleListHosts(w http.ResponseWriter, r *http.Request) {
 	writeList(w, hosts, metaFor(p, total))
 }
 
+// hostDetail is a host plus the records that explain why it is quiet.
+//
+// Composed here rather than left to the client. The two extra reads hit
+// small tables keyed by hostname, and a detail page that has to make
+// three requests makes them again on every live refresh.
+type hostDetail struct {
+	domain.HostStatus
+	// Downtimes the core is holding on this host right now.
+	Downtimes []domain.Downtime `json:"downtimes"`
+	// The acknowledgement in force, when the host is acknowledged. The
+	// table keeps removed ones too, so it is only read when the status
+	// says one applies.
+	Acknowledgement *domain.Acknowledgement `json:"acknowledgement,omitempty"`
+}
+
 func (s *Server) handleGetHost(w http.ResponseWriter, r *http.Request) {
 	hostname := r.PathValue("host")
 
@@ -139,7 +154,26 @@ func (s *Server) handleGetHost(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, "the host", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, host)
+
+	detail := hostDetail{HostStatus: host, Downtimes: []domain.Downtime{}}
+	if host.InDowntime {
+		downtimes, err := s.downtimes.ForObject(r.Context(), domain.KindHost, hostname, "")
+		if err != nil {
+			s.internalError(w, r, "the host's downtimes", err)
+			return
+		}
+		detail.Downtimes = downtimes
+	}
+	if host.Acknowledged {
+		ack, err := s.acks.LatestFor(r.Context(), domain.KindHost, hostname, "")
+		if err != nil {
+			s.internalError(w, r, "the host's acknowledgement", err)
+			return
+		}
+		detail.Acknowledgement = ack
+	}
+
+	writeJSON(w, http.StatusOK, detail)
 }
 
 func (s *Server) handleListHostNames(w http.ResponseWriter, r *http.Request) {
@@ -208,7 +242,33 @@ func (s *Server) handleGetService(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, "the service", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, service)
+
+	detail := serviceDetail{ServiceStatus: service, Downtimes: []domain.Downtime{}}
+	if service.InDowntime {
+		downtimes, err := s.downtimes.ForObject(r.Context(), domain.KindService, host, description)
+		if err != nil {
+			s.internalError(w, r, "the service's downtimes", err)
+			return
+		}
+		detail.Downtimes = downtimes
+	}
+	if service.Acknowledged {
+		ack, err := s.acks.LatestFor(r.Context(), domain.KindService, host, description)
+		if err != nil {
+			s.internalError(w, r, "the service's acknowledgement", err)
+			return
+		}
+		detail.Acknowledgement = ack
+	}
+
+	writeJSON(w, http.StatusOK, detail)
+}
+
+// serviceDetail is the service equivalent of hostDetail.
+type serviceDetail struct {
+	domain.ServiceStatus
+	Downtimes       []domain.Downtime       `json:"downtimes"`
+	Acknowledgement *domain.Acknowledgement `json:"acknowledgement,omitempty"`
 }
 
 // --- problems --------------------------------------------------------------
@@ -287,7 +347,16 @@ func (s *Server) downtimeFilter(r *http.Request) (repo.DowntimeFilter, *apiError
 	q := r.URL.Query()
 	f.Search = strings.TrimSpace(q.Get("q"))
 	f.Host = strings.TrimSpace(q.Get("host"))
+	f.Service = strings.TrimSpace(q.Get("service"))
 	f.Now = time.Now().Unix()
+
+	if f.Service != "" && f.Host == "" {
+		return f, &apiError{
+			Code:    CodeBadRequest,
+			Message: "a service filter needs a host as well; a service description is not unique on its own",
+			Field:   "host",
+		}
+	}
 
 	kind, apiErr := parseKind(r)
 	if apiErr != nil {
@@ -353,7 +422,17 @@ func (s *Server) handleListAcknowledgements(w http.ResponseWriter, r *http.Reque
 	q := r.URL.Query()
 	f.Search = strings.TrimSpace(q.Get("q"))
 	f.Host = strings.TrimSpace(q.Get("host"))
+	f.Service = strings.TrimSpace(q.Get("service"))
 	f.Author = strings.TrimSpace(q.Get("author"))
+
+	if f.Service != "" && f.Host == "" {
+		fail(w, &apiError{
+			Code:    CodeBadRequest,
+			Message: "a service filter needs a host as well; a service description is not unique on its own",
+			Field:   "host",
+		})
+		return
+	}
 
 	kind, apiErr := parseKind(r)
 	if apiErr != nil {

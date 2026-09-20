@@ -586,3 +586,89 @@ func TestIntegrationMetrics(t *testing.T) {
 		}
 	})
 }
+
+// The detail pages compose their context from these two, so a wrong
+// filter here shows an operator somebody else's downtime.
+func TestIntegrationObjectContext(t *testing.T) {
+	db := testDB(t)
+	downtimes := NewDowntimes(db)
+	acks := NewAcknowledgements(db)
+	ctx := ctxFor(t)
+
+	t.Run("a service's windows come only from the service table", func(t *testing.T) {
+		current, _, err := downtimes.Current(ctx, DowntimeFilter{Now: time.Now().Unix()},
+			page("scheduled_start_time", true))
+		if err != nil {
+			t.Fatalf("Current: %v", err)
+		}
+		var sample *domain.Downtime
+		for i := range current {
+			if current[i].Kind == domain.KindService {
+				sample = &current[i]
+				break
+			}
+		}
+		if sample == nil {
+			t.Skip("no service downtimes in the test database")
+		}
+
+		got, err := downtimes.ForObject(ctx, domain.KindService, sample.Hostname, sample.Description)
+		if err != nil {
+			t.Fatalf("ForObject: %v", err)
+		}
+		if len(got) == 0 {
+			t.Fatal("the object's own downtime was not returned")
+		}
+		for _, d := range got {
+			// A host downtime is not a downtime on one of its services,
+			// and the host table has no service column to match anyway.
+			if d.Kind != domain.KindService {
+				t.Errorf("a %s downtime came back for a service", d.Kind)
+			}
+			if d.Hostname != sample.Hostname || d.Description != sample.Description {
+				t.Errorf("got %s/%s, want %s/%s",
+					d.Hostname, d.Description, sample.Hostname, sample.Description)
+			}
+		}
+	})
+
+	t.Run("a host's windows exclude its services", func(t *testing.T) {
+		got, err := downtimes.ForObject(ctx, domain.KindHost, "no-such-host-9f3a", "")
+		if err != nil {
+			t.Fatalf("ForObject: %v", err)
+		}
+		if len(got) != 0 {
+			t.Errorf("got %d downtimes for a host that does not exist", len(got))
+		}
+	})
+
+	t.Run("the latest acknowledgement, or nothing", func(t *testing.T) {
+		all, total, err := acks.List(ctx, AckFilter{}, page("entry_time", true))
+		if err != nil {
+			t.Fatalf("List: %v", err)
+		}
+		if total == 0 {
+			t.Skip("no acknowledgements in the test database")
+		}
+		sample := all[0]
+
+		got, err := acks.LatestFor(ctx, sample.Kind, sample.Hostname, sample.Description)
+		if err != nil {
+			t.Fatalf("LatestFor: %v", err)
+		}
+		if got == nil {
+			t.Fatal("the object's own acknowledgement was not returned")
+		}
+		if got.Hostname != sample.Hostname || got.Description != sample.Description {
+			t.Errorf("got %s/%s", got.Hostname, got.Description)
+		}
+
+		missing, err := acks.LatestFor(ctx, domain.KindHost, "no-such-host-9f3a", "")
+		if err != nil {
+			t.Fatalf("LatestFor: %v", err)
+		}
+		if missing != nil {
+			t.Error("an acknowledgement came back for a host that does not exist")
+		}
+	})
+}

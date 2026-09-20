@@ -13,13 +13,14 @@ import { Api } from '../../core/api/api.service';
 import { Commands } from '../../core/commands/commands.service';
 import { Live } from '../../core/events/live.service';
 import { ApiError } from '../../core/api/api.error';
-import type { ServiceStatus } from '../../core/api/types';
+import type { ServiceDetail as ServiceDetailData } from '../../core/api/types';
 import { FactList, type Fact } from '../../shared/ui/fact-list';
 import { PluginOutput } from '../../shared/ui/plugin-output';
 import { RowFlags } from '../../shared/ui/row-flags';
 import { StateBadge } from '../../shared/ui/state-badge';
 import { MetricsPanel } from './metrics-panel';
 import { ObjectActions } from '../commands/object-actions';
+import { ObjectContext } from '../commands/object-context';
 import { DurationPipe } from '../../shared/pipes/duration.pipe';
 import { SincePipe } from '../../shared/pipes/since.pipe';
 import { TimestampPipe } from '../../shared/pipes/timestamp.pipe';
@@ -45,6 +46,7 @@ import { stateClass } from '../../shared/state/state';
     RowFlags,
     MetricsPanel,
     ObjectActions,
+    ObjectContext,
     DurationPipe,
     SincePipe,
     TimestampPipe,
@@ -61,7 +63,7 @@ export class ServiceDetail {
   readonly hostname = this.route.snapshot.queryParamMap.get('host') ?? '';
   readonly description = this.route.snapshot.queryParamMap.get('service') ?? '';
 
-  readonly service = signal<ServiceStatus | null>(null);
+  readonly service = signal<ServiceDetailData | null>(null);
   readonly error = signal<ApiError | null>(null);
   readonly loading = signal(true);
 
@@ -123,7 +125,7 @@ export class ServiceDetail {
     this.error.set(null);
     try {
       this.service.set(
-        await this.api.get<ServiceStatus>('/service', {
+        await this.api.get<ServiceDetailData>('/service', {
           host: this.hostname,
           service: this.description,
         }),

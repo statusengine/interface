@@ -1,0 +1,125 @@
+<ng-container *transloco="let t">
+  @if (hasAnything()) {
+    <div class="space-y-2">
+      @for (downtime of downtimes(); track downtime.internal_id) {
+        <section
+          class="rounded-md border border-line border-l-2 border-l-accent bg-surface px-4 py-3"
+          [attr.aria-label]="t('context.downtimeRegion')"
+        >
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h2 class="flex items-center gap-1.5 text-[13px] font-medium text-accent">
+                <sei-icon name="pause" [size]="14" />
+                {{
+                  isRunning(downtime)
+                    ? t('context.inDowntime', { remaining: remaining(downtime) | seiDuration })
+                    : t('context.downtimeScheduled', {
+                        when: downtime.scheduled_start_time | seiSince,
+                      })
+                }}
+              </h2>
+
+              <p class="mt-1 text-[13px] text-ink">{{ downtime.comment }}</p>
+
+              <p
+                class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12px] text-ink-dim"
+              >
+                <span>{{ t('context.setBy', { author: downtime.author || '—' }) }}</span>
+                <span [title]="downtime.entry_time | seiTimestamp">
+                  {{ t('context.setAgo', { ago: downtime.entry_time | seiSince }) }}
+                </span>
+                <span>
+                  {{
+                    t('context.window', {
+                      from: downtime.scheduled_start_time | seiTimestamp,
+                      to: downtime.scheduled_end_time | seiTimestamp,
+                    })
+                  }}
+                </span>
+                @if (!downtime.is_fixed) {
+                  <span [title]="t('downtimes.flexibleTitle')">{{ t('downtimes.flexible') }}</span>
+                }
+              </p>
+            </div>
+
+            @if (canDowntime() && commandsEnabled()) {
+              <button
+                type="button"
+                (click)="cancelDowntime(downtime)"
+                [disabled]="busy()"
+                class="sei-action shrink-0"
+              >
+                <sei-icon name="close" [size]="14" />
+                {{ t('context.cancelDowntime') }}
+              </button>
+            }
+          </div>
+        </section>
+      }
+
+      @if (downtimes().length > 1) {
+        <!-- Depth, not duplication: the object stays suppressed until
+             the last window ends, so cancelling one changes nothing an
+             operator can see. -->
+        <p class="px-1 text-[12px] text-ink-dim">
+          {{ t('context.overlapping', { count: downtimes().length }) }}
+        </p>
+      }
+
+      @if (acknowledged()) {
+        <section
+          class="rounded-md border border-line border-l-2 border-l-ok bg-surface px-4 py-3"
+          [attr.aria-label]="t('context.acknowledgementRegion')"
+        >
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h2 class="flex items-center gap-1.5 text-[13px] font-medium text-ok">
+                <sei-icon name="check-circle" [size]="14" />
+                {{ t('context.acknowledged') }}
+              </h2>
+
+              @if (acknowledgement(); as ack) {
+                <p class="mt-1 text-[13px] text-ink">{{ ack.comment }}</p>
+
+                <p
+                  class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12px] text-ink-dim"
+                >
+                  <span>{{ t('context.setBy', { author: ack.author || '—' }) }}</span>
+                  <span [title]="ack.entry_time | seiTimestamp">
+                    {{ t('context.setAgo', { ago: ack.entry_time | seiSince }) }}
+                  </span>
+                  <span>{{ t('context.ackState', { state: t('states.' + ack.state_text) }) }}</span>
+                  @if (ack.is_sticky) {
+                    <span [title]="t('acknowledgements.stickyTitle')">{{
+                      t('acknowledgements.sticky')
+                    }}</span>
+                  } @else {
+                    <span [title]="t('context.notStickyTitle')">{{ t('context.notSticky') }}</span>
+                  }
+                </p>
+              } @else {
+                <!-- The core says it is acknowledged but the worker
+                     never recorded the event, so there is no author or
+                     comment to show. The state is still real and still
+                     removable. -->
+                <p class="mt-1 text-[13px] text-ink-dim">{{ t('context.ackWithoutRecord') }}</p>
+              }
+            </div>
+
+            @if (canAcknowledge() && commandsEnabled()) {
+              <button
+                type="button"
+                (click)="removeAcknowledgement()"
+                [disabled]="busy()"
+                class="sei-action shrink-0"
+              >
+                <sei-icon name="close" [size]="14" />
+                {{ t('commands.removeAck') }}
+              </button>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  }
+</ng-container>

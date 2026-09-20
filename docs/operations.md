@@ -71,6 +71,16 @@ but `proxy_read_timeout` is still yours to set.
 | A list answers `504` "took longer than 20s" | A query hit `query_timeout` | Narrow the window, name a host, or ask for fewer rows. See the performance notes below. |
 | The log entries page is empty | `LogData` is not enabled in the broker | Add `LogData = "statusngin_logentries"` to `statusengine.toml` and restart Naemon. |
 
+### Overlapping downtimes
+
+Windows stack. Scheduling a downtime on an object that is already in one
+increments `scheduled_downtime_depth` rather than replacing it, and
+notifications stay suppressed until the last of them ends. The detail
+page lists every window on the object for that reason, and says so when
+there is more than one - cancelling one of three changes nothing an
+operator can see, and a page that showed only the first would make that
+look like a bug.
+
 ### Limits on a bulk
 
 The worker accepts at most 1 000 commands in one submission. A downtime

@@ -457,5 +457,23 @@
     "acknowledged": "{{count}} Objekte quittiert",
     "schedulingDowntime": "Wartungsfenster für {{count}} Objekte werden geplant",
     "downtimeScheduled": "{{count}} Objekte sind in Wartung"
+  },
+  "context": {
+    "downtimeRegion": "Wartungsfenster",
+    "acknowledgementRegion": "Quittierung",
+    "inDowntime": "In einem Wartungsfenster — noch {{remaining}}",
+    "downtimeScheduled": "Wartungsfenster geplant, beginnt {{when}}",
+    "cancelDowntime": "Fenster abbrechen",
+    "cancellingDowntime": "Wartungsfenster für {{target}} wird abgebrochen",
+    "downtimeCancelled": "Das Wartungsfenster für {{target}} wurde abgebrochen",
+    "overlapping": "Hier überlappen {{count}} Fenster. Benachrichtigungen bleiben unterdrückt, bis das letzte endet.",
+    "acknowledged": "Quittiert",
+    "ackState": "gesetzt bei {{state}}",
+    "notSticky": "nicht sticky",
+    "notStickyTitle": "Die Quittierung verfällt von selbst, wenn der Zustand schlechter wird.",
+    "setBy": "von {{author}}",
+    "setAgo": "vor {{ago}}",
+    "window": "{{from}} → {{to}}",
+    "ackWithoutRecord": "Der Monitoring-Kern meldet das als quittiert, aber wer es gesetzt hat, ist nie in der Datenbank angekommen."
   }
 }

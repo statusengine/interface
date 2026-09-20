@@ -200,6 +200,23 @@ export interface LogEntry {
   node_name?: string;
 }
 
+/**
+ * What a detail page gets: the object, plus the records that explain
+ * why it is quiet. Composed by the server so the page is one request
+ * and stays one request on every live refresh.
+ */
+export interface ObjectContext {
+  /** The windows the core is holding on this object right now. More
+   *  than one can overlap, and the object stays in a downtime until the
+   *  last of them ends. */
+  downtimes: Downtime[];
+  /** The acknowledgement in force, when there is one. */
+  acknowledgement?: Acknowledgement;
+}
+
+export type HostDetail = HostStatus & ObjectContext;
+export type ServiceDetail = ServiceStatus & ObjectContext;
+
 export interface StateCounts {
   total: number;
   pending: number;

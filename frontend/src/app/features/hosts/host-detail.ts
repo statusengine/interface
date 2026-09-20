@@ -14,7 +14,7 @@ import { Commands } from '../../core/commands/commands.service';
 import { Live } from '../../core/events/live.service';
 import { ApiError } from '../../core/api/api.error';
 import { ListStore } from '../../core/list/list-store';
-import type { HostStatus, ServiceStatus } from '../../core/api/types';
+import type { HostDetail as HostDetailData, ServiceStatus } from '../../core/api/types';
 import { DataTable } from '../../shared/ui/data-table';
 import { FactList, type Fact } from '../../shared/ui/fact-list';
 import { Icon } from '../../shared/ui/icon';
@@ -27,6 +27,7 @@ import { SincePipe } from '../../shared/pipes/since.pipe';
 import { TimestampPipe } from '../../shared/pipes/timestamp.pipe';
 import { stateClass, stateTextClass } from '../../shared/state/state';
 import { ObjectActions } from '../commands/object-actions';
+import { ObjectContext } from '../commands/object-context';
 
 /** One host: its current state, what the plugin said, and its services. */
 @Component({
@@ -43,6 +44,7 @@ import { ObjectActions } from '../commands/object-actions';
     SortHeader,
     Icon,
     ObjectActions,
+    ObjectContext,
     DurationPipe,
     SincePipe,
     TimestampPipe,
@@ -59,7 +61,7 @@ export class HostDetail {
 
   readonly hostname = this.route.snapshot.paramMap.get('host') ?? '';
 
-  readonly host = signal<HostStatus | null>(null);
+  readonly host = signal<HostDetailData | null>(null);
   readonly error = signal<ApiError | null>(null);
   readonly loading = signal(true);
 
@@ -126,7 +128,9 @@ export class HostDetail {
     this.loading.set(true);
     this.error.set(null);
     try {
-      this.host.set(await this.api.get<HostStatus>(`/hosts/${encodeURIComponent(this.hostname)}`));
+      this.host.set(
+        await this.api.get<HostDetailData>(`/hosts/${encodeURIComponent(this.hostname)}`),
+      );
     } catch (err) {
       this.error.set(ApiError.from(err));
     } finally {

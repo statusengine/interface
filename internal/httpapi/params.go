@@ -58,7 +58,7 @@ func parseIntList(r *http.Request, name string, min, max int) ([]int, *apiError)
 	return out, nil
 }
 
-// TimeRange is a bounded window over a partitioned table.
+// TimeRange is a bounded window over a history table.
 type TimeRange struct {
 	From int64
 	To   int64
@@ -67,15 +67,13 @@ type TimeRange struct {
 // parseTimeRange reads `from` and `to` as Unix seconds and applies a
 // default window when either is missing.
 //
-// The default is not a convenience. It bounds the result set, and on the
-// history tables that carry a time-leading index it turns a table walk
-// into a range scan. It does NOT buy partition pruning: the worker
-// partitions by `time DIV 86400`, and MySQL does not prune for a DIV
-// expression - EXPLAIN reports every partition either way. So there is no
-// such thing as an unbounded history request here, and on
-// statusengine_servicechecks and the two statehistory tables, which have
-// no time-leading index at all, a window is the only thing standing
-// between a list and a full scan.
+// The default is not a convenience. The history tables are clustered on
+// an object-first primary key - (hostname, service_description, time) on
+// the service ones - so the rows for a given hour are scattered across
+// the table in small per-object runs. A window bounds the result set,
+// and combined with an object filter it becomes a contiguous range read
+// instead. There is therefore no such thing as an unbounded history
+// request here.
 func parseTimeRange(r *http.Request, defaultWindow time.Duration, maxWindow time.Duration) (TimeRange, *apiError) {
 	now := time.Now().Unix()
 	tr := TimeRange{From: now - int64(defaultWindow.Seconds()), To: now}

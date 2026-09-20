@@ -56,61 +56,52 @@ Three interfaces carry the parts that are meant to be replaceable:
 - **`events.Source`** — the worker's WebSocket today; a polling source
   covers the case where it is unreachable.
 
-## Time windows, partitions and the indexes that are missing
+## Time windows and the clustered primary key
 
-The worker partitions its history tables by `time DIV 86400`. That reads
-like an invitation to rely on partition pruning, and it is not one:
-**MySQL does not prune for a `RANGE (col DIV 86400)` expression.** Measured
-on this schema, a windowed query reports every partition in `EXPLAIN`,
-including one whose range cannot contain a single matching row.
+The history tables are clustered on an object-first primary key:
 
-What actually decides whether a history query is fast is the index, and
-the picture is uneven:
-
-| Table | Index leading with a time column |
+| Table | Primary key |
 |---|---|
-| `statusengine_logentries` | `logentries_se (entry_time, node_name)` |
-| `statusengine_hostchecks` | `times (start_time, end_time)` |
-| `statusengine_host_notifications` | `start_time (start_time)` |
-| `statusengine_service_notifications` | `start_time (start_time)` |
-| `statusengine_perfdata` | `timestamp_unix`, plus the composite below |
-| `statusengine_servicechecks` | **none** |
-| `statusengine_host_statehistory` | **none** |
-| `statusengine_service_statehistory` | **none** |
+| `statusengine_servicechecks` | `(hostname, service_description, start_time, start_time_usec)` |
+| `statusengine_service_statehistory` | `(hostname, service_description, state_time, state_time_usec)` |
+| `statusengine_hostchecks` | `(hostname, start_time, start_time_usec)` |
+| `statusengine_host_statehistory` | `(hostname, state_time, state_time_usec)` |
 
-For the last three, every index leads with `hostname` or
-`service_description`. So:
+InnoDB stores rows in primary-key order, so every check and every state
+change for one service sits physically together, in time order. That is
+the point of the key, and it decides the shape of this interface's
+history queries:
 
-- **Per-object history is fast.** `hostname + service_description + time`
-  hits `servicename (hostname, service_description, start_time)`. Measured
-  at 8 ms against 321k rows. This is the service detail page's history
-  tab, and it is the common case.
-- **Global history across all objects is a full scan.** Measured at 244 ms
-  against 321k rows, and it scales linearly: a year of a real
-  installation is tens of millions of rows and tens of seconds.
+- **One object over a window is a contiguous range read.** Measured at
+  8 ms against 321k rows. This is the service detail page's history tab,
+  and it is the common case.
+- **Every object over a window is not.** The rows for a given hour are
+  scattered across the whole table, one small run per service. Measured
+  at 244 ms against 321k rows, and it grows with the table rather than
+  with the window.
 
-Two consequences, both deliberate:
+So the global check-history and state-change pages lead with an object
+filter and cap the window, rather than pretending an unfiltered year is
+a reasonable request. Every history endpoint requires a window and
+defaults to a short one. The per-object pages, which is where an
+operator actually spends an incident, are on the fast path by
+construction.
 
-1. Every history endpoint requires a time window and defaults to a short
-   one. That does not buy pruning, but it does bound the result set and it
-   does use the index on the five tables that have one.
-2. The global check-history and state-change pages steer towards an object
-   filter rather than pretending an unfiltered year is a reasonable
-   request, and they cap the window.
+Adding a time-leading index to these tables would work against the
+clustering rather than with it, and is not something this interface
+asks for.
 
-An operator who wants fast global history can add the missing index. This
-is their call, not ours - the `statusengine_*` tables belong to the worker
-and this interface does not write to them:
+Two indexes in the standard schema are worth naming, because the
+queries here are written to hit them:
 
-```sql
-ALTER TABLE statusengine_servicechecks          ADD INDEX time (start_time);
-ALTER TABLE statusengine_host_statehistory      ADD INDEX time (state_time);
-ALTER TABLE statusengine_service_statehistory   ADD INDEX time (state_time);
-```
-
-`statusengine_perfdata` is not partitioned, but it carries
-`metric (hostname, service_description, label, timestamp_unix)`. The chart
-query is written in exactly that column order, and downsamples in SQL:
+- `statusengine_servicestatus` carries
+  `issues (problem_has_been_acknowledged, scheduled_downtime_depth, current_state)`,
+  which is exactly the shape of the unhandled-problems filter that the
+  dashboard and the problems list are built around.
+- `statusengine_perfdata` carries
+  `metric (hostname, service_description, label, timestamp_unix)`. The
+  chart query is written in exactly that column order and downsamples in
+  SQL:
 
 ```sql
 SELECT label, unit,
@@ -122,6 +113,15 @@ WHERE hostname = ? AND service_description = ?
 GROUP BY label, unit, bucket
 ORDER BY bucket
 ```
+
+### A note on partitions
+
+The standard schema, `packaging/mysql_schema.sql` in the worker
+repository, has no partitions. Some installations add them, and this
+project does not rely on them either way. If you do partition by
+`time DIV 86400`, be aware that MySQL does not prune for that
+expression - `EXPLAIN` reports every partition for a windowed query - so
+the clustering above is still what carries the cost.
 
 ## Sorting and SQL
 

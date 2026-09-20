@@ -344,9 +344,9 @@ func (s *Server) handleListAcknowledgements(w http.ResponseWriter, r *http.Reque
 	}
 	f.Kind = kind
 
-	// Acknowledgement tables are not partitioned, so a window is optional
-	// here. It is still offered, because "what did we acknowledge last
-	// week" is a real question.
+	// Acknowledgements are few and the table is small, so a window is
+	// optional here. It is still offered, because "what did we
+	// acknowledge last week" is a real question.
 	if q.Get("from") != "" || q.Get("to") != "" {
 		tr, apiErr := parseTimeRange(r, 30*24*time.Hour, 0)
 		if apiErr != nil {
@@ -376,9 +376,9 @@ func (s *Server) handleListAcknowledgements(w http.ResponseWriter, r *http.Reque
 // --- log entries -----------------------------------------------------------
 
 func (s *Server) handleListLogEntries(w http.ResponseWriter, r *http.Request) {
-	// statusengine_logentries is partitioned by entry_time DIV 86400, and
-	// its retention is days rather than months, so a day is a sensible
-	// default and a month is a generous ceiling.
+	// The worker ages log entries out after days rather than months
+	// (age_logentries defaults to 5), so a day is a sensible default
+	// window and a month is a generous ceiling.
 	tr, apiErr := parseTimeRange(r, 24*time.Hour, 31*24*time.Hour)
 	if apiErr != nil {
 		fail(w, apiErr)

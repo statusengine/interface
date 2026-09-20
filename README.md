@@ -155,27 +155,19 @@ Worth knowing before filing a bug:
   comments, flapping history or program status, so there is no comments
   page and no global "core is healthy" tile. Acknowledgement and downtime
   comments are stored and are shown.
-- **`statusengine_servicechecks` has a primary key of
-  `(service_description, start_time, start_time_usec)`,** without
-  `hostname`. Two hosts running a service of the same name in the same
-  microsecond collide, and one row is lost. That is upstream, not
-  something this interface can fix, but it can make check history look
-  incomplete.
-- **Three history tables have no index leading with a time column:**
-  `statusengine_servicechecks`, `statusengine_host_statehistory` and
-  `statusengine_service_statehistory`. Per-object history is fast (8 ms
-  against 321k rows here); global history across all objects is a full
-  scan (244 ms against the same data, and linear from there). Partition
-  pruning does not help - MySQL does not prune a `RANGE (col DIV 86400)`
-  expression. If global history matters on your installation, the fix is
-  three indexes, and it is your call because these are the worker's
-  tables:
-
-  ```sql
-  ALTER TABLE statusengine_servicechecks        ADD INDEX time (start_time);
-  ALTER TABLE statusengine_host_statehistory    ADD INDEX time (state_time);
-  ALTER TABLE statusengine_service_statehistory ADD INDEX time (state_time);
-  ```
+- **The history tables are clustered on an object-first primary key,**
+  for example `(hostname, service_description, start_time, …)` on
+  `statusengine_servicechecks`. InnoDB stores rows in that order, so
+  every check for one service sits physically together: reading one
+  object over a window is a contiguous range read (8 ms against 321k
+  rows here), while reading every object over the same window is not
+  (244 ms, growing with the table). The history pages are built around
+  that - per-object views are the fast path, and global views lead with
+  an object filter and a capped window.
+- **The standard schema has no partitions.** Some installations add
+  them. This project does not depend on them either way; if you
+  partition by `time DIV 86400`, note that MySQL does not prune for that
+  expression, so the clustering above is still what carries the cost.
 
 ## Testing
 

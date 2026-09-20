@@ -20,9 +20,7 @@ func NewLogEntries(db *sql.DB) *LogEntries { return &LogEntries{db: db} }
 //
 // From and To are required rather than optional: logentries_se leads with
 // entry_time, so a window turns this into a range scan instead of walking
-// the whole table. (The table is also partitioned by entry_time DIV 86400,
-// but MySQL does not prune for a DIV expression - measured, not assumed -
-// so the index is what does the work.)
+// a table whose retention is measured in days.
 type LogFilter struct {
 	Search string
 	From   int64
@@ -41,10 +39,9 @@ var LogSortColumns = map[string]string{
 // List returns a page of log entries.
 func (r *LogEntries) List(ctx context.Context, f LogFilter, p Page) ([]domain.LogEntry, int64, error) {
 	var c conditions
-	// Always bound entry_time, even when the caller passed nothing. It is
-	// the leading column of logentries_se, and an unbounded read of a
-	// table whose retention is measured in days is never what anyone
-	// meant.
+	// Always bound entry_time, even when the caller passed nothing: it is
+	// the leading column of logentries_se, and an unbounded read is never
+	// what anyone meant.
 	c.add("entry_time >= ?", f.From)
 	c.add("entry_time <= ?", f.To)
 	c.addIn("logentry_type", f.Types)

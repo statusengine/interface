@@ -1,0 +1,57 @@
+# Local development stack.
+#
+# This brings up MySQL and the interface. Naemon, the broker module and the
+# Statusengine worker are upstream systems and are expected to be running
+# already - point `worker_command_url` and `worker_events_url` at wherever
+# they live. On Linux, `host.docker.internal` needs the extra_hosts entry
+# below; on Docker Desktop it resolves on its own.
+
+name: statusengine-interface
+
+services:
+  mysql:
+    image: mysql:8.4
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: statusengine
+      MYSQL_DATABASE: statusengine
+      MYSQL_USER: statusengine
+      MYSQL_PASSWORD: statusengine
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-ustatusengine", "-pstatusengine"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  interface:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SEI_LISTEN_ADDR: ":8090"
+      SEI_MYSQL_DSN: "statusengine:statusengine@tcp(mysql:3306)/statusengine?parseTime=true"
+      # The worker runs outside this stack. Leave the keys empty to start
+      # without commands and without live updates; the UI degrades to
+      # read-only and polling, and says which of the two it is doing.
+      SEI_WORKER_COMMAND_URL: "http://host.docker.internal:8081/commands"
+      SEI_WORKER_COMMAND_KEY: "${SEI_WORKER_COMMAND_KEY:-}"
+      SEI_WORKER_EVENTS_URL: "ws://host.docker.internal:8080/ws"
+      SEI_WORKER_EVENTS_KEY: "${SEI_WORKER_EVENTS_KEY:-}"
+      SEI_DEMO_MODE: "true"
+      SEI_LOG_LEVEL: "debug"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:8090:8090"
+
+volumes:
+  mysql-data:

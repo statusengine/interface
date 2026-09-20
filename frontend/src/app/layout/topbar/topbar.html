@@ -1,0 +1,96 @@
+<header
+  class="flex h-12 items-center gap-2 border-b border-line bg-surface px-2 sm:px-3"
+  *transloco="let t"
+>
+  <button
+    type="button"
+    (click)="openDrawer.emit()"
+    class="rounded-sm p-2 text-ink-dim transition-colors hover:bg-sunken hover:text-ink lg:hidden"
+    [attr.aria-label]="t('nav.openMenu')"
+  >
+    <sei-icon name="menu" [size]="18" />
+  </button>
+
+  <div class="min-w-0 flex-1"></div>
+
+  @if (isDemo()) {
+    <!-- Not a warning banner: the demo account works, it just cannot
+         change anything. Said once, quietly, where the account lives. -->
+    <span
+      class="hidden rounded-xs border border-line px-2 py-0.5 text-[11px] text-ink-dim sm:inline"
+    >
+      {{ t('auth.readOnlySession') }}
+    </span>
+  }
+
+  <button
+    type="button"
+    (click)="theme.cycle()"
+    class="rounded-sm p-2 text-ink-dim transition-colors hover:bg-sunken hover:text-ink"
+    [attr.aria-label]="t('theme.' + theme.preference())"
+    [attr.title]="t('theme.' + theme.preference())"
+  >
+    <sei-icon [name]="themeIcon()" [size]="18" />
+  </button>
+
+  <div class="relative">
+    <button
+      type="button"
+      (click)="toggleMenu()"
+      class="flex items-center gap-2 rounded-sm px-2 py-1.5 text-[13px] text-ink-dim transition-colors hover:bg-sunken hover:text-ink"
+      [attr.aria-expanded]="menuOpen()"
+      aria-haspopup="menu"
+    >
+      <sei-icon name="user" [size]="16" />
+      <span class="hidden max-w-32 truncate sm:inline">{{ displayName() }}</span>
+      <sei-icon name="chevron-down" [size]="14" />
+    </button>
+
+    @if (menuOpen()) {
+      <!-- Clicking anywhere else closes the menu. Keyboard users get the
+           same via Escape on the panel. -->
+      <div class="fixed inset-0 z-10" (click)="closeMenu()" aria-hidden="true"></div>
+
+      <div
+        class="absolute right-0 z-20 mt-1 w-56 rounded-md border border-line bg-raised py-1 shadow-[var(--shadow-overlay)]"
+        role="menu"
+        (keydown.escape)="closeMenu()"
+      >
+        <div class="border-b border-line px-3 py-2">
+          <div class="truncate text-[13px] font-medium">{{ displayName() }}</div>
+          <div class="truncate text-[12px] text-ink-dim">{{ t('roles.' + role()) }}</div>
+        </div>
+
+        <div class="px-3 py-2">
+          <div class="pb-1.5 text-[11px] text-ink-dim">{{ t('language.label') }}</div>
+          <div class="flex gap-1">
+            @for (lang of language.available; track lang) {
+              <button
+                type="button"
+                (click)="setLanguage(lang)"
+                class="flex-1 rounded-xs border px-2 py-1 text-[12px] transition-colors"
+                [class.border-accent]="language.active() === lang"
+                [class.text-accent]="language.active() === lang"
+                [class.bg-accent-wash]="language.active() === lang"
+                [class.border-line]="language.active() !== lang"
+                [class.text-ink-dim]="language.active() !== lang"
+              >
+                {{ t('language.' + lang) }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <button
+          type="button"
+          (click)="signOut()"
+          role="menuitem"
+          class="flex w-full items-center gap-2.5 border-t border-line px-3 py-2 text-left text-[13px] text-ink-dim transition-colors hover:bg-sunken hover:text-ink"
+        >
+          <sei-icon name="logout" [size]="16" />
+          {{ t('auth.signOut') }}
+        </button>
+      </div>
+    }
+  </div>
+</header>

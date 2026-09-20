@@ -1,0 +1,19 @@
+# Go
+/seid
+/dist/
+*.test
+
+# The embedded frontend is build output. The directory itself stays, so
+# go:embed always has something to point at.
+/internal/webui/dist/*
+!/internal/webui/dist/.gitkeep
+
+# Node
+node_modules/
+/frontend/.angular/
+/frontend/dist/
+
+# Local configuration and credentials
+/seid.yaml
+/config.local.yaml
+*.local.yaml

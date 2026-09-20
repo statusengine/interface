@@ -1,0 +1,78 @@
+<nav
+  class="flex h-full flex-col bg-surface"
+  [class.w-60]="!collapsed()"
+  [class.w-14]="collapsed()"
+  *transloco="let t"
+  [attr.aria-label]="t('nav.primary')"
+>
+  <div
+    class="flex h-12 items-center gap-2.5 border-b border-line px-3"
+    [class.justify-center]="collapsed()"
+  >
+    <!-- The mark is the state rail itself: three bars, one per severity.
+         It is the same device the tables use, so the logo teaches it. -->
+    <span class="flex items-end gap-[3px]" aria-hidden="true">
+      <span class="block h-3.5 w-[3px] rounded-full bg-ok"></span>
+      <span class="block h-2.5 w-[3px] rounded-full bg-warning"></span>
+      <span class="block h-4.5 w-[3px] rounded-full bg-critical"></span>
+    </span>
+    @if (!collapsed()) {
+      <span class="truncate text-[13px] font-semibold tracking-tight">Statusengine</span>
+    }
+  </div>
+
+  <div class="flex-1 overflow-y-auto overscroll-contain py-2">
+    @for (group of groups(); track group.label) {
+      <div class="mb-1">
+        @if (group.label && !collapsed()) {
+          <div class="px-3 pb-1 pt-3 text-[11px] font-medium text-ink-dim">
+            {{ t('nav.groups.' + group.label) }}
+          </div>
+        } @else if (group.label && collapsed()) {
+          <div class="mx-3 my-2 border-t border-line"></div>
+        }
+
+        <ul class="px-2">
+          @for (item of group.items; track item.path) {
+            <li>
+              <a
+                [routerLink]="item.path"
+                routerLinkActive="bg-accent-wash text-accent font-medium"
+                [routerLinkActiveOptions]="{ exact: false }"
+                (click)="navigate.emit()"
+                class="flex items-center gap-2.5 rounded-sm px-2 py-1.5 text-[13px] text-ink-dim transition-colors hover:bg-sunken hover:text-ink"
+                [class.justify-center]="collapsed()"
+                [attr.title]="collapsed() ? t('nav.' + item.label) : null"
+              >
+                <sei-icon [name]="item.icon" />
+                @if (!collapsed()) {
+                  <span class="truncate">{{ t('nav.' + item.label) }}</span>
+                }
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </div>
+
+  <div class="border-t border-line p-2">
+    @if (!drawer()) {
+      <button
+        type="button"
+        (click)="toggleCollapsed.emit()"
+        class="flex w-full items-center gap-2.5 rounded-sm px-2 py-1.5 text-[13px] text-ink-dim transition-colors hover:bg-sunken hover:text-ink"
+        [class.justify-center]="collapsed()"
+        [attr.aria-label]="collapsed() ? t('nav.expandRail') : t('nav.collapseRail')"
+      >
+        <sei-icon [name]="collapsed() ? 'expand' : 'collapse'" />
+        @if (!collapsed()) {
+          <span>{{ t('nav.collapseRail') }}</span>
+        }
+      </button>
+    }
+    @if (!collapsed() && version()) {
+      <div class="px-2 pt-1.5 text-[11px] text-ink-faint mono">{{ version() }}</div>
+    }
+  </div>
+</nav>

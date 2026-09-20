@@ -1,0 +1,129 @@
+<div class="flex min-h-dvh flex-col bg-ground" *transloco="let t">
+  <div class="flex flex-1 items-center justify-center px-4 py-10">
+    <div class="w-full max-w-sm">
+      <div class="mb-7 flex items-center gap-3">
+        <span class="flex items-end gap-1" aria-hidden="true">
+          <span class="block h-5 w-1 rounded-full bg-ok"></span>
+          <span class="block h-3.5 w-1 rounded-full bg-warning"></span>
+          <span class="block h-6.5 w-1 rounded-full bg-critical"></span>
+        </span>
+        <div>
+          <h1 class="text-[17px] font-semibold">Statusengine</h1>
+          <p class="text-[12px] text-ink-dim">{{ t('auth.subtitle') }}</p>
+        </div>
+      </div>
+
+      @if (expired()) {
+        <div
+          class="mb-4 rounded-md border border-line bg-surface px-3 py-2.5 text-[13px] text-ink-dim"
+        >
+          {{ t('auth.sessionExpired') }}
+        </div>
+      }
+
+      <form
+        (ngSubmit)="submit()"
+        class="rounded-lg border border-line bg-surface p-5 shadow-[var(--shadow-raised)]"
+      >
+        <div class="mb-3.5">
+          <label for="username" class="mb-1.5 block text-[13px] font-medium">
+            {{ t('auth.username') }}
+          </label>
+          <input
+            id="username"
+            name="username"
+            type="text"
+            autocomplete="username"
+            required
+            autofocus
+            [ngModel]="username()"
+            (ngModelChange)="username.set($event)"
+            class="mono w-full rounded-sm border border-line bg-ground px-2.5 py-2 text-[13px] text-ink outline-none transition-colors focus:border-accent"
+          />
+        </div>
+
+        <div class="mb-4">
+          <label for="password" class="mb-1.5 block text-[13px] font-medium">
+            {{ t('auth.password') }}
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+            [ngModel]="password()"
+            (ngModelChange)="password.set($event)"
+            class="w-full rounded-sm border border-line bg-ground px-2.5 py-2 text-[13px] text-ink outline-none transition-colors focus:border-accent"
+          />
+        </div>
+
+        @if (error()) {
+          <p
+            class="mb-3.5 rounded-sm border-l-2 border-critical bg-critical-wash px-2.5 py-2 text-[13px] text-ink"
+            role="alert"
+          >
+            {{ error() }}
+          </p>
+        }
+
+        <button
+          type="submit"
+          [disabled]="busy() || !username() || !password()"
+          class="w-full rounded-sm bg-accent px-3 py-2 text-[13px] font-medium text-accent-ink transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {{ busy() ? t('auth.signingIn') : t('auth.signIn') }}
+        </button>
+
+        @if (demoAvailable()) {
+          <div class="mt-4 border-t border-line pt-4">
+            <button
+              type="button"
+              (click)="enterDemo()"
+              [disabled]="busy()"
+              class="w-full rounded-sm border border-line px-3 py-2 text-[13px] text-ink-dim transition-colors hover:border-line-strong hover:text-ink disabled:opacity-50"
+            >
+              {{ t('auth.enterDemo') }}
+            </button>
+            <p class="mt-2 text-center text-[12px] text-ink-dim">
+              {{ t('auth.demoExplainer') }}
+            </p>
+          </div>
+        }
+      </form>
+    </div>
+  </div>
+
+  <footer class="flex items-center justify-center gap-1 px-4 pb-6">
+    @for (lang of language.available; track lang) {
+      <button
+        type="button"
+        (click)="setLanguage(lang)"
+        class="rounded-xs px-2 py-1 text-[12px] transition-colors"
+        [class.text-accent]="language.active() === lang"
+        [class.text-ink-dim]="language.active() !== lang"
+      >
+        {{ t('language.' + lang) }}
+      </button>
+    }
+    <span class="px-1 text-ink-faint" aria-hidden="true">|</span>
+    <button
+      type="button"
+      (click)="theme.cycle()"
+      class="flex items-center gap-1.5 rounded-xs px-2 py-1 text-[12px] text-ink-dim transition-colors hover:text-ink"
+      [attr.aria-label]="t('theme.' + theme.preference())"
+    >
+      <sei-icon
+        [name]="
+          theme.preference() === 'light'
+            ? 'sun'
+            : theme.preference() === 'dark'
+              ? 'moon'
+              : 'monitor'
+        "
+        [size]="14"
+      />
+      {{ t('theme.' + theme.preference()) }}
+    </button>
+  </footer>
+</div>

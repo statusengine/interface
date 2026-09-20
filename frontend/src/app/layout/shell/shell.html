@@ -1,0 +1,28 @@
+<div class="flex h-dvh overflow-hidden bg-ground" *transloco="let t">
+  <!-- Wide screens: the rail is part of the layout. -->
+  <div class="hidden shrink-0 border-r border-line lg:block">
+    <sei-sidebar [collapsed]="railCollapsed()" (toggleCollapsed)="toggleRail()" />
+  </div>
+
+  <!-- Narrow screens: the same rail, as an overlay. -->
+  @if (drawerOpen()) {
+    <div class="fixed inset-0 z-40 lg:hidden">
+      <div class="absolute inset-0 bg-black/50" (click)="closeDrawer()" aria-hidden="true"></div>
+      <div
+        class="absolute inset-y-0 left-0 w-60 border-r border-line shadow-[var(--shadow-overlay)]"
+      >
+        <sei-sidebar [drawer]="true" (navigate)="closeDrawer()" />
+      </div>
+    </div>
+  }
+
+  <div class="flex min-w-0 flex-1 flex-col">
+    <sei-topbar (openDrawer)="openDrawer()" />
+
+    <!-- Skip link target. The main region scrolls, not the page, so the
+         rail and the top bar stay put while a long table moves. -->
+    <main id="main" class="min-h-0 flex-1 overflow-y-auto" tabindex="-1">
+      <router-outlet />
+    </main>
+  </div>
+</div>

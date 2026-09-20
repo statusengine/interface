@@ -1,0 +1,5 @@
+The Angular build writes here (`npm run build` in frontend/, or `make build`).
+
+This file is kept in git so the go:embed directive in ../webui.go always has
+a directory to find. A build with no frontend present serves the API only and
+says so at startup, rather than failing to compile.

@@ -1,0 +1,115 @@
+{
+  "a11y": {
+    "skipToContent": "Skip to content"
+  },
+  "nav": {
+    "primary": "Primary",
+    "openMenu": "Open the navigation",
+    "collapseRail": "Collapse",
+    "expandRail": "Expand the navigation",
+    "dashboard": "Dashboard",
+    "problems": "Problems",
+    "hosts": "Hosts",
+    "services": "Services",
+    "downtimes": "Downtimes",
+    "acknowledgements": "Acknowledgements",
+    "logentries": "Log entries",
+    "historyChecks": "Checks",
+    "historyStateChanges": "State changes",
+    "historyNotifications": "Notifications",
+    "groups": {
+      "monitoring": "Monitoring",
+      "operations": "Operations",
+      "records": "History"
+    }
+  },
+  "pages": {
+    "dashboard": {
+      "title": "Dashboard",
+      "description": "What needs attention right now."
+    },
+    "problems": {
+      "title": "Problems",
+      "description": "Hosts and services that are not in an OK state."
+    },
+    "hosts": {
+      "title": "Hosts",
+      "description": "Every host the monitoring core is watching."
+    },
+    "services": {
+      "title": "Services",
+      "description": "Every service check across all hosts."
+    },
+    "downtimes": {
+      "title": "Downtimes",
+      "description": "Scheduled and running maintenance windows."
+    },
+    "acknowledgements": {
+      "title": "Acknowledgements",
+      "description": "Problems someone has taken ownership of."
+    },
+    "logentries": {
+      "title": "Log entries",
+      "description": "Raw log lines from the monitoring core."
+    },
+    "historyChecks": {
+      "title": "Check history",
+      "description": "Every check the core has executed."
+    },
+    "historyStateChanges": {
+      "title": "State changes",
+      "description": "When hosts and services changed state, and to what."
+    },
+    "historyNotifications": {
+      "title": "Notifications",
+      "description": "Who was told about what, and when."
+    }
+  },
+  "placeholder": {
+    "title": "Not built yet",
+    "body": "This page arrives in phase {{phase}}. The route and its permissions already work, so the navigation is complete while the content catches up."
+  },
+  "auth": {
+    "subtitle": "Monitoring operations",
+    "username": "Username",
+    "password": "Password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in",
+    "signOut": "Sign out",
+    "enterDemo": "Continue as a guest",
+    "demoExplainer": "Read-only. Every command is refused.",
+    "readOnlySession": "Read-only",
+    "sessionExpired": "Your session ended. Sign in to pick up where you left off."
+  },
+  "roles": {
+    "admin": "Administrator",
+    "operator": "Operator",
+    "guest": "Guest"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "de": "Deutsch"
+  },
+  "errors": {
+    "unauthorized": "Wrong username or password.",
+    "forbidden": "Your role does not allow this.",
+    "rate_limited": "Too many attempts. Wait a moment and try again.",
+    "not_found": "That does not exist.",
+    "network_unreachable": "Could not reach the server. Check your connection.",
+    "internal_error": "The server could not complete that. Try again.",
+    "unavailable": "The monitoring core is not reachable right now.",
+    "invalid_filter": "That filter is not one this list accepts.",
+    "bad_request": "The request was not understood.",
+    "forbiddenTitle": "Not your permission",
+    "forbiddenBody": "This page needs a permission your role does not hold. An administrator can grant it.",
+    "notFoundTitle": "No such page",
+    "notFoundBody": "That address does not match anything in this interface.",
+    "backToDashboard": "Back to the dashboard"
+  }
+}

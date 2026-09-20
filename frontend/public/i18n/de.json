@@ -1,0 +1,115 @@
+{
+  "a11y": {
+    "skipToContent": "Zum Inhalt springen"
+  },
+  "nav": {
+    "primary": "Hauptnavigation",
+    "openMenu": "Navigation öffnen",
+    "collapseRail": "Einklappen",
+    "expandRail": "Navigation ausklappen",
+    "dashboard": "Übersicht",
+    "problems": "Probleme",
+    "hosts": "Hosts",
+    "services": "Services",
+    "downtimes": "Wartungsfenster",
+    "acknowledgements": "Quittierungen",
+    "logentries": "Logeinträge",
+    "historyChecks": "Checks",
+    "historyStateChanges": "Statuswechsel",
+    "historyNotifications": "Benachrichtigungen",
+    "groups": {
+      "monitoring": "Monitoring",
+      "operations": "Betrieb",
+      "records": "Verlauf"
+    }
+  },
+  "pages": {
+    "dashboard": {
+      "title": "Übersicht",
+      "description": "Was gerade Aufmerksamkeit braucht."
+    },
+    "problems": {
+      "title": "Probleme",
+      "description": "Hosts und Services, die nicht OK sind."
+    },
+    "hosts": {
+      "title": "Hosts",
+      "description": "Alle Hosts, die der Monitoring-Kern überwacht."
+    },
+    "services": {
+      "title": "Services",
+      "description": "Alle Service-Checks über alle Hosts."
+    },
+    "downtimes": {
+      "title": "Wartungsfenster",
+      "description": "Geplante und laufende Wartungen."
+    },
+    "acknowledgements": {
+      "title": "Quittierungen",
+      "description": "Probleme, für die jemand die Verantwortung übernommen hat."
+    },
+    "logentries": {
+      "title": "Logeinträge",
+      "description": "Rohe Logzeilen aus dem Monitoring-Kern."
+    },
+    "historyChecks": {
+      "title": "Check-Verlauf",
+      "description": "Jeder Check, den der Kern ausgeführt hat."
+    },
+    "historyStateChanges": {
+      "title": "Statuswechsel",
+      "description": "Wann Hosts und Services den Status gewechselt haben, und wohin."
+    },
+    "historyNotifications": {
+      "title": "Benachrichtigungen",
+      "description": "Wer wann worüber informiert wurde."
+    }
+  },
+  "placeholder": {
+    "title": "Noch nicht gebaut",
+    "body": "Diese Seite kommt in Phase {{phase}}. Route und Berechtigungen funktionieren bereits, damit die Navigation vollständig ist, während der Inhalt nachzieht."
+  },
+  "auth": {
+    "subtitle": "Monitoring-Betrieb",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "signIn": "Anmelden",
+    "signingIn": "Anmeldung läuft",
+    "signOut": "Abmelden",
+    "enterDemo": "Als Gast fortfahren",
+    "demoExplainer": "Nur lesend. Jeder Befehl wird abgelehnt.",
+    "readOnlySession": "Nur lesend",
+    "sessionExpired": "Deine Sitzung ist abgelaufen. Melde dich an, um weiterzumachen."
+  },
+  "roles": {
+    "admin": "Administrator",
+    "operator": "Operator",
+    "guest": "Gast"
+  },
+  "theme": {
+    "light": "Hell",
+    "dark": "Dunkel",
+    "system": "System"
+  },
+  "language": {
+    "label": "Sprache",
+    "en": "English",
+    "de": "Deutsch"
+  },
+  "errors": {
+    "unauthorized": "Benutzername oder Passwort stimmt nicht.",
+    "forbidden": "Deine Rolle erlaubt das nicht.",
+    "rate_limited": "Zu viele Versuche. Warte einen Moment und versuch es erneut.",
+    "not_found": "Das gibt es nicht.",
+    "network_unreachable": "Server nicht erreichbar. Prüf die Verbindung.",
+    "internal_error": "Der Server konnte das nicht ausführen. Versuch es erneut.",
+    "unavailable": "Der Monitoring-Kern ist gerade nicht erreichbar.",
+    "invalid_filter": "Diesen Filter akzeptiert die Liste nicht.",
+    "bad_request": "Die Anfrage war nicht verständlich.",
+    "forbiddenTitle": "Keine Berechtigung",
+    "forbiddenBody": "Diese Seite braucht eine Berechtigung, die deine Rolle nicht hat. Ein Administrator kann sie vergeben.",
+    "notFoundTitle": "Seite gibt es nicht",
+    "notFoundBody": "Diese Adresse passt zu nichts in dieser Oberfläche.",
+    "backToDashboard": "Zurück zur Übersicht"
+  }
+}

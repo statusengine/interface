@@ -1,0 +1,59 @@
+# Statusengine Web Interface - example configuration.
+#
+# Every key is optional except mysql_dsn. Precedence, for every setting:
+#
+#   command line flag  >  environment variable  >  this file  >  default
+#
+# Environment variables are the key in upper case with an SEI_ prefix,
+# for example SEI_LISTEN_ADDR.
+
+# --- HTTP ------------------------------------------------------------------
+
+# Loopback by default. This process holds a key that can drive the
+# monitoring core, so reaching the network should be a decision.
+listen_addr: 127.0.0.1:8090
+
+# --- MySQL -----------------------------------------------------------------
+
+# The same database the Statusengine worker writes to. The interface reads
+# statusengine_* and owns the sei_* tables it creates itself.
+mysql_dsn: statusengine:statusengine@tcp(127.0.0.1:3306)/statusengine?parseTime=true
+mysql_max_open_conns: 25
+
+# --- Statusengine worker ---------------------------------------------------
+
+# External commands. Without a key this is left switched off and the UI
+# says so rather than offering buttons that always fail.
+# Note the endpoint is /commands, plural, on its own port with its own key
+# - a /ws key does not work here.
+worker_command_url: http://127.0.0.1:8081/commands
+worker_command_key: ""
+
+# Live event stream. The browser never talks to this directly: the daemon
+# is the only client and fans events out over SSE. Without a key the UI
+# falls back to polling.
+worker_events_url: ws://127.0.0.1:8080/ws
+worker_events_key: ""
+
+# --- Sessions --------------------------------------------------------------
+
+session_ttl: 12h
+# Turn this on whenever the interface is served over TLS.
+secure_cookies: false
+
+# --- Demo mode -------------------------------------------------------------
+
+# Offers a read-only account on the login page. The account is created on
+# start and every external command it submits is refused.
+demo_mode: false
+demo_user: guest
+
+# --- Performance data ------------------------------------------------------
+
+# "mysql" reads statusengine_perfdata. "graphite" is not wired up yet.
+metrics_provider: mysql
+
+# --- Logging ---------------------------------------------------------------
+
+log_level: info
+log_format: text

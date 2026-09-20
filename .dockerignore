@@ -1,0 +1,10 @@
+.git
+.github
+frontend/node_modules
+frontend/dist
+frontend/.angular
+internal/webui/dist/*
+!internal/webui/dist/.gitkeep
+seid
+seid.yaml
+*.local.yaml

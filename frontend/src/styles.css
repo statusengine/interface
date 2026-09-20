@@ -1,0 +1,339 @@
+/* Statusengine Web Interface - design tokens and base layer.
+ *
+ * Two rules run through everything here:
+ *
+ *   1. State is structure. A status is never carried by colour alone; it is
+ *      carried by a rail at the row's edge, a label, and a position in the
+ *      sort order. Colour is the fastest of the three, not the only one.
+ *
+ *   2. Monospace means "a machine wrote this". Hostnames, service names,
+ *      plugin output, performance data and command lines are set in mono.
+ *      Everything a person wrote - labels, buttons, headings, help text -
+ *      is set in sans. An operator can tell a literal string from our
+ *      prose without reading it.
+ *
+ * Fonts are vendored, not fetched. A monitoring system routinely runs on a
+ * segment with no route to the internet, and a UI that degrades there is a
+ * UI that degrades exactly when someone needs it.
+ */
+
+@import 'tailwindcss';
+
+/* Latin and latin-ext only. The full families carry Cyrillic, Greek,
+ * Vietnamese and Thai subsets that de/en never reach for, and they are
+ * most of the weight. Adding a language here means adding its subset. */
+@import '@fontsource/ibm-plex-sans/latin-400.css';
+@import '@fontsource/ibm-plex-sans/latin-500.css';
+@import '@fontsource/ibm-plex-sans/latin-600.css';
+@import '@fontsource/ibm-plex-sans/latin-ext-400.css';
+@import '@fontsource/ibm-plex-mono/latin-400.css';
+@import '@fontsource/ibm-plex-mono/latin-500.css';
+
+/* Dark is opt-in via data-theme so the user's choice can override the OS,
+ * and the OS still decides when they have not chosen. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces. The light theme is a cool paper, not white: a wall display
+   * in a lit room is glare, and these tables are large fields of colour. */
+  --ground: #f4f6f9;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-sunken: #eaeef4;
+  --line: #d3dae4;
+  --line-strong: #b8c2d0;
+
+  --ink: #131922;
+  --ink-dim: #4d596b;
+  --ink-faint: #76829333;
+
+  /* Interactive. Cyan is chosen for one reason: no monitoring state uses
+   * it, so a link can never be misread as a status. */
+  --accent: #0b7d95;
+  --accent-hover: #096477;
+  --accent-ink: #ffffff;
+  --accent-wash: #0b7d9514;
+
+  /* States. Distinguishable by lightness as well as hue, because a red and
+   * a green of equal lightness are one colour to a deuteranope.
+   *
+   * UNKNOWN is violet rather than Nagios's orange. Orange next to a yellow
+   * WARNING is the single most misread pair in the classic interface, and
+   * the two mean very different things: one says the check succeeded and
+   * the news is bad, the other says the check itself did not work. */
+  --state-ok: #1a7f52;
+  --state-warning: #9a6b00;
+  --state-critical: #c62a30;
+  --state-unknown: #6d43c9;
+  --state-unreachable: #a13a68;
+  --state-pending: #6a7686;
+
+  --state-ok-wash: #1a7f5214;
+  --state-warning-wash: #9a6b0014;
+  --state-critical-wash: #c62a3014;
+  --state-unknown-wash: #6d43c914;
+  --state-unreachable-wash: #a13a6814;
+  --state-pending-wash: #6a768614;
+
+  --shadow-raised: 0 1px 2px #13192214, 0 2px 8px #1319220a;
+  --shadow-overlay: 0 4px 12px #13192226, 0 16px 40px #1319221f;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Blue-slate rather than a tinted near-black: the status hues sit on it
+   * without muddying, and a genuinely neutral dark makes the reds look
+   * brown at low brightness. */
+  --ground: #0f141c;
+  --surface: #161d27;
+  --surface-raised: #1d2531;
+  --surface-sunken: #0b0f16;
+  --line: #2a3340;
+  --line-strong: #3b475a;
+
+  --ink: #e4e9f0;
+  --ink-dim: #9aa7b8;
+  --ink-faint: #6b7786;
+
+  --accent: #3fb6d4;
+  --accent-hover: #63c8e1;
+  --accent-ink: #0b1017;
+  --accent-wash: #3fb6d41f;
+
+  --state-ok: #3cb37f;
+  --state-warning: #dfa23c;
+  --state-critical: #ef5a5f;
+  --state-unknown: #a98cf5;
+  --state-unreachable: #d66a9d;
+  --state-pending: #7b8797;
+
+  --state-ok-wash: #3cb37f1f;
+  --state-warning-wash: #dfa23c1f;
+  --state-critical-wash: #ef5a5f1f;
+  --state-unknown-wash: #a98cf51f;
+  --state-unreachable-wash: #d66a9d1f;
+  --state-pending-wash: #7b87971f;
+
+  --shadow-raised: 0 1px 2px #00000052, 0 2px 8px #00000038;
+  --shadow-overlay: 0 4px 12px #00000066, 0 16px 40px #00000059;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --ground: #0f141c;
+    --surface: #161d27;
+    --surface-raised: #1d2531;
+    --surface-sunken: #0b0f16;
+    --line: #2a3340;
+    --line-strong: #3b475a;
+
+    --ink: #e4e9f0;
+    --ink-dim: #9aa7b8;
+    --ink-faint: #6b7786;
+
+    --accent: #3fb6d4;
+    --accent-hover: #63c8e1;
+    --accent-ink: #0b1017;
+    --accent-wash: #3fb6d41f;
+
+    --state-ok: #3cb37f;
+    --state-warning: #dfa23c;
+    --state-critical: #ef5a5f;
+    --state-unknown: #a98cf5;
+    --state-unreachable: #d66a9d;
+    --state-pending: #7b8797;
+
+    --state-ok-wash: #3cb37f1f;
+    --state-warning-wash: #dfa23c1f;
+    --state-critical-wash: #ef5a5f1f;
+    --state-unknown-wash: #a98cf51f;
+    --state-unreachable-wash: #d66a9d1f;
+    --state-pending-wash: #7b87971f;
+
+    --shadow-raised: 0 1px 2px #00000052, 0 2px 8px #00000038;
+    --shadow-overlay: 0 4px 12px #00000066, 0 16px 40px #00000059;
+  }
+}
+
+/* `inline` keeps the utilities pointing at the custom properties, so the
+ * theme flips at runtime without rebuilding a stylesheet. */
+@theme inline {
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-raised: var(--surface-raised);
+  --color-sunken: var(--surface-sunken);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-ink: var(--ink);
+  --color-ink-dim: var(--ink-dim);
+  --color-ink-faint: var(--ink-faint);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-wash: var(--accent-wash);
+
+  --color-ok: var(--state-ok);
+  --color-warning: var(--state-warning);
+  --color-critical: var(--state-critical);
+  --color-unknown: var(--state-unknown);
+  --color-unreachable: var(--state-unreachable);
+  --color-pending: var(--state-pending);
+
+  --color-ok-wash: var(--state-ok-wash);
+  --color-warning-wash: var(--state-warning-wash);
+  --color-critical-wash: var(--state-critical-wash);
+  --color-unknown-wash: var(--state-unknown-wash);
+  --color-unreachable-wash: var(--state-unreachable-wash);
+  --color-pending-wash: var(--state-pending-wash);
+
+  --shadow-raised: var(--shadow-raised);
+  --shadow-overlay: var(--shadow-overlay);
+
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+}
+
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    background: var(--ground);
+    /* The tables live or die on figures lining up in a column. */
+    font-variant-numeric: tabular-nums;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Machine-emitted text. Applied by the `mono` class, never by element. */
+  .mono {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    letter-spacing: -0.005em;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 600;
+    letter-spacing: -0.012em;
+    margin: 0;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    line-height: 1.25;
+  }
+  h2 {
+    font-size: 1.125rem;
+    line-height: 1.3;
+  }
+  h3 {
+    font-size: 0.9375rem;
+    line-height: 1.35;
+  }
+
+  /* A focus ring that survives both themes and never relies on the accent
+   * alone, which sits on wildly different backgrounds across this app. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: var(--accent-wash);
+  }
+
+  /* Scrollbars, because a dense table is mostly scrollbar. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+}
+
+@layer components {
+  /* The state rail: the device the whole interface is built around.
+   *
+   * A 3px bar at a row's leading edge, in the state's colour. Solid means
+   * a hard state - the core has confirmed it. Striped means a soft state,
+   * still inside its retry budget. That distinction decides whether an
+   * operator acts now or waits, and every other Nagios interface buries it
+   * in a "3/5" column halfway across the screen.
+   */
+  .rail {
+    position: relative;
+    padding-inline-start: 0.75rem;
+  }
+
+  .rail::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 3px;
+    background: var(--rail-color, var(--line-strong));
+  }
+
+  .rail-soft::before {
+    background: repeating-linear-gradient(
+      to bottom,
+      var(--rail-color, var(--line-strong)) 0 3px,
+      transparent 3px 6px
+    );
+  }
+
+  /* Set --rail-color from the state, so one class does every state. */
+  .state-ok {
+    --rail-color: var(--state-ok);
+  }
+  .state-warning {
+    --rail-color: var(--state-warning);
+  }
+  .state-critical {
+    --rail-color: var(--state-critical);
+  }
+  .state-unknown {
+    --rail-color: var(--state-unknown);
+  }
+  .state-unreachable {
+    --rail-color: var(--state-unreachable);
+  }
+  .state-pending {
+    --rail-color: var(--state-pending);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

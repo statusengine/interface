@@ -172,6 +172,13 @@ Every submission is recorded in `sei_command_audit`, including the ones
 that were refused, with the submitting account and the response - one
 row per object, so a bulk of fifty leaves fifty rows.
 
+The **Command log** page reads that back: who sent what, at which
+object, from which address, what the broker answered, and the payload as
+it was sent. It filters by action, by person, by window, or down to the
+failures alone, and a host or service page links into it pre-filtered to
+that object. Administrators and operators can read it; guests cannot,
+because it names people and their addresses.
+
 ## Live updates
 
 With `worker_events_key` set, the daemon holds one WebSocket to the
@@ -262,7 +269,7 @@ tokens are not eyeballed: every text colour is computed against all
 three surfaces of its theme and must clear 4.5:1.
 
 The repository tests can also run against a real Statusengine schema.
-They only read, and they are skipped unless a DSN is given:
+They are skipped unless a DSN is given:
 
 ```bash
 make test-integration SEI_TEST_DSN='user:pass@tcp(127.0.0.1:3306)/statusengine'
@@ -271,3 +278,8 @@ make test-integration SEI_TEST_DSN='user:pass@tcp(127.0.0.1:3306)/statusengine'
 They are worth running after any change to a query: a builder test proves
 the clause reads correctly, but only a database proves MySQL accepts it
 and that the column list and the scan targets still line up.
+
+The repository tests only read. The one exception is the audit test,
+which writes its own rows to `sei_command_audit` under a username
+nothing else uses and deletes exactly those again - point `SEI_TEST_DSN`
+at a test database, not at production.

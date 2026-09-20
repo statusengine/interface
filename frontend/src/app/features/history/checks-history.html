@@ -30,7 +30,7 @@
   <sei-data-table
     [loading]="store.loading()"
     [empty]="store.isEmpty()"
-    [error]="store.error()?.message ?? null"
+    [error]="store.errorText()"
     [emptyTitle]="t('history.emptyChecksTitle')"
     [emptyBody]="t('history.emptyChecksBody')"
     (retry)="store.reload()"

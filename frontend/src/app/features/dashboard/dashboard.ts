@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { Api } from '../../core/api/api.service';
 import { ApiError } from '../../core/api/api.error';
+import { apiErrorText } from '../../core/api/error-text';
 import type { ListResponse, Problem, Summary } from '../../core/api/types';
 import { Icon } from '../../shared/ui/icon';
 import { PageHeader } from '../../shared/ui/page-header';
@@ -44,7 +45,13 @@ export class Dashboard {
   readonly stateClass = stateClass;
 
   readonly summary = signal<Summary | null>(null);
+  private readonly transloco = inject(TranslocoService);
+
   readonly summaryError = signal<ApiError | null>(null);
+
+  /** The failure in the reader's language; the server's sentence is the
+   *  fallback for a code with no wording yet. */
+  readonly summaryErrorText = computed(() => apiErrorText(this.transloco, this.summaryError()));
   readonly loading = signal(true);
 
   readonly problems = signal<Problem[]>([]);

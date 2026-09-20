@@ -118,8 +118,18 @@ type AuditFilter struct {
 	FailedOnly bool
 }
 
-// List returns a page of audit records, newest first.
-func (a *Audit) List(ctx context.Context, f AuditFilter, limit, offset int) ([]Record, int64, error) {
+// AuditPage is the slice of the log a caller wants back.
+type AuditPage struct {
+	Limit  int
+	Offset int
+	// Desc puts the newest entries first, which is how the log is read
+	// nine times out of ten. Ascending exists for the tenth: walking an
+	// incident forwards from the first command someone ran.
+	Desc bool
+}
+
+// List returns a page of audit records.
+func (a *Audit) List(ctx context.Context, f AuditFilter, p AuditPage) ([]Record, int64, error) {
 	where := " WHERE 1=1"
 	var args []any
 
@@ -156,11 +166,18 @@ func (a *Audit) List(ctx context.Context, f AuditFilter, limit, offset int) ([]R
 		return nil, 0, nil
 	}
 
+	// The direction is a literal chosen here, never a caller's string,
+	// and id breaks the tie so paging cannot show one row twice: audit
+	// rows are written in batches and share a timestamp by the hundred.
+	dir := "ASC"
+	if p.Desc {
+		dir = "DESC"
+	}
 	query := `SELECT id, username, action, target, payload, http_status, response,
 		remote_ip, created_at FROM sei_command_audit` + where +
-		" ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?"
+		" ORDER BY created_at " + dir + ", id " + dir + " LIMIT ? OFFSET ?"
 
-	rows, err := a.db.QueryContext(ctx, query, append(args, limit, offset)...)
+	rows, err := a.db.QueryContext(ctx, query, append(args, p.Limit, p.Offset)...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("commands: listing audit entries: %w", err)
 	}

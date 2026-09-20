@@ -148,6 +148,18 @@ would rather migrate as a separate step.
 Migrations only ever create or alter `sei_*` objects. An upgrade never
 touches the worker's tables.
 
+The three built-in roles are defined in code, and startup brings the
+stored ones back in line with that definition, logging what it changed:
+
+```
+level=INFO msg="updated built-in role" role=operator added=[audit:read] removed=[]
+```
+
+That is how a permission added in a new version reaches an installation
+that already has the role. Nothing in the interface edits a role, so the
+reconcile cannot overwrite somebody's choice - a role you want to differ
+has to be a new one, not one of the three built-ins.
+
 ## Accounts
 
 ```
@@ -156,6 +168,10 @@ seid user passwd -username ops     # also ends that user's sessions
 seid user role   -username ops -role admin
 seid user list
 ```
+
+Roles: `admin` holds everything; `operator` reads everything, submits
+commands and reads the command log; `guest` reads the monitoring data
+only - not the command log, which names people and their addresses.
 
 There is no default administrator and no default password. Passwords are
 argon2id; the session cookie carries a random token and the database

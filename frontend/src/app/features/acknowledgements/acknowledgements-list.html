@@ -15,7 +15,7 @@
   <sei-data-table
     [loading]="store.loading()"
     [empty]="store.isEmpty()"
-    [error]="store.error()?.message ?? null"
+    [error]="store.errorText()"
     [emptyTitle]="
       store.hasFilters()
         ? t('acknowledgements.emptyFilteredTitle')

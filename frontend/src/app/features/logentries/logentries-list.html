@@ -20,7 +20,7 @@
   <sei-data-table
     [loading]="store.loading()"
     [empty]="store.isEmpty()"
-    [error]="store.error()?.message ?? null"
+    [error]="store.errorText()"
     [emptyTitle]="t('logentries.emptyTitle')"
     [emptyBody]="t('logentries.emptyBody')"
     [showClear]="store.hasFilters()"

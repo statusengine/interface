@@ -234,6 +234,25 @@ func (s *Store) CreateRole(ctx context.Context, r Role) (uint32, error) {
 	return uint32(id), nil
 }
 
+// SetRolePermissions replaces a role's permission set.
+//
+// Only Bootstrap calls this, to keep the built-in roles matching their
+// definition in code. Nothing in the product edits a role, so this can
+// never overwrite a choice somebody made in the interface.
+func (s *Store) SetRolePermissions(ctx context.Context, roleID uint32, perms []string) error {
+	for _, p := range perms {
+		if !IsKnownPermission(p) {
+			return fmt.Errorf("auth: %q is not a known permission", p)
+		}
+	}
+	encoded, err := json.Marshal(perms)
+	if err != nil {
+		return fmt.Errorf("auth: encoding permissions: %w", err)
+	}
+	const q = `UPDATE sei_roles SET permissions = ? WHERE id = ?`
+	return s.affectOne(ctx, "updating role permissions", q, encoded, roleID)
+}
+
 func scanRole(row interface{ Scan(...any) error }) (Role, error) {
 	var r Role
 	var perms []byte

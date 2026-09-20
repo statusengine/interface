@@ -114,6 +114,12 @@ export const routes: Routes = [
       },
 
       {
+        path: 'audit',
+        canActivate: [permissionGuard('audit:read')],
+        loadComponent: () => import('./features/audit/audit-list').then((m) => m.AuditList),
+      },
+
+      {
         path: 'forbidden',
         loadComponent: () => import('./features/errors/forbidden').then((m) => m.Forbidden),
       },

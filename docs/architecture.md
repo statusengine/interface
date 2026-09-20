@@ -151,6 +151,12 @@ then watches the affected object for a few seconds - via SSE, or by polling -
 before it says "confirmed". When confirmation does not arrive, it says that
 instead of claiming success.
 
+The audit is written by the same path, one row per object rather than one
+per submission, and refusals are written too: "who tried to acknowledge
+that, and why did it not take" is a question a log of successes cannot
+answer. `GET /api/v1/commands/audit` reads it back behind `audit:read`,
+which admins and operators hold and guests do not.
+
 ## Frontend
 
 Angular 21, standalone components, signals, zoneless change detection.

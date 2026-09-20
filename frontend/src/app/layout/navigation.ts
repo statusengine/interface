@@ -66,6 +66,7 @@ export const NAVIGATION: NavGroup[] = [
         icon: 'history',
         needs: 'history:read',
       },
+      { path: '/audit', label: 'audit', icon: 'audit', needs: 'audit:read' },
     ],
   },
 ];

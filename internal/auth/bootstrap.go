@@ -34,7 +34,10 @@ func Bootstrap(ctx context.Context, store *Store, log *slog.Logger, demoMode boo
 		{
 			Name:        RoleOperator,
 			Description: "Read everything and submit external commands",
-			Permissions: append(ReadPermissions(), CommandPermissions()...),
+			// The command log too: the first person who wants to know
+			// whether a command took is the one who sent it. Guests stay
+			// out of it, because it names people and their addresses.
+			Permissions: append(append(ReadPermissions(), CommandPermissions()...), PermAuditRead),
 			IsSystem:    true,
 		},
 		{
@@ -46,8 +49,22 @@ func Bootstrap(ctx context.Context, store *Store, log *slog.Logger, demoMode boo
 	}
 
 	for _, r := range builtins {
-		_, err := store.RoleByName(ctx, r.Name)
+		existing, err := store.RoleByName(ctx, r.Name)
 		if err == nil {
+			// The built-in roles are defined here, in code, so this is
+			// where they are kept true. Without the reconcile a
+			// permission added in a later version would only ever reach
+			// new installations, and nothing in the product could grant
+			// it afterwards.
+			if samePermissions(existing.Permissions, r.Permissions) {
+				continue
+			}
+			if err := store.SetRolePermissions(ctx, existing.ID, r.Permissions); err != nil {
+				return err
+			}
+			log.Info("updated built-in role", "role", r.Name,
+				"added", missing(r.Permissions, existing.Permissions),
+				"removed", missing(existing.Permissions, r.Permissions))
 			continue
 		}
 		if !errors.Is(err, ErrNotFound) {
@@ -149,4 +166,39 @@ func (s *Service) LoginDemo(ctx context.Context, userAgent, ip string) (string, 
 	}
 
 	return s.openSession(ctx, user, ident, userAgent, ip)
+}
+
+// samePermissions compares two permission sets as sets: the order a role
+// happens to be stored in is not a difference worth an UPDATE.
+func samePermissions(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	seen := make(map[string]int, len(a))
+	for _, p := range a {
+		seen[p]++
+	}
+	for _, p := range b {
+		seen[p]--
+		if seen[p] < 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// missing returns the entries of want that are not in have, so the log
+// can say what actually changed instead of only that something did.
+func missing(want, have []string) []string {
+	set := make(map[string]struct{}, len(have))
+	for _, p := range have {
+		set[p] = struct{}{}
+	}
+	var out []string
+	for _, p := range want {
+		if _, ok := set[p]; !ok {
+			out = append(out, p)
+		}
+	}
+	return out
 }

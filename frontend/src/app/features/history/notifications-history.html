@@ -25,7 +25,7 @@
   <sei-data-table
     [loading]="store.loading()"
     [empty]="store.isEmpty()"
-    [error]="store.error()?.message ?? null"
+    [error]="store.errorText()"
     [emptyTitle]="t('history.emptyNotificationsTitle')"
     [emptyBody]="t('history.emptyNotificationsBody')"
     (retry)="store.reload()"

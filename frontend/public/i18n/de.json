@@ -21,7 +21,8 @@
       "monitoring": "Monitoring",
       "operations": "Betrieb",
       "records": "Verlauf"
-    }
+    },
+    "audit": "Kommando-Protokoll"
   },
   "pages": {
     "dashboard": {
@@ -67,6 +68,10 @@
     "downtimeHistory": {
       "title": "Vergangene Wartungsfenster",
       "description": "Wartungen, die beendet sind."
+    },
+    "audit": {
+      "title": "Kommando-Protokoll",
+      "description": "Jedes abgesetzte externe Kommando — auch die, die nicht durchkamen."
     }
   },
   "placeholder": {
@@ -106,6 +111,7 @@
     "forbidden": "Deine Rolle erlaubt das nicht.",
     "rate_limited": "Zu viele Versuche. Warte einen Moment und versuch es erneut.",
     "not_found": "Das gibt es nicht.",
+    "conflict": "Das widerspricht dem, was gerade schon da ist.",
     "network_unreachable": "Server nicht erreichbar. Prüf die Verbindung.",
     "internal_error": "Der Server konnte das nicht ausführen. Versuch es erneut.",
     "unavailable": "Der Monitoring-Kern ist gerade nicht erreichbar.",
@@ -153,7 +159,8 @@
     "change": "Wechsel",
     "contact": "Kontakt",
     "reason": "Grund",
-    "command": "Kommando"
+    "command": "Kommando",
+    "user": "Benutzer"
   },
   "states": {
     "ok": "OK",
@@ -310,7 +317,8 @@
     "serviceNotFoundBody": "Auf {{host}} gibt es keinen Service namens {{service}}.",
     "backToServices": "Zurück zu den Services",
     "lastCheckType": "Letzter Check war",
-    "intervalUnit": "{{count}} Einheit"
+    "intervalUnit": "{{count}} Einheit",
+    "commandLog": "Kommandos für dieses Objekt"
   },
   "metrics": {
     "title": "Performance-Daten",
@@ -377,10 +385,6 @@
     "downtime": "Wartung",
     "passiveResult": "Ergebnis senden",
     "notify": "Benachrichtigen",
-    "enableNotifications": "Benachrichtigungen an",
-    "disableNotifications": "Benachrichtigungen aus",
-    "enableChecks": "Aktive Checks an",
-    "disableChecks": "Aktive Checks aus",
     "acknowledgeTitle": "Problem quittieren",
     "downtimeTitle": "Wartungsfenster planen",
     "resultTitle": "Passives Check-Ergebnis senden",
@@ -429,14 +433,6 @@
     "resultSubmitted": "Das Ergebnis für {{target}} wurde übernommen",
     "notifying": "Benachrichtigung zu {{target}} wird gesendet",
     "notified": "Die Benachrichtigung für {{target}} wurde übermittelt",
-    "enablingNotifications": "Benachrichtigungen für {{target}} werden aktiviert",
-    "notificationsEnabled": "Benachrichtigungen für {{target}} sind an",
-    "disablingNotifications": "Benachrichtigungen für {{target}} werden deaktiviert",
-    "notificationsDisabled": "Benachrichtigungen für {{target}} sind aus",
-    "enablingChecks": "Aktive Checks für {{target}} werden aktiviert",
-    "checksEnabled": "Aktive Checks für {{target}} sind an",
-    "disablingChecks": "Aktive Checks für {{target}} werden deaktiviert",
-    "checksDisabled": "Aktive Checks für {{target}} sind aus",
     "confirming": "Übermittelt. Warte auf den Monitoring-Kern.",
     "failed": "Das Kommando wurde nicht übermittelt",
     "submittedNote": "Das Kommando hat den Message-Broker erreicht.",
@@ -490,5 +486,31 @@
     "enabled": "{{setting}} ist für {{target}} an",
     "disabling": "{{setting}} für {{target}} wird ausgeschaltet",
     "disabled": "{{setting}} ist für {{target}} aus"
+  },
+  "audit": {
+    "searchPlaceholder": "Ziel, Antwort oder Benutzer suchen",
+    "action": "Aktion",
+    "anyAction": "Alle Aktionen",
+    "failedOnly": "Nur fehlgeschlagene",
+    "outcome": "Ergebnis",
+    "from": "Von",
+    "payload": "Daten",
+    "submitted": "Übermittelt",
+    "noResponse": "Keine Antwort vom Broker",
+    "filterByUser": "Nur Kommandos von {{user}} zeigen",
+    "emptyTitle": "Noch keine Kommandos",
+    "emptyBody": "Sobald jemand ein Kommando absetzt, steht es hier — mit Benutzer, Ziel und Ergebnis.",
+    "emptyFilteredTitle": "Keine Kommandos in dieser Auswahl",
+    "emptyFilteredBody": "Andere Filter oder ein größerer Zeitraum bringen vermutlich Treffer.",
+    "actions": {
+      "acknowledge": "Quittieren",
+      "remove_acknowledgement": "Quittierung entfernen",
+      "schedule_downtime": "Downtime planen",
+      "delete_downtime": "Downtime abbrechen",
+      "reschedule": "Check erzwingen",
+      "submit_result": "Passives Ergebnis",
+      "custom_notification": "Benachrichtigung senden",
+      "toggle": "Einstellung ändern"
+    }
   }
 }

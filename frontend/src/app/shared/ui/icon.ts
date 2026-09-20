@@ -43,7 +43,8 @@ export type IconName =
   | 'check-circle'
   | 'pause'
   | 'bell-off'
-  | 'wave';
+  | 'wave'
+  | 'audit';
 
 const PATHS: Record<IconName, string> = {
   dashboard: 'M3 3h7v7H3zM14 3h7v4h-7zM14 10h7v11h-7zM3 13h7v8H3z',
@@ -82,6 +83,7 @@ const PATHS: Record<IconName, string> = {
   'bell-off':
     'M9 19a3 3 0 0 0 6 0M18 15V11a6 6 0 0 0-8-5.7M6.2 8.6A6 6 0 0 0 6 11v4l-2 3h14M3 3l18 18',
   wave: 'M2 12c2.5 0 2.5-6 5-6s2.5 12 5 12 2.5-6 5-6 2.5 3 5 3',
+  audit: 'M5 3h9l5 5v13H5zM14 3v5h5M8.5 14l2.2 2.2L16 11',
 };
 
 @Component({

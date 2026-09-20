@@ -1,7 +1,10 @@
 import { DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { TranslocoService } from '@jsverse/transloco';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Api, type ListQuery } from '../api/api.service';
 import { ApiError } from '../api/api.error';
+import { apiErrorText } from '../api/error-text';
 import { Commands } from '../commands/commands.service';
 import { Live } from '../events/live.service';
 import type { ListMeta } from '../api/types';
@@ -42,6 +45,7 @@ export class ListStore<T> {
   private readonly destroyRef = inject(DestroyRef);
   private readonly live = inject(Live);
   private readonly commands = inject(Commands);
+  private readonly transloco = inject(TranslocoService);
 
   private readonly _rows = signal<T[]>([]);
   private readonly _meta = signal<ListMeta>({ total: 0, limit: 0, offset: 0 });
@@ -52,6 +56,19 @@ export class ListStore<T> {
   readonly meta = this._meta.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
+
+  /** The failure in the reader's language, falling back to the server's
+   *  own sentence when this build has no wording for the code. */
+  readonly errorText = computed(() => {
+    // Read the active language so switching it re-translates what is
+    // already on screen.
+    this.language();
+    return apiErrorText(this.transloco, this._error());
+  });
+
+  private readonly language = toSignal(this.transloco.langChanges$, {
+    initialValue: this.transloco.getActiveLang(),
+  });
 
   readonly total = computed(() => this._meta().total);
   readonly isEmpty = computed(

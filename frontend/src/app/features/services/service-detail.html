@@ -7,7 +7,7 @@
           {{
             error()!.status === 404
               ? t('detail.serviceNotFoundBody', { service: description, host: hostname })
-              : error()!.message
+              : errorText()
           }}
         </p>
         <p class="mt-5">
@@ -53,6 +53,14 @@
         <span [title]="data.next_check | seiTimestamp">
           {{ t('detail.nextCheck', { when: data.next_check | seiSince }) }}
         </span>
+        @if (canReadAudit()) {
+          <a
+            routerLink="/audit"
+            [queryParams]="{ q: data.hostname + '/' + data.service_description }"
+            class="hover:text-ink hover:underline"
+            >{{ t('detail.commandLog') }}</a
+          >
+        }
       </p>
 
       <div class="mt-3">

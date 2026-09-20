@@ -10,9 +10,11 @@ import {
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { Api } from '../../core/api/api.service';
+import { Auth } from '../../core/auth/auth.service';
 import { Commands } from '../../core/commands/commands.service';
 import { Live } from '../../core/events/live.service';
 import { ApiError } from '../../core/api/api.error';
+import { apiErrorText } from '../../core/api/error-text';
 import type { ServiceDetail as ServiceDetailData } from '../../core/api/types';
 import { FactList, type Fact } from '../../shared/ui/fact-list';
 import { PluginOutput } from '../../shared/ui/plugin-output';
@@ -57,8 +59,16 @@ import { stateClass } from '../../shared/state/state';
 })
 export class ServiceDetail {
   private readonly api = inject(Api);
+  private readonly auth = inject(Auth);
   private readonly route = inject(ActivatedRoute);
   private readonly transloco = inject(TranslocoService);
+
+  /** The failure in the reader's language; the server's sentence is the
+   *  fallback for a code with no wording yet. */
+  readonly errorText = computed(() => apiErrorText(this.transloco, this.error()));
+
+  /** The command log is the object's own history of being acted on. */
+  readonly canReadAudit = computed(() => this.auth.can('audit:read'));
 
   readonly stateClass = stateClass;
 

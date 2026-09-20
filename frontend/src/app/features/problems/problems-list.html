@@ -61,7 +61,7 @@
   <sei-data-table
     [loading]="store.loading()"
     [empty]="store.isEmpty()"
-    [error]="store.error()?.message ?? null"
+    [error]="store.errorText()"
     [emptyTitle]="store.hasFilters() ? t('problems.emptyFilteredTitle') : t('problems.emptyTitle')"
     [emptyBody]="store.hasFilters() ? t('problems.emptyFilteredBody') : t('problems.emptyBody')"
     [showClear]="store.hasFilters()"

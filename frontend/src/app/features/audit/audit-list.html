@@ -1,0 +1,182 @@
+<ng-container *transloco="let t">
+  <sei-page-header [title]="t('pages.audit.title')" [description]="t('pages.audit.description')" />
+
+  <sei-toolbar [showClear]="store.hasFilters()" (clear)="store.clearFilters()">
+    <sei-search
+      [value]="$any(store.filters()['q']) ?? ''"
+      [placeholder]="t('audit.searchPlaceholder')"
+      (search)="store.setSearch($event)"
+    />
+
+    <label class="flex items-center gap-1.5 text-[12px] text-ink-dim">
+      <span>{{ t('audit.action') }}</span>
+      <select
+        class="rounded-sm border border-line bg-surface px-2 py-1 text-[12px] text-ink"
+        [value]="$any(store.filters()['action']) ?? ''"
+        (change)="store.setFilter('action', $any($event.target).value || undefined)"
+      >
+        <option value="">{{ t('audit.anyAction') }}</option>
+        @for (action of actions; track action) {
+          <option [value]="action">{{ t('audit.actions.' + action) }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="flex items-center gap-1.5 text-[12px] text-ink-dim">
+      <input
+        type="checkbox"
+        [checked]="store.filters()['failed'] === 'true' || store.filters()['failed'] === true"
+        (change)="store.setFilter('failed', $any($event.target).checked || undefined)"
+      />
+      <span>{{ t('audit.failedOnly') }}</span>
+    </label>
+
+    <!-- No default window: unlike the history lists, this one is
+         unbounded until somebody bounds it, so no preset is shown as
+         chosen while it is. -->
+    <sei-range-picker
+      [from]="$any(store.filters()['from'])"
+      [to]="$any(store.filters()['to'])"
+      [defaultSeconds]="0"
+      (change)="setRange($event)"
+    />
+  </sei-toolbar>
+
+  <sei-data-table
+    [loading]="store.loading()"
+    [empty]="store.isEmpty()"
+    [error]="store.errorText()"
+    [emptyTitle]="store.hasFilters() ? t('audit.emptyFilteredTitle') : t('audit.emptyTitle')"
+    [emptyBody]="store.hasFilters() ? t('audit.emptyFilteredBody') : t('audit.emptyBody')"
+    [showClear]="store.hasFilters()"
+    (clear)="store.clearFilters()"
+    (retry)="store.reload()"
+  >
+    <tr head>
+      <th
+        sei-sort
+        column="created_at"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+      >
+        {{ t('columns.time') }}
+      </th>
+      <th class="border-b border-line px-3 py-2 text-left font-medium text-ink-dim">
+        {{ t('columns.user') }}
+      </th>
+      <th class="border-b border-line px-3 py-2 text-left font-medium text-ink-dim">
+        {{ t('audit.action') }}
+      </th>
+      <th class="border-b border-line px-3 py-2 text-left font-medium text-ink-dim">
+        {{ t('columns.object') }}
+      </th>
+      <th class="w-full border-b border-line px-3 py-2 text-left font-medium text-ink-dim">
+        {{ t('audit.outcome') }}
+      </th>
+      <th
+        class="hidden border-b border-line px-3 py-2 text-left font-medium text-ink-dim lg:table-cell"
+      >
+        {{ t('audit.from') }}
+      </th>
+      <th class="border-b border-line px-3 py-2 text-right font-medium text-ink-dim">
+        <span class="sr-only">{{ t('audit.payload') }}</span>
+      </th>
+    </tr>
+
+    <!-- One row per record, and the payload opens inside it. Two
+         sibling rows per iteration would be two root nodes in the block,
+         and a control flow block with more than one root is not matched
+         against the [body] slot at all: the rows would simply vanish. -->
+    @for (record of store.rows(); track record.id) {
+      <tr body class="border-b border-line last:border-0 hover:bg-sunken">
+        <!-- Refusals carry the rail, accepted submissions a quiet one:
+             the half of the log worth reading should be findable by
+             running an eye down the left edge. -->
+        <td
+          class="rail relative whitespace-nowrap py-1.5 pr-3 align-top tabular-nums text-ink-dim"
+          [class.state-critical]="!accepted(record)"
+          [title]="record.created_at | seiTimestamp"
+        >
+          {{ record.created_at | seiSince }}
+        </td>
+        <td class="whitespace-nowrap px-3 py-1.5 align-top">
+          <button
+            type="button"
+            (click)="filterByUser(record.username)"
+            class="hover:text-accent hover:underline"
+            [title]="t('audit.filterByUser', { user: record.username })"
+          >
+            {{ record.username }}
+          </button>
+        </td>
+        <td class="whitespace-nowrap px-3 py-1.5 align-top text-ink-dim">
+          {{ t('audit.actions.' + record.action) }}
+        </td>
+        <td class="whitespace-nowrap px-3 py-1.5 align-top">
+          <a
+            [routerLink]="['/hosts', host(record)]"
+            class="mono hover:text-accent hover:underline"
+            [class.text-ink]="!service(record)"
+            [class.text-ink-dim]="service(record)"
+            >{{ host(record) }}</a
+          >
+          @if (service(record); as service) {
+            <span class="text-ink-faint" aria-hidden="true">/</span>
+            <a
+              routerLink="/service"
+              [queryParams]="{ host: host(record), service: service }"
+              class="mono text-ink hover:text-accent hover:underline"
+              >{{ service }}</a
+            >
+          }
+        </td>
+        <td class="max-w-0 px-3 py-1.5 align-top">
+          <div class="truncate">
+            @if (accepted(record)) {
+              <span class="text-ink-dim">{{ t('audit.submitted') }}</span>
+            } @else {
+              <span class="font-medium text-critical">{{ record.http_status }}</span>
+              <span class="ml-1.5 text-ink-dim" [title]="record.response">{{
+                record.response || t('audit.noResponse')
+              }}</span>
+            }
+          </div>
+
+          @if (expanded(record)) {
+            <!-- What was actually sent, unedited. In a post-mortem the
+                 comment and the times are the answer. -->
+            <pre
+              [id]="'payload-' + record.id"
+              class="mono mt-1.5 overflow-x-auto rounded-sm bg-sunken p-2.5 text-[12px] text-ink-dim"
+              >{{ payload(record) }}</pre>
+          }
+        </td>
+        <td class="mono hidden whitespace-nowrap px-3 py-1.5 align-top text-ink-dim lg:table-cell">
+          {{ record.remote_ip || '—' }}
+        </td>
+        <td class="whitespace-nowrap px-3 py-1.5 text-right align-top">
+          @if (payload(record)) {
+            <button
+              type="button"
+              (click)="toggle(record)"
+              [attr.aria-expanded]="expanded(record)"
+              [attr.aria-controls]="'payload-' + record.id"
+              class="rounded-xs border border-line px-1.5 py-0.5 text-[11px] text-ink-dim transition-colors hover:border-line-strong hover:text-ink"
+            >
+              {{ t('audit.payload') }}
+            </button>
+          }
+        </td>
+      </tr>
+    }
+  </sei-data-table>
+
+  <sei-pagination
+    [total]="store.total()"
+    [offset]="store.offset()"
+    [limit]="store.limit()"
+    (offsetChange)="store.setPage($event)"
+    (limitChange)="store.setLimit($event)"
+  />
+</ng-container>

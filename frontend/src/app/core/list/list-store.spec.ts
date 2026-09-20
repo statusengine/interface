@@ -6,13 +6,27 @@ import { Api } from '../api/api.service';
 import { ApiError } from '../api/api.error';
 import { Commands } from '../commands/commands.service';
 import { Live } from '../events/live.service';
+import { TranslocoService } from '@jsverse/transloco';
+import { of } from 'rxjs';
 import { ListStore } from './list-store';
 
 interface Row {
   hostname: string;
 }
 
-function setup(options: { queryParams?: Record<string, string>; list?: ReturnType<typeof vi.fn> }) {
+/** Echoing the key back is what Transloco does for a missing entry,
+ *  which makes the store fall through to the server's own sentence. */
+const transloco = {
+  translate: (key: string) => key,
+  langChanges$: of('en'),
+  getActiveLang: () => 'en',
+};
+
+function setup(options: {
+  queryParams?: Record<string, string>;
+  list?: ReturnType<typeof vi.fn>;
+  translate?: (key: string) => string;
+}) {
   const list =
     options.list ??
     vi
@@ -33,6 +47,11 @@ function setup(options: { queryParams?: Record<string, string>; list?: ReturnTyp
       { provide: Router, useValue: { navigate } },
       { provide: Live, useValue: { tick: tick.asReadonly() } },
       { provide: Commands, useValue: { submitted: submitted.asReadonly() } },
+      // The store translates the error it is holding.
+      {
+        provide: TranslocoService,
+        useValue: { ...transloco, translate: options.translate ?? transloco.translate },
+      },
       {
         provide: ActivatedRoute,
         useValue: {
@@ -203,6 +222,34 @@ describe('ListStore', () => {
     expect(store.isEmpty()).toBe(false);
   });
 
+  it('shows the server sentence when the code has no wording yet', async () => {
+    const list = vi.fn().mockRejectedValue(new ApiError(409, 'brand_new_code', 'boom'));
+    const { store } = setup({ list });
+    await settle();
+
+    // The stub echoes the key back, standing in for a missing entry.
+    expect(store.errorText()).toBe('boom');
+  });
+
+  it('translates the failure when there is wording for the code', async () => {
+    const list = vi.fn().mockRejectedValue(new ApiError(503, 'unavailable', 'upstream is down'));
+    const translate = vi.fn().mockReturnValue('Der Monitoring-Kern ist gerade nicht erreichbar.');
+    const { store } = setup({ list, translate });
+    await settle();
+
+    // Reading it is what triggers the lookup: the computed is lazy, so
+    // a page that never shows the error never pays for translating it.
+    expect(store.errorText()).toBe('Der Monitoring-Kern ist gerade nicht erreichbar.');
+    expect(translate).toHaveBeenCalledWith('errors.unavailable');
+  });
+
+  it('has nothing to say when nothing failed', async () => {
+    const { store } = setup({});
+    await settle();
+
+    expect(store.errorText()).toBeNull();
+  });
+
   it('reports an empty result as empty rather than as an error', async () => {
     const list = vi.fn().mockResolvedValue({ data: [], meta: { total: 0, limit: 50, offset: 0 } });
     const { store } = setup({ list });
@@ -316,6 +363,7 @@ describe('ListStore', () => {
           },
           { provide: Live, useValue: { tick: signal(0).asReadonly() } },
           { provide: Commands, useValue: { submitted: signal(0).asReadonly() } },
+          { provide: TranslocoService, useValue: transloco },
         ],
       });
       const store = runInInjectionContext(

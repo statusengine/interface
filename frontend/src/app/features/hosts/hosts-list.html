@@ -37,7 +37,7 @@
   <sei-data-table
     [loading]="store.loading()"
     [empty]="store.isEmpty()"
-    [error]="store.error()?.message ?? null"
+    [error]="store.errorText()"
     [emptyTitle]="store.hasFilters() ? t('hosts.emptyFilteredTitle') : t('hosts.emptyTitle')"
     [emptyBody]="store.hasFilters() ? t('hosts.emptyFilteredBody') : t('hosts.emptyBody')"
     [showClear]="store.hasFilters()"

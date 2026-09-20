@@ -25,6 +25,7 @@ const pages = [
   ['check history', '/history/checks', true],
   ['state changes', '/history/statechanges', true],
   ['notifications', '/history/notifications', true],
+  ['command log', '/audit', true],
 ];
 
 let total = 0;

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { apiErrorText } from '../../../core/api/error-text';
 import { ApiError } from '../../../core/api/api.error';
 import { Auth } from '../../../core/auth/auth.service';
 import { LanguageService, type Language } from '../../../core/i18n/language.service';
@@ -83,9 +84,6 @@ export class Login {
   }
 
   private describe(err: unknown): string {
-    const api = ApiError.from(err);
-    const translated = this.transloco.translate(api.translationKey);
-    // translate() echoes the key back when there is no entry for it.
-    return translated === api.translationKey ? api.message : translated;
+    return apiErrorText(this.transloco, ApiError.from(err)) ?? '';
   }
 }

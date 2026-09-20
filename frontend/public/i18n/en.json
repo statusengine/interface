@@ -21,7 +21,8 @@
       "monitoring": "Monitoring",
       "operations": "Operations",
       "records": "History"
-    }
+    },
+    "audit": "Command log"
   },
   "pages": {
     "dashboard": {
@@ -67,6 +68,10 @@
     "downtimeHistory": {
       "title": "Past downtimes",
       "description": "Maintenance windows that have ended."
+    },
+    "audit": {
+      "title": "Command log",
+      "description": "Every external command submitted from here, including the ones that did not get through."
     }
   },
   "placeholder": {
@@ -106,6 +111,7 @@
     "forbidden": "Your role does not allow this.",
     "rate_limited": "Too many attempts. Wait a moment and try again.",
     "not_found": "That does not exist.",
+    "conflict": "That conflicts with what is already there.",
     "network_unreachable": "Could not reach the server. Check your connection.",
     "internal_error": "The server could not complete that. Try again.",
     "unavailable": "The monitoring core is not reachable right now.",
@@ -153,7 +159,8 @@
     "change": "Change",
     "contact": "Contact",
     "reason": "Reason",
-    "command": "Command"
+    "command": "Command",
+    "user": "User"
   },
   "states": {
     "ok": "OK",
@@ -310,7 +317,8 @@
     "serviceNotFoundBody": "There is no service called {{service}} on {{host}}.",
     "backToServices": "Back to services",
     "lastCheckType": "Last check was",
-    "intervalUnit": "{{count}} unit"
+    "intervalUnit": "{{count}} unit",
+    "commandLog": "Commands for this object"
   },
   "metrics": {
     "title": "Performance data",
@@ -377,10 +385,6 @@
     "downtime": "Downtime",
     "passiveResult": "Submit result",
     "notify": "Notify",
-    "enableNotifications": "Enable notifications",
-    "disableNotifications": "Disable notifications",
-    "enableChecks": "Enable active checks",
-    "disableChecks": "Disable active checks",
     "acknowledgeTitle": "Acknowledge this problem",
     "downtimeTitle": "Schedule a downtime",
     "resultTitle": "Submit a passive check result",
@@ -429,14 +433,6 @@
     "resultSubmitted": "The result for {{target}} was applied",
     "notifying": "Sending a notification about {{target}}",
     "notified": "The notification for {{target}} was submitted",
-    "enablingNotifications": "Enabling notifications for {{target}}",
-    "notificationsEnabled": "Notifications for {{target}} are on",
-    "disablingNotifications": "Disabling notifications for {{target}}",
-    "notificationsDisabled": "Notifications for {{target}} are off",
-    "enablingChecks": "Enabling active checks for {{target}}",
-    "checksEnabled": "Active checks for {{target}}",
-    "disablingChecks": "Disabling active checks for {{target}}",
-    "checksDisabled": "Active checks for {{target}} are off",
     "confirming": "Submitted. Waiting for the monitoring core.",
     "failed": "The command was not submitted",
     "submittedNote": "The command reached the message broker.",
@@ -490,5 +486,31 @@
     "enabled": "{{setting}} is on for {{target}}",
     "disabling": "Turning {{setting}} off for {{target}}",
     "disabled": "{{setting}} is off for {{target}}"
+  },
+  "audit": {
+    "searchPlaceholder": "Search target, response or user",
+    "action": "Action",
+    "anyAction": "Any action",
+    "failedOnly": "Failed only",
+    "outcome": "Outcome",
+    "from": "From",
+    "payload": "Payload",
+    "submitted": "Submitted",
+    "noResponse": "No answer from the broker",
+    "filterByUser": "Show only commands from {{user}}",
+    "emptyTitle": "No commands yet",
+    "emptyBody": "As soon as somebody submits a command it appears here, with who sent it, what it was aimed at and how it went.",
+    "emptyFilteredTitle": "No commands in this selection",
+    "emptyFilteredBody": "Different filters or a wider window will probably turn something up.",
+    "actions": {
+      "acknowledge": "Acknowledge",
+      "remove_acknowledgement": "Remove acknowledgement",
+      "schedule_downtime": "Schedule downtime",
+      "delete_downtime": "Cancel downtime",
+      "reschedule": "Force check",
+      "submit_result": "Passive result",
+      "custom_notification": "Send notification",
+      "toggle": "Change setting"
+    }
   }
 }

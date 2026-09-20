@@ -5,9 +5,7 @@
         <h1>{{ t('detail.hostNotFoundTitle') }}</h1>
         <p class="mt-2 text-[13px] text-ink-dim">
           {{
-            error()!.status === 404
-              ? t('detail.hostNotFoundBody', { host: hostname })
-              : error()!.message
+            error()!.status === 404 ? t('detail.hostNotFoundBody', { host: hostname }) : errorText()
           }}
         </p>
         <p class="mt-5">
@@ -52,6 +50,14 @@
         <span [title]="data.next_check | seiTimestamp">
           {{ t('detail.nextCheck', { when: data.next_check | seiSince }) }}
         </span>
+        @if (canReadAudit()) {
+          <a
+            routerLink="/audit"
+            [queryParams]="{ q: data.hostname }"
+            class="hover:text-ink hover:underline"
+            >{{ t('detail.commandLog') }}</a
+          >
+        }
       </p>
 
       <div class="mt-3">
@@ -128,7 +134,7 @@
         <sei-data-table
           [loading]="services.loading()"
           [empty]="services.isEmpty()"
-          [error]="services.error()?.message ?? null"
+          [error]="services.errorText()"
           [emptyTitle]="t('detail.noServicesTitle')"
           [emptyBody]="t('detail.noServicesBody')"
           (retry)="services.reload()"

@@ -19,7 +19,7 @@
     @if (summaryError()) {
       <div class="max-w-prose rounded-md border-l-2 border-critical bg-surface p-4">
         <h2 class="text-[15px]">{{ t('dashboard.errorTitle') }}</h2>
-        <p class="mt-1.5 text-[13px] text-ink-dim">{{ summaryError()!.message }}</p>
+        <p class="mt-1.5 text-[13px] text-ink-dim">{{ summaryErrorText() }}</p>
         <button
           type="button"
           (click)="load()"

@@ -353,3 +353,41 @@ export interface HistoryMeta extends ListMeta {
   to: number;
   scoped: boolean;
 }
+
+// --- command audit ---------------------------------------------------------
+
+/** The actions the command log can hold, as the backend names them. */
+export const COMMAND_ACTIONS = [
+  'acknowledge',
+  'remove_acknowledgement',
+  'schedule_downtime',
+  'delete_downtime',
+  'reschedule',
+  'submit_result',
+  'custom_notification',
+  'toggle',
+] as const;
+
+export type CommandAction = (typeof COMMAND_ACTIONS)[number];
+
+/**
+ * One submitted command, as the audit recorded it.
+ *
+ * One row per object: a downtime over forty services is forty records,
+ * because "which of them did not take" is the question the log exists to
+ * answer. `http_status` is the broker's answer and not Naemon's - 202
+ * means accepted for delivery. Refusals are recorded too.
+ */
+export interface AuditRecord {
+  id: number;
+  username: string;
+  action: string;
+  /** `host` or `host/service`, as the command was addressed. */
+  target: string;
+  /** Whatever the request body held, minus nothing. */
+  payload?: unknown;
+  http_status: number;
+  response: string;
+  remote_ip?: string;
+  created_at: number;
+}

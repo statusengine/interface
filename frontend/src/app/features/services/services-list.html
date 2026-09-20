@@ -40,7 +40,7 @@
   <sei-data-table
     [loading]="store.loading()"
     [empty]="store.isEmpty()"
-    [error]="store.error()?.message ?? null"
+    [error]="store.errorText()"
     [emptyTitle]="store.hasFilters() ? t('services.emptyFilteredTitle') : t('services.emptyTitle')"
     [emptyBody]="store.hasFilters() ? t('services.emptyFilteredBody') : t('services.emptyBody')"
     [showClear]="store.hasFilters()"

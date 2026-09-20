@@ -541,8 +541,11 @@ func (s *Server) handleListAudit(w http.ResponseWriter, r *http.Request) {
 		fail(w, apiErr)
 		return
 	}
-
 	q := r.URL.Query()
+	if q.Get("sort") == "" {
+		p.Desc = true
+	}
+
 	filter := commands.AuditFilter{
 		Username:   q.Get("username"),
 		Action:     q.Get("action"),
@@ -558,12 +561,13 @@ func (s *Server) handleListAudit(w http.ResponseWriter, r *http.Request) {
 		filter.From, filter.To = tr.From, tr.To
 	}
 
-	records, total, err := s.audit.List(r.Context(), filter, p.Limit, p.Offset)
+	records, total, err := s.audit.List(r.Context(), filter,
+		commands.AuditPage{Limit: p.Limit, Offset: p.Offset, Desc: p.Desc})
 	if err != nil {
 		s.internalError(w, r, "the command audit", err)
 		return
 	}
 	writeList(w, records, ListMeta{
-		Total: total, Limit: p.Limit, Offset: p.Offset, Sort: "created_at:desc",
+		Total: total, Limit: p.Limit, Offset: p.Offset, Sort: p.SortSpec(),
 	})
 }

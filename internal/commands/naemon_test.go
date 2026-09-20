@@ -128,30 +128,82 @@ func TestCommandLines(t *testing.T) {
 		{
 			"disable host notifications",
 			func() (Envelope, error) {
-				return ToggleNotifications(ToggleRequest{Target: hostTarget("db01")})
+				return Toggle(ToggleRequest{Target: hostTarget("db01"), Switch: SwitchNotifications})
 			},
 			"DISABLE_HOST_NOTIFICATIONS;db01",
 		},
 		{
 			"enable service notifications",
 			func() (Envelope, error) {
-				return ToggleNotifications(ToggleRequest{Target: serviceTarget("db01", "PING"), Enable: true})
+				return Toggle(ToggleRequest{
+					Target: serviceTarget("db01", "PING"), Switch: SwitchNotifications, Enable: true,
+				})
 			},
 			"ENABLE_SVC_NOTIFICATIONS;db01;PING",
 		},
 		{
 			"disable active checks on a service",
 			func() (Envelope, error) {
-				return ToggleActiveChecks(ToggleRequest{Target: serviceTarget("db01", "PING")})
+				return Toggle(ToggleRequest{Target: serviceTarget("db01", "PING"), Switch: SwitchActiveChecks})
 			},
 			"DISABLE_SVC_CHECK;db01;PING",
 		},
 		{
 			"enable active checks on a host",
 			func() (Envelope, error) {
-				return ToggleActiveChecks(ToggleRequest{Target: hostTarget("db01"), Enable: true})
+				return Toggle(ToggleRequest{Target: hostTarget("db01"), Switch: SwitchActiveChecks, Enable: true})
 			},
 			"ENABLE_HOST_CHECK;db01",
+		},
+		{
+			// The passive pair puts PASSIVE first, unlike every other
+			// switch, which is exactly why these are written out.
+			"disable passive checks on a host",
+			func() (Envelope, error) {
+				return Toggle(ToggleRequest{Target: hostTarget("db01"), Switch: SwitchPassiveChecks})
+			},
+			"DISABLE_PASSIVE_HOST_CHECKS;db01",
+		},
+		{
+			"enable passive checks on a service",
+			func() (Envelope, error) {
+				return Toggle(ToggleRequest{
+					Target: serviceTarget("db01", "PING"), Switch: SwitchPassiveChecks, Enable: true,
+				})
+			},
+			"ENABLE_PASSIVE_SVC_CHECKS;db01;PING",
+		},
+		{
+			"disable flap detection on a host",
+			func() (Envelope, error) {
+				return Toggle(ToggleRequest{Target: hostTarget("db01"), Switch: SwitchFlapDetection})
+			},
+			"DISABLE_HOST_FLAP_DETECTION;db01",
+		},
+		{
+			"enable flap detection on a service",
+			func() (Envelope, error) {
+				return Toggle(ToggleRequest{
+					Target: serviceTarget("db01", "PING"), Switch: SwitchFlapDetection, Enable: true,
+				})
+			},
+			"ENABLE_SVC_FLAP_DETECTION;db01;PING",
+		},
+		{
+			"disable the event handler on a host",
+			func() (Envelope, error) {
+				return Toggle(ToggleRequest{Target: hostTarget("db01"), Switch: SwitchEventHandler})
+			},
+			"DISABLE_HOST_EVENT_HANDLER;db01",
+		},
+		{
+			"enable the event handler on a service",
+			func() (Envelope, error) {
+				return Toggle(ToggleRequest{
+					Target: serviceTarget("db01", "PING"), Switch: SwitchEventHandler, Enable: true,
+				})
+			},
+			"ENABLE_SVC_EVENT_HANDLER;db01;PING",
 		},
 	}
 
@@ -461,5 +513,46 @@ func TestCommandCount(t *testing.T) {
 	// the caller's job, on targets, not here.
 	if got := CommandCount(bulk); got != 3 {
 		t.Errorf("CommandCount(bulk) = %d, want 3", got)
+	}
+}
+
+// A switch the interface does not know must not be assembled into a
+// command name and sent to the core, where an unrecognised command is
+// dropped without a word in any log.
+func TestToggleRejectsAnUnknownSwitch(t *testing.T) {
+	_, err := Toggle(ToggleRequest{Target: hostTarget("db01"), Switch: "obsess_over_host"})
+	if err == nil {
+		t.Fatal("want a rejection")
+	}
+	if !strings.Contains(err.Error(), "obsess_over_host") {
+		t.Errorf("the error should name it: %v", err)
+	}
+}
+
+// Every switch has to produce a command for both kinds; a missing entry
+// would only surface as a dropped command at runtime.
+func TestEverySwitchCoversBothKinds(t *testing.T) {
+	for _, setting := range Switches() {
+		t.Run(string(setting), func(t *testing.T) {
+			for _, target := range []Target{hostTarget("db01"), serviceTarget("db01", "PING")} {
+				for _, enable := range []bool{true, false} {
+					envelope, err := Toggle(ToggleRequest{Target: target, Switch: setting, Enable: enable})
+					if err != nil {
+						t.Fatalf("%s enable=%t: %v", target.Kind, enable, err)
+					}
+					line := envelope.Data.(string)
+					verb := "DISABLE_"
+					if enable {
+						verb = "ENABLE_"
+					}
+					if !strings.HasPrefix(line, verb) {
+						t.Errorf("%s enable=%t produced %q", target.Kind, enable, line)
+					}
+					if !strings.Contains(line, ";db01") {
+						t.Errorf("%s: the object is missing from %q", target.Kind, line)
+					}
+				}
+			}
+		})
 	}
 }

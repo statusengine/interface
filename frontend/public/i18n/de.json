@@ -475,5 +475,20 @@
     "setAgo": "vor {{ago}}",
     "window": "{{from}} → {{to}}",
     "ackWithoutRecord": "Der Monitoring-Kern meldet das als quittiert, aber wer es gesetzt hat, ist nie in der Datenbank angekommen."
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "on": "An",
+    "off": "Aus",
+    "needsPermission": "Deine Rolle darf diese Werte nicht ändern.",
+    "activeChecks": "Aktive Checks",
+    "passiveChecks": "Passive Checks",
+    "notifications": "Benachrichtigungen",
+    "flapDetection": "Flap-Erkennung",
+    "eventHandler": "Event-Handler",
+    "enabling": "{{setting}} für {{target}} wird eingeschaltet",
+    "enabled": "{{setting}} ist für {{target}} an",
+    "disabling": "{{setting}} für {{target}} wird ausgeschaltet",
+    "disabled": "{{setting}} ist für {{target}} aus"
   }
 }

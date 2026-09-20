@@ -68,7 +68,6 @@ export class ObjectActions {
   readonly canReschedule = computed(() => this.auth.can('commands:reschedule'));
   readonly canSubmitResult = computed(() => this.auth.can('commands:passiveresult'));
   readonly canNotify = computed(() => this.auth.can('commands:notification'));
-  readonly canToggle = computed(() => this.auth.can('commands:toggle'));
 
   readonly anyAction = computed(
     () =>
@@ -76,8 +75,7 @@ export class ObjectActions {
       this.canDowntime() ||
       this.canReschedule() ||
       this.canSubmitResult() ||
-      this.canNotify() ||
-      this.canToggle(),
+      this.canNotify(),
   );
 
   /** A host can be UP, DOWN or UNREACHABLE; a service adds UNKNOWN. */
@@ -220,40 +218,5 @@ export class ObjectActions {
     if (ok) {
       this.close();
     }
-  }
-
-  async toggleNotifications(): Promise<void> {
-    const enable = !this.status().notifications_enabled;
-    await this.commands.run({
-      action: 'toggle-notifications',
-      targets: this.targets(),
-      body: { enable },
-      pending: this.t(
-        enable ? 'commands.enablingNotifications' : 'commands.disablingNotifications',
-        {
-          target: this.label(),
-        },
-      ),
-      success: this.t(enable ? 'commands.notificationsEnabled' : 'commands.notificationsDisabled', {
-        target: this.label(),
-      }),
-      verify: (status) => status.notifications_enabled === enable,
-    });
-  }
-
-  async toggleActiveChecks(): Promise<void> {
-    const enable = !this.status().active_checks_enabled;
-    await this.commands.run({
-      action: 'toggle-active-checks',
-      targets: this.targets(),
-      body: { enable },
-      pending: this.t(enable ? 'commands.enablingChecks' : 'commands.disablingChecks', {
-        target: this.label(),
-      }),
-      success: this.t(enable ? 'commands.checksEnabled' : 'commands.checksDisabled', {
-        target: this.label(),
-      }),
-      verify: (status) => status.active_checks_enabled === enable,
-    });
   }
 }

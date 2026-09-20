@@ -21,6 +21,7 @@ import { StateBadge } from '../../shared/ui/state-badge';
 import { MetricsPanel } from './metrics-panel';
 import { ObjectActions } from '../commands/object-actions';
 import { ObjectContext } from '../commands/object-context';
+import { ObjectSettings } from '../commands/object-settings';
 import { DurationPipe } from '../../shared/pipes/duration.pipe';
 import { SincePipe } from '../../shared/pipes/since.pipe';
 import { TimestampPipe } from '../../shared/pipes/timestamp.pipe';
@@ -47,6 +48,7 @@ import { stateClass } from '../../shared/state/state';
     MetricsPanel,
     ObjectActions,
     ObjectContext,
+    ObjectSettings,
     DurationPipe,
     SincePipe,
     TimestampPipe,
@@ -81,8 +83,6 @@ export class ServiceDetail {
       return [];
     }
     const t = (key: string) => this.transloco.translate('detail.' + key);
-    const yes = this.transloco.translate('filters.yes');
-    const no = this.transloco.translate('filters.no');
 
     return [
       { label: t('checkCommand'), value: service.check_command || '—', mono: true },
@@ -96,10 +96,6 @@ export class ServiceDetail {
       { label: t('latency'), value: `${service.latency.toFixed(3)} s` },
       { label: t('executionTime'), value: `${service.execution_time.toFixed(3)} s` },
       { label: t('lastCheckType'), value: service.is_passive_check ? t('passive') : t('active') },
-      { label: t('activeChecks'), value: service.active_checks_enabled ? yes : no },
-      { label: t('passiveChecks'), value: service.passive_checks_enabled ? yes : no },
-      { label: t('notifications'), value: service.notifications_enabled ? yes : no },
-      { label: t('flapDetection'), value: service.flap_detection_enabled ? yes : no },
       { label: t('eventHandler'), value: service.event_handler || '—', mono: true },
       { label: t('node'), value: service.node_name || '—', mono: true },
     ];

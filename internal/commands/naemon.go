@@ -17,15 +17,14 @@ import (
 type Action string
 
 const (
-	ActionAcknowledge       Action = "acknowledge"
-	ActionRemoveAck         Action = "remove_acknowledgement"
-	ActionScheduleDowntime  Action = "schedule_downtime"
-	ActionDeleteDowntime    Action = "delete_downtime"
-	ActionReschedule        Action = "reschedule"
-	ActionSubmitResult      Action = "submit_result"
-	ActionNotify            Action = "custom_notification"
-	ActionToggleNotify      Action = "toggle_notifications"
-	ActionToggleActiveCheck Action = "toggle_active_checks"
+	ActionAcknowledge      Action = "acknowledge"
+	ActionRemoveAck        Action = "remove_acknowledgement"
+	ActionScheduleDowntime Action = "schedule_downtime"
+	ActionDeleteDowntime   Action = "delete_downtime"
+	ActionReschedule       Action = "reschedule"
+	ActionSubmitResult     Action = "submit_result"
+	ActionNotify           Action = "custom_notification"
+	ActionToggle           Action = "toggle"
 )
 
 // Envelope is the broker's own message format, reproduced rather than
@@ -408,34 +407,74 @@ func Notify(r NotifyRequest, author string) (Envelope, error) {
 	return raw(name, append(fields, strconv.Itoa(options), author, r.Comment)), nil
 }
 
+// Switch names a per-object setting that can be turned on or off.
+//
+// These are the ones the status tables report, so the interface can
+// show the current value and confirm a change against it. Naemon has
+// more - freshness checks, obsessing - which nothing here displays, and
+// a control for a value the page cannot show afterwards is a control
+// nobody can trust.
+type Switch string
+
+const (
+	SwitchActiveChecks  Switch = "active_checks"
+	SwitchPassiveChecks Switch = "passive_checks"
+	SwitchNotifications Switch = "notifications"
+	SwitchFlapDetection Switch = "flap_detection"
+	SwitchEventHandler  Switch = "event_handler"
+)
+
+// switchCommands maps a switch to the Naemon command name for each
+// kind, without the ENABLE_/DISABLE_ prefix.
+//
+// The names are not derivable from one another - a host's active checks
+// are HOST_CHECK while a service's are SVC_CHECK, and the passive pair
+// puts PASSIVE first - so they are written out and pinned by a test
+// rather than assembled from parts.
+var switchCommands = map[Switch]struct{ host, service string }{
+	SwitchActiveChecks:  {"HOST_CHECK", "SVC_CHECK"},
+	SwitchPassiveChecks: {"PASSIVE_HOST_CHECKS", "PASSIVE_SVC_CHECKS"},
+	SwitchNotifications: {"HOST_NOTIFICATIONS", "SVC_NOTIFICATIONS"},
+	SwitchFlapDetection: {"HOST_FLAP_DETECTION", "SVC_FLAP_DETECTION"},
+	SwitchEventHandler:  {"HOST_EVENT_HANDLER", "SVC_EVENT_HANDLER"},
+}
+
+// Switches lists every setting this interface can change, for
+// validating a request and for documenting the API.
+func Switches() []Switch {
+	return []Switch{
+		SwitchActiveChecks, SwitchPassiveChecks, SwitchNotifications,
+		SwitchFlapDetection, SwitchEventHandler,
+	}
+}
+
 // ToggleRequest turns a per-object switch on or off.
 type ToggleRequest struct {
 	Target Target
+	Switch Switch
 	Enable bool
 }
 
-// ToggleNotifications enables or disables notifications for one object.
-func ToggleNotifications(r ToggleRequest) (Envelope, error) {
-	return toggle(r, "NOTIFICATIONS", "SVC_NOTIFICATIONS")
-}
-
-// ToggleActiveChecks enables or disables active checks for one object.
-func ToggleActiveChecks(r ToggleRequest) (Envelope, error) {
-	return toggle(r, "CHECK", "SVC_CHECK")
-}
-
-func toggle(r ToggleRequest, hostSuffix, serviceSuffix string) (Envelope, error) {
+// Toggle builds the envelope for one setting on one object.
+func Toggle(r ToggleRequest) (Envelope, error) {
 	if err := r.Target.Validate(); err != nil {
 		return Envelope{}, err
 	}
+
+	names, known := switchCommands[r.Switch]
+	if !known {
+		return Envelope{}, fmt.Errorf(
+			"commands: %q is not a setting this interface can change", r.Switch)
+	}
+
 	verb := "DISABLE"
 	if r.Enable {
 		verb = "ENABLE"
 	}
 	if r.Target.IsService() {
-		return raw(verb+"_"+serviceSuffix, []string{r.Target.Hostname, r.Target.Description}), nil
+		return raw(verb+"_"+names.service, []string{r.Target.Hostname, r.Target.Description}), nil
 	}
-	return raw(verb+"_HOST_"+hostSuffix, []string{r.Target.Hostname}), nil
+	return raw(verb+"_"+names.host, []string{r.Target.Hostname}), nil
 }
 
 // raw assembles a Naemon external command line. The worker prefixes the

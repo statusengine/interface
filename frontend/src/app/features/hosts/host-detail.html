@@ -84,6 +84,10 @@
         <sei-fact-list [facts]="facts()" />
       </section>
 
+      <div class="mt-4">
+        <sei-object-settings kind="host" [status]="data" (changed)="load()" />
+      </div>
+
       <section class="mt-4 rounded-md border border-line bg-surface p-4">
         <h2 class="mb-3 text-[13px] font-medium">{{ t('detail.stateTimes') }}</h2>
         <dl class="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">

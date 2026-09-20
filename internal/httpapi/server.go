@@ -179,8 +179,7 @@ func (s *Server) routes() http.Handler {
 	api.Handle("POST /api/v1/commands/reschedule", authed(auth.PermCmdReschedule, s.handleReschedule))
 	api.Handle("POST /api/v1/commands/submit-result", authed(auth.PermCmdPassiveResult, s.handleSubmitResult))
 	api.Handle("POST /api/v1/commands/notify", authed(auth.PermCmdNotification, s.handleNotify))
-	api.Handle("POST /api/v1/commands/toggle-notifications", authed(auth.PermCmdToggle, s.handleToggleNotifications))
-	api.Handle("POST /api/v1/commands/toggle-active-checks", authed(auth.PermCmdToggle, s.handleToggleActiveChecks))
+	api.Handle("POST /api/v1/commands/toggle", authed(auth.PermCmdToggle, s.handleToggle))
 
 	api.Handle("GET /api/v1/commands/audit", authed(auth.PermAuditRead, s.handleListAudit))
 

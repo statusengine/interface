@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/statusengine/interface/internal/auth"
@@ -486,33 +487,47 @@ func (s *Server) handleNotify(w http.ResponseWriter, r *http.Request) {
 
 type toggleBody struct {
 	targetsRequest
-	Enable bool `json:"enable"`
+	Switch string `json:"switch"`
+	Enable bool   `json:"enable"`
 }
 
 func (b *toggleBody) resolved() targetsRequest { return b.targetsRequest }
 
-func (s *Server) handleToggleNotifications(w http.ResponseWriter, r *http.Request) {
-	s.handleToggle(w, r, commands.ActionToggleNotify, commands.ToggleNotifications)
-}
-
-func (s *Server) handleToggleActiveChecks(w http.ResponseWriter, r *http.Request) {
-	s.handleToggle(w, r, commands.ActionToggleActiveCheck, commands.ToggleActiveChecks)
-}
-
-func (s *Server) handleToggle(
-	w http.ResponseWriter,
-	r *http.Request,
-	action commands.Action,
-	build func(commands.ToggleRequest) (commands.Envelope, error),
-) {
+// handleToggle changes one per-object setting.
+//
+// One endpoint for all five rather than five endpoints, because they
+// differ only in which Naemon command name they map to, and that
+// mapping belongs in one table rather than spread across the routing.
+func (s *Server) handleToggle(w http.ResponseWriter, r *http.Request) {
 	var body toggleBody
 	targets, ok := decodeTargets(w, r, &body)
 	if !ok {
 		return
 	}
 
-	s.submit(w, r, action, targets, body, func(t commands.Target) (commands.Envelope, error) {
-		return build(commands.ToggleRequest{Target: t, Enable: body.Enable})
+	setting := commands.Switch(body.Switch)
+	known := false
+	for _, candidate := range commands.Switches() {
+		if candidate == setting {
+			known = true
+			break
+		}
+	}
+	if !known {
+		names := make([]string, 0, len(commands.Switches()))
+		for _, candidate := range commands.Switches() {
+			names = append(names, string(candidate))
+		}
+		fail(w, &apiError{
+			Code:    CodeBadRequest,
+			Message: fmt.Sprintf("switch must be one of %s", strings.Join(names, ", ")),
+			Field:   "switch",
+		})
+		return
+	}
+
+	s.submit(w, r, commands.ActionToggle, targets, body, func(t commands.Target) (commands.Envelope, error) {
+		return commands.Toggle(commands.ToggleRequest{Target: t, Switch: setting, Enable: body.Enable})
 	})
 }
 

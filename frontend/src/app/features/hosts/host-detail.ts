@@ -28,6 +28,7 @@ import { TimestampPipe } from '../../shared/pipes/timestamp.pipe';
 import { stateClass, stateTextClass } from '../../shared/state/state';
 import { ObjectActions } from '../commands/object-actions';
 import { ObjectContext } from '../commands/object-context';
+import { ObjectSettings } from '../commands/object-settings';
 
 /** One host: its current state, what the plugin said, and its services. */
 @Component({
@@ -45,6 +46,7 @@ import { ObjectContext } from '../commands/object-context';
     Icon,
     ObjectActions,
     ObjectContext,
+    ObjectSettings,
     DurationPipe,
     SincePipe,
     TimestampPipe,
@@ -88,8 +90,6 @@ export class HostDetail {
       return [];
     }
     const t = (key: string) => this.transloco.translate('detail.' + key);
-    const yes = this.transloco.translate('filters.yes');
-    const no = this.transloco.translate('filters.no');
 
     return [
       { label: t('checkCommand'), value: host.check_command || '—', mono: true },
@@ -100,10 +100,6 @@ export class HostDetail {
       { label: t('latency'), value: `${host.latency.toFixed(3)} s` },
       { label: t('executionTime'), value: `${host.execution_time.toFixed(3)} s` },
       { label: t('lastCheckType'), value: host.is_passive_check ? t('passive') : t('active') },
-      { label: t('activeChecks'), value: host.active_checks_enabled ? yes : no },
-      { label: t('passiveChecks'), value: host.passive_checks_enabled ? yes : no },
-      { label: t('notifications'), value: host.notifications_enabled ? yes : no },
-      { label: t('flapDetection'), value: host.flap_detection_enabled ? yes : no },
       { label: t('eventHandler'), value: host.event_handler || '—', mono: true },
       { label: t('node'), value: host.node_name || '—', mono: true },
     ];

@@ -475,5 +475,20 @@
     "setAgo": "{{ago}} ago",
     "window": "{{from}} → {{to}}",
     "ackWithoutRecord": "The monitoring core reports this as acknowledged, but no record of who set it reached the database."
+  },
+  "settings": {
+    "title": "Settings",
+    "on": "On",
+    "off": "Off",
+    "needsPermission": "Your role cannot change these.",
+    "activeChecks": "Active checks",
+    "passiveChecks": "Passive checks",
+    "notifications": "Notifications",
+    "flapDetection": "Flap detection",
+    "eventHandler": "Event handler",
+    "enabling": "Turning {{setting}} on for {{target}}",
+    "enabled": "{{setting}} is on for {{target}}",
+    "disabling": "Turning {{setting}} off for {{target}}",
+    "disabled": "{{setting}} is off for {{target}}"
   }
 }

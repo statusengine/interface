@@ -130,8 +130,15 @@ as a courtesy, but the refusal is what enforces it.
 Operator actions go to the worker's `/commands` endpoint, which hands
 them to the broker and on to Naemon. Supported: acknowledge and remove
 an acknowledgement, schedule and delete a downtime, force a check,
-submit a passive result, send a custom notification, and toggle
-notifications or active checks per object.
+submit a passive result, send a custom notification, and switch active
+checks, passive checks, notifications, flap detection or the event
+handler on and off per object.
+
+Those five switches sit on the detail page as controls, not readings:
+the value is the button, and clicking it sends the matching
+`ENABLE_`/`DISABLE_` command and waits for the object to report the new
+value back. A reader without the permission sees the same five values
+as plain text.
 
 A host or service that is in a downtime or acknowledged says so on its
 detail page, with the record behind it: who set it, what they wrote,

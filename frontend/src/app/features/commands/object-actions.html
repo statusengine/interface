@@ -49,33 +49,6 @@
             {{ t('commands.notify') }}
           </button>
         }
-
-        @if (canToggle()) {
-          <button
-            type="button"
-            (click)="toggleNotifications()"
-            [disabled]="busy()"
-            class="sei-action"
-          >
-            {{
-              status().notifications_enabled
-                ? t('commands.disableNotifications')
-                : t('commands.enableNotifications')
-            }}
-          </button>
-          <button
-            type="button"
-            (click)="toggleActiveChecks()"
-            [disabled]="busy()"
-            class="sei-action"
-          >
-            {{
-              status().active_checks_enabled
-                ? t('commands.disableChecks')
-                : t('commands.enableChecks')
-            }}
-          </button>
-        }
       </div>
     }
   }

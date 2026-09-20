@@ -64,12 +64,11 @@
           [longOutput]="data.long_output ?? ''"
           [perfdata]="data.perfdata ?? ''"
         />
-        @if (data.perfdata) {
-          <p class="mt-2.5 border-t border-line pt-2.5 text-[12px] text-ink-dim">
-            {{ t('detail.chartsComingInPhase3') }}
-          </p>
-        }
       </section>
+
+      <div class="mt-4">
+        <sei-metrics-panel [hostname]="data.hostname" [description]="data.service_description" />
+      </div>
 
       <section class="mt-4 rounded-md border border-line bg-surface p-4">
         <h2 class="mb-3 text-[13px] font-medium">{{ t('detail.check') }}</h2>

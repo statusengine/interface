@@ -146,7 +146,12 @@
     "type": "Type",
     "message": "Message",
     "kind": "Kind",
-    "object": "Object"
+    "object": "Object",
+    "took": "Took",
+    "change": "Change",
+    "contact": "Contact",
+    "reason": "Reason",
+    "command": "Command"
   },
   "states": {
     "ok": "OK",
@@ -244,7 +249,8 @@
     "6h": "6h",
     "24h": "24h",
     "7d": "7d",
-    "30d": "30d"
+    "30d": "30d",
+    "tooWide": "Wider than this view allows. Name a host to raise the limit."
   },
   "dashboard": {
     "totalCount": "{{count}} total",
@@ -266,7 +272,6 @@
     "output": "Check output",
     "noOutput": "The plugin returned no output.",
     "performanceData": "Performance data",
-    "chartsComingInPhase3": "Charts for this data arrive in phase 3.",
     "check": "Check",
     "stateTimes": "Last seen in each state",
     "forDuration": "for {{duration}}",
@@ -304,5 +309,47 @@
     "backToServices": "Back to services",
     "lastCheckType": "Last check was",
     "intervalUnit": "{{count}} unit"
+  },
+  "metrics": {
+    "title": "Performance data",
+    "value": "value",
+    "loading": "Loading performance data",
+    "errorTitle": "Could not load performance data",
+    "noneAtAll": "This service's plugin does not emit performance data, so there is nothing to chart.",
+    "emptyWindowTitle": "Nothing in this window",
+    "emptyWindowBody": "This service has data going back {{since}}. Widen the range to reach it."
+  },
+  "history": {
+    "views": "History views",
+    "anyHost": "any host",
+    "anyService": "any service",
+    "needsHost": "pick a host first",
+    "scopedHint": "Scoped to one object, so the range may go back up to 90 days.",
+    "unscopedHint": "Across every object the range is capped at 6 hours. Name a host to widen it to 90 days — the history tables are stored per object, so a scoped query is far cheaper.",
+    "searchChecks": "Search hosts, services and output",
+    "searchNotifications": "Search hosts, services and contacts",
+    "transitionsOnly": "Transitions only",
+    "repeat": "no change",
+    "repeatTitle": "A retry that found the same state again, not a transition.",
+    "timedOut": "timed out",
+    "timedOutTitle": "The plugin hit its timeout and was killed.",
+    "emptyChecksTitle": "No checks in this window",
+    "emptyChecksBody": "Nothing ran in the selected range, or the worker has aged these records out.",
+    "emptyStatesTitle": "No state changes in this window",
+    "emptyStatesBody": "Nothing changed state in the selected range. This table stays empty unless StateChange is enabled in statusengine.toml.",
+    "emptyNotificationsTitle": "No notifications in this window",
+    "emptyNotificationsBody": "Nobody was notified in the selected range."
+  },
+  "reasons": {
+    "normal": "Problem",
+    "acknowledgement": "Acknowledged",
+    "flapping_start": "Started flapping",
+    "flapping_stop": "Stopped flapping",
+    "flapping_disabled": "Flap detection off",
+    "downtime_start": "Downtime started",
+    "downtime_end": "Downtime ended",
+    "downtime_cancelled": "Downtime cancelled",
+    "custom": "Custom",
+    "unknown": "Unknown"
   }
 }

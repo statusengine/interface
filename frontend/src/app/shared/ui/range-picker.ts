@@ -31,13 +31,15 @@ const PRESETS = [
         <button
           type="button"
           (click)="pick(preset.seconds)"
-          class="rounded-sm border px-2 py-1 text-[12px] transition-colors"
+          [disabled]="tooWide(preset.seconds)"
+          class="rounded-sm border px-2 py-1 text-[12px] transition-colors disabled:cursor-not-allowed disabled:opacity-35"
           [class.border-accent]="active() === preset.seconds"
           [class.text-accent]="active() === preset.seconds"
           [class.bg-accent-wash]="active() === preset.seconds"
           [class.border-line]="active() !== preset.seconds"
           [class.text-ink-dim]="active() !== preset.seconds"
           [attr.aria-pressed]="active() === preset.seconds"
+          [attr.title]="tooWide(preset.seconds) ? t('range.tooWide') : null"
         >
           {{ t('range.' + preset.key) }}
         </button>
@@ -52,6 +54,11 @@ export class RangePicker {
   readonly from = input<string | undefined>(undefined);
   readonly to = input<string | undefined>(undefined);
   readonly defaultSeconds = input(24 * 3600);
+
+  /** The widest window the server will accept here; 0 means no limit.
+   *  Offering a preset that is going to come back as a 400 teaches an
+   *  operator to distrust the control. */
+  readonly maxSeconds = input(0);
 
   readonly change = output<{ from: string; to: string }>();
 
@@ -68,6 +75,11 @@ export class RangePicker {
     const match = PRESETS.find((p) => Math.abs(p.seconds - span) < 60);
     return match?.seconds ?? 0;
   });
+
+  tooWide(seconds: number): boolean {
+    const max = this.maxSeconds();
+    return max > 0 && seconds > max;
+  }
 
   pick(seconds: number): void {
     const now = Math.floor(Date.now() / 1000);

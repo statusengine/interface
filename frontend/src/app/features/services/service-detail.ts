@@ -8,6 +8,7 @@ import { FactList, type Fact } from '../../shared/ui/fact-list';
 import { PluginOutput } from '../../shared/ui/plugin-output';
 import { RowFlags } from '../../shared/ui/row-flags';
 import { StateBadge } from '../../shared/ui/state-badge';
+import { MetricsPanel } from './metrics-panel';
 import { DurationPipe } from '../../shared/pipes/duration.pipe';
 import { SincePipe } from '../../shared/pipes/since.pipe';
 import { TimestampPipe } from '../../shared/pipes/timestamp.pipe';
@@ -31,6 +32,7 @@ import { stateClass } from '../../shared/state/state';
     PluginOutput,
     FactList,
     RowFlags,
+    MetricsPanel,
     DurationPipe,
     SincePipe,
     TimestampPipe,

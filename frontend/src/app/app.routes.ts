@@ -94,9 +94,24 @@ export const routes: Routes = [
           import('./features/logentries/logentries-list').then((m) => m.LogEntriesList),
       },
 
-      placeholder('history/checks', 'historyChecks', 3, 'history:read'),
-      placeholder('history/statechanges', 'historyStateChanges', 3, 'history:read'),
-      placeholder('history/notifications', 'historyNotifications', 3, 'history:read'),
+      {
+        path: 'history/checks',
+        canActivate: [permissionGuard('history:read')],
+        loadComponent: () =>
+          import('./features/history/checks-history').then((m) => m.ChecksHistory),
+      },
+      {
+        path: 'history/statechanges',
+        canActivate: [permissionGuard('history:read')],
+        loadComponent: () =>
+          import('./features/history/statechanges-history').then((m) => m.StateChangesHistory),
+      },
+      {
+        path: 'history/notifications',
+        canActivate: [permissionGuard('history:read')],
+        loadComponent: () =>
+          import('./features/history/notifications-history').then((m) => m.NotificationsHistory),
+      },
 
       {
         path: 'forbidden',

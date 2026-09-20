@@ -13,8 +13,8 @@ systems. This repository is the web interface and its API.
 |---|---|---|
 | 1 | Scaffolding, authentication, roles, demo mode, responsive shell | done |
 | 2 | Dashboard, hosts, services, problems, downtimes, acknowledgements, log entries | done |
-| 3 | History pages, performance charts, metrics provider abstraction | next |
-| 4 | External commands, live updates with polling fallback | planned |
+| 3 | History pages, performance charts, metrics provider abstraction | done |
+| 4 | External commands, live updates with polling fallback | next |
 | 5 | Accessibility pass, edge cases, hardening | planned |
 
 Pages from a later phase are already routed and permission-guarded; they
@@ -164,6 +164,11 @@ Worth knowing before filing a bug:
   (244 ms, growing with the table). The history pages are built around
   that - per-object views are the fast path, and global views lead with
   an object filter and a capped window.
+- **History requests always carry a time window,** and the ceiling
+  depends on whether they name an object: 90 days for one host or
+  service, 6 hours across everything. That follows directly from the
+  clustering above, and the interface says which limit is in force
+  rather than letting you find out from a rejected request.
 - **The standard schema has no partitions.** Some installations add
   them. This project does not depend on them either way; if you
   partition by `time DIV 86400`, note that MySQL does not prune for that

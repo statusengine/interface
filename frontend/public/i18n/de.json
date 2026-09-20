@@ -146,7 +146,12 @@
     "type": "Typ",
     "message": "Meldung",
     "kind": "Art",
-    "object": "Objekt"
+    "object": "Objekt",
+    "took": "Dauer",
+    "change": "Wechsel",
+    "contact": "Kontakt",
+    "reason": "Grund",
+    "command": "Kommando"
   },
   "states": {
     "ok": "OK",
@@ -244,7 +249,8 @@
     "6h": "6 Std",
     "24h": "24 Std",
     "7d": "7 Tage",
-    "30d": "30 Tage"
+    "30d": "30 Tage",
+    "tooWide": "Weiter als diese Ansicht erlaubt. Ein Host hebt die Grenze an."
   },
   "dashboard": {
     "totalCount": "{{count}} gesamt",
@@ -266,7 +272,6 @@
     "output": "Check-Ausgabe",
     "noOutput": "Das Plugin hat keine Ausgabe geliefert.",
     "performanceData": "Performance-Daten",
-    "chartsComingInPhase3": "Diagramme dazu kommen in Phase 3.",
     "check": "Check",
     "stateTimes": "Zuletzt in jedem Zustand",
     "forDuration": "seit {{duration}}",
@@ -304,5 +309,47 @@
     "backToServices": "Zurück zu den Services",
     "lastCheckType": "Letzter Check war",
     "intervalUnit": "{{count}} Einheit"
+  },
+  "metrics": {
+    "title": "Performance-Daten",
+    "value": "Wert",
+    "loading": "Performance-Daten werden geladen",
+    "errorTitle": "Performance-Daten konnten nicht geladen werden",
+    "noneAtAll": "Das Plugin dieses Services liefert keine Performance-Daten, es gibt also nichts zu zeichnen.",
+    "emptyWindowTitle": "Nichts in diesem Zeitraum",
+    "emptyWindowBody": "Für diesen Service gibt es Daten bis vor {{since}}. Erweitere den Zeitraum, um sie zu sehen."
+  },
+  "history": {
+    "views": "Verlaufs-Ansichten",
+    "anyHost": "alle Hosts",
+    "anyService": "alle Services",
+    "needsHost": "erst einen Host wählen",
+    "scopedHint": "Auf ein Objekt eingegrenzt, der Zeitraum darf bis zu 90 Tage zurückreichen.",
+    "unscopedHint": "Über alle Objekte ist der Zeitraum auf 6 Stunden begrenzt. Ein Host weitet ihn auf 90 Tage — die Verlaufstabellen liegen pro Objekt zusammen, eine eingegrenzte Abfrage ist deutlich günstiger.",
+    "searchChecks": "Hosts, Services und Ausgabe durchsuchen",
+    "searchNotifications": "Hosts, Services und Kontakte durchsuchen",
+    "transitionsOnly": "Nur Wechsel",
+    "repeat": "unverändert",
+    "repeatTitle": "Ein erneuter Versuch mit demselben Status, kein Wechsel.",
+    "timedOut": "Timeout",
+    "timedOutTitle": "Das Plugin lief in seinen Timeout und wurde abgebrochen.",
+    "emptyChecksTitle": "Keine Checks in diesem Zeitraum",
+    "emptyChecksBody": "Im gewählten Zeitraum lief nichts, oder der Worker hat die Einträge bereits gelöscht.",
+    "emptyStatesTitle": "Keine Statuswechsel in diesem Zeitraum",
+    "emptyStatesBody": "Im gewählten Zeitraum hat sich nichts geändert. Die Tabelle bleibt leer, solange StateChange in der statusengine.toml nicht aktiv ist.",
+    "emptyNotificationsTitle": "Keine Benachrichtigungen in diesem Zeitraum",
+    "emptyNotificationsBody": "Im gewählten Zeitraum wurde niemand benachrichtigt."
+  },
+  "reasons": {
+    "normal": "Problem",
+    "acknowledgement": "Quittiert",
+    "flapping_start": "Flapping begonnen",
+    "flapping_stop": "Flapping beendet",
+    "flapping_disabled": "Flap-Erkennung aus",
+    "downtime_start": "Wartung gestartet",
+    "downtime_end": "Wartung beendet",
+    "downtime_cancelled": "Wartung abgebrochen",
+    "custom": "Benutzerdefiniert",
+    "unknown": "Unbekannt"
   }
 }

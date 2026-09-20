@@ -1,0 +1,151 @@
+<ng-container *transloco="let t">
+  <sei-page-header
+    [title]="t('pages.historyChecks.title')"
+    [description]="t('pages.historyChecks.description')"
+  >
+    <sei-history-nav />
+  </sei-page-header>
+
+  <sei-history-scope
+    [host]="$any(store.filters()['host'])"
+    [service]="$any(store.filters()['service'])"
+    [from]="$any(store.filters()['from'])"
+    [to]="$any(store.filters()['to'])"
+    (hostChange)="setHost($event)"
+    (serviceChange)="store.setFilter('service', $event)"
+    (rangeChange)="setRange($event)"
+  >
+    <sei-search
+      [value]="$any(store.filters()['q']) ?? ''"
+      [placeholder]="t('history.searchChecks')"
+      (search)="store.setSearch($event)"
+    />
+    <sei-filter-toggle
+      [label]="t('filters.hardState')"
+      [value]="$any(store.filters()['hard_only'])"
+      (valueChange)="store.setFilter('hard_only', $event === 'true' ? 'true' : undefined)"
+    />
+  </sei-history-scope>
+
+  <sei-data-table
+    [loading]="store.loading()"
+    [empty]="store.isEmpty()"
+    [error]="store.error()?.message ?? null"
+    [emptyTitle]="t('history.emptyChecksTitle')"
+    [emptyBody]="t('history.emptyChecksBody')"
+    (retry)="store.reload()"
+  >
+    <tr head>
+      <th
+        sei-sort
+        column="start_time"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+      >
+        {{ t('columns.time') }}
+      </th>
+      <th
+        sei-sort
+        column="hostname"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+      >
+        {{ t('columns.object') }}
+      </th>
+      <th
+        sei-sort
+        column="state"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+        class="hidden sm:table-cell"
+      >
+        {{ t('columns.state') }}
+      </th>
+      <th class="w-px border-b border-line px-3 py-2 text-left font-medium text-ink-dim">
+        {{ t('columns.attempt') }}
+      </th>
+      <th
+        sei-sort
+        column="execution_time"
+        [active]="store.sort()"
+        [desc]="store.desc()"
+        (sort)="store.toggleSort($event)"
+        class="hidden lg:table-cell"
+      >
+        {{ t('columns.took') }}
+      </th>
+      <th
+        class="hidden w-full border-b border-line px-3 py-2 text-left font-medium text-ink-dim sm:table-cell"
+      >
+        {{ t('columns.output') }}
+      </th>
+    </tr>
+
+    @for (check of store.rows(); track key(check)) {
+      <tr body class="border-b border-line last:border-0 hover:bg-sunken">
+        <td class="whitespace-nowrap py-1.5 pl-4 pr-3 align-top tabular-nums text-ink-dim sm:pl-6">
+          {{ check.start_time | seiTimestamp }}
+        </td>
+        <td
+          class="rail relative py-1.5 pr-3 align-top whitespace-normal sm:whitespace-nowrap"
+          [class]="stateClass(check.state_text)"
+          [class.rail-soft]="!check.is_hard_state"
+        >
+          <div class="flex items-center gap-1.5">
+            <a
+              [routerLink]="['/hosts', check.hostname]"
+              class="mono hover:text-accent hover:underline"
+              [class.text-ink]="check.kind === 'host'"
+              [class.text-ink-dim]="check.kind === 'service'"
+              >{{ check.hostname }}</a
+            >
+            @if (check.kind === 'service') {
+              <span class="text-ink-faint" aria-hidden="true">/</span>
+              <a
+                routerLink="/service"
+                [queryParams]="{ host: check.hostname, service: check.service_description }"
+                class="mono font-medium text-ink hover:text-accent hover:underline"
+                >{{ check.service_description }}</a
+              >
+            }
+            <span class="sm:hidden">
+              <sei-state-badge [state]="check.state_text" [hard]="check.is_hard_state" />
+            </span>
+          </div>
+        </td>
+        <td class="hidden px-3 py-1.5 align-top sm:table-cell">
+          <sei-state-badge [state]="check.state_text" [hard]="check.is_hard_state" />
+        </td>
+        <td class="whitespace-nowrap px-3 py-1.5 align-top tabular-nums text-ink-dim">
+          {{ check.current_check_attempt }}/{{ check.max_check_attempts }}
+        </td>
+        <td
+          class="hidden whitespace-nowrap px-3 py-1.5 align-top tabular-nums text-ink-dim lg:table-cell"
+        >
+          {{ durationMs(check) }} ms
+          @if (check.early_timeout) {
+            <span class="ml-1 text-warning" [title]="t('history.timedOutTitle')">{{
+              t('history.timedOut')
+            }}</span>
+          }
+        </td>
+        <td class="hidden max-w-0 px-3 py-1.5 align-top sm:table-cell">
+          <span class="mono block truncate text-ink-dim" [title]="check.output">{{
+            check.output
+          }}</span>
+        </td>
+      </tr>
+    }
+  </sei-data-table>
+
+  <sei-pagination
+    [total]="store.total()"
+    [offset]="store.offset()"
+    [limit]="store.limit()"
+    (offsetChange)="store.setPage($event)"
+    (limitChange)="store.setLimit($event)"
+  />
+</ng-container>

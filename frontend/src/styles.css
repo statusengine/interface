@@ -29,6 +29,10 @@
 @import '@fontsource/ibm-plex-mono/latin-400.css';
 @import '@fontsource/ibm-plex-mono/latin-500.css';
 
+/* uPlot's structural stylesheet. The chart component restyles the few
+ * parts that carry colour with this application's tokens. */
+@import 'uplot/dist/uPlot.min.css';
+
 /* Dark is opt-in via data-theme so the user's choice can override the OS,
  * and the OS still decides when they have not chosen. */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
@@ -79,6 +83,27 @@
 
   --shadow-raised: 0 1px 2px #13192214, 0 2px 8px #1319220a;
   --shadow-overlay: 0 4px 12px #13192226, 0 16px 40px #1319221f;
+
+  /* Chart series. A separate palette from the state colours on purpose:
+   * inside a chart nothing carries a monitoring state, and reusing the
+   * status hues there would invite reading a load average as "critical".
+   * Assigned in this fixed order and never cycled - a ninth series folds
+   * into a second chart rather than repeating a colour.
+   *
+   * Validated with the data-viz palette checker against both surfaces:
+   * lightness band, chroma floor, adjacent-pair CVD separation and
+   * normal-vision separation all pass. Three light-mode hues sit below
+   * 3:1 against white, which the checker flags as needing relief - the
+   * legend carries a visible label and the current value for every
+   * series, which is that relief. */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
 }
 
 :root[data-theme='dark'] {
@@ -119,6 +144,18 @@
 
   --shadow-raised: 0 1px 2px #00000052, 0 2px 8px #00000038;
   --shadow-overlay: 0 4px 12px #00000066, 0 16px 40px #00000059;
+
+  /* The same eight hues, stepped for the dark surface and validated
+   * against it as a set - not an automatic lightening of the light
+   * values. */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -157,6 +194,18 @@
 
     --shadow-raised: 0 1px 2px #00000052, 0 2px 8px #00000038;
     --shadow-overlay: 0 4px 12px #00000066, 0 16px 40px #00000059;
+
+    /* The same eight hues, stepped for the dark surface and validated
+     * against it as a set - not an automatic lightening of the light
+     * values. */
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
   }
 }
 
@@ -195,6 +244,15 @@
   --color-unknown-wash: var(--state-unknown-wash);
   --color-unreachable-wash: var(--state-unreachable-wash);
   --color-pending-wash: var(--state-pending-wash);
+
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-series-4: var(--series-4);
+  --color-series-5: var(--series-5);
+  --color-series-6: var(--series-6);
+  --color-series-7: var(--series-7);
+  --color-series-8: var(--series-8);
 
   --shadow-raised: var(--shadow-raised);
   --shadow-overlay: var(--shadow-overlay);

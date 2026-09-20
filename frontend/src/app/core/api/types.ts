@@ -227,3 +227,112 @@ export interface Summary {
   last_update: number;
   nodes: MonitoringNode[];
 }
+
+// --- metrics ---------------------------------------------------------------
+
+/** One measurable series on a service, and the window it covers. */
+export interface MetricMeta {
+  hostname: string;
+  service_description: string;
+  label: string;
+  unit: string;
+  first_seen: number;
+  last_seen: number;
+}
+
+/**
+ * One downsampled bucket. `min` and `max` travel with `avg` because
+ * averaging a bucket hides the spike that caused the alert.
+ */
+export interface MetricPoint {
+  t: number;
+  avg: number;
+  min: number;
+  max: number;
+}
+
+export interface Series {
+  label: string;
+  unit: string;
+  points: MetricPoint[];
+}
+
+export interface MetricResult {
+  series: Series[];
+  /** The resolution the provider settled on, so the chart can say
+   *  "5-minute average" rather than implying raw samples. */
+  bucket_seconds: number;
+  from: number;
+  to: number;
+  /** Which provider answered: mysql today, graphite later. */
+  source: string;
+}
+
+// --- history ---------------------------------------------------------------
+
+export interface CheckResult {
+  kind: Kind;
+  hostname: string;
+  service_description?: string;
+  start_time: number;
+  end_time: number;
+  state: number;
+  state_text: string;
+  is_hard_state: boolean;
+  output: string;
+  long_output?: string;
+  perfdata?: string;
+  command?: string;
+  current_check_attempt: number;
+  max_check_attempts: number;
+  latency: number;
+  execution_time: number;
+  timeout: number;
+  early_timeout: boolean;
+}
+
+export interface StateChange {
+  kind: Kind;
+  hostname: string;
+  service_description?: string;
+  state_time: number;
+  state: number;
+  state_text: string;
+  last_state: number;
+  last_state_text: string;
+  last_hard_state: number;
+  is_hard_state: boolean;
+  /** False for a row that repeats the previous state at a new check
+   *  attempt rather than actually changing it. */
+  is_transition: boolean;
+  current_check_attempt: number;
+  max_check_attempts: number;
+  output: string;
+  long_output?: string;
+}
+
+export interface NotificationRecord {
+  kind: Kind;
+  hostname: string;
+  service_description?: string;
+  start_time: number;
+  end_time: number;
+  contact_name: string;
+  command_name: string;
+  command_args?: string;
+  state: number;
+  state_text: string;
+  reason_type: number;
+  reason: string;
+  output: string;
+  ack_author?: string;
+  ack_data?: string;
+}
+
+/** History lists add the window they cover and whether an object filter
+ *  put them on the clustered key's fast path. */
+export interface HistoryMeta extends ListMeta {
+  from: number;
+  to: number;
+  scoped: boolean;
+}

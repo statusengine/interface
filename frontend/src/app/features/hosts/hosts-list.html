@@ -45,6 +45,14 @@
     (retry)="store.reload()"
   >
     <tr head>
+      <th class="w-px border-b border-line py-2 pl-4 pr-1 sm:pl-6">
+        <input
+          type="checkbox"
+          [checked]="store.allOnPageSelected()"
+          (change)="store.toggleAllOnPage()"
+          [attr.aria-label]="t('bulk.selectPage')"
+        />
+      </th>
       <th
         sei-sort
         column="hostname"
@@ -103,6 +111,14 @@
 
     @for (host of store.rows(); track host.hostname) {
       <tr body class="group border-b border-line last:border-0 hover:bg-sunken">
+        <td class="w-px py-1.5 pl-4 pr-1 align-top sm:pl-6">
+          <input
+            type="checkbox"
+            [checked]="store.isSelected(host)"
+            (change)="store.toggleRow(host)"
+            [attr.aria-label]="t('bulk.selectOne', { name: host.hostname })"
+          />
+        </td>
         <td
           class="rail relative py-1.5 pr-3 align-top whitespace-normal sm:whitespace-nowrap"
           [class]="stateClass(host.state_text)"
@@ -154,5 +170,11 @@
     [limit]="store.limit()"
     (offsetChange)="store.setPage($event)"
     (limitChange)="store.setLimit($event)"
+  />
+
+  <sei-bulk-actions
+    [targets]="selectedTargets()"
+    (applied)="store.clearSelection()"
+    (clear)="store.clearSelection()"
   />
 </ng-container>

@@ -33,6 +33,38 @@ type Audit struct {
 // NewAudit returns an Audit backed by db.
 func NewAudit(db *sql.DB) *Audit { return &Audit{db: db} }
 
+// RecordBatch writes one entry per target in a single statement.
+//
+// One row per object, not one per submission: a bulk downtime over two
+// hundred services is two hundred things that happened, and "which of
+// them did not take" is the question an audit trail exists to answer.
+func (a *Audit) RecordBatch(ctx context.Context, entries []Entry) error {
+	if len(entries) == 0 {
+		return nil
+	}
+
+	const columns = "(user_id, username, action, target, payload, http_status, response, remote_ip, created_at)"
+	values := make([]string, 0, len(entries))
+	args := make([]any, 0, len(entries)*9)
+	now := time.Now().Unix()
+
+	for _, e := range entries {
+		payload, err := json.Marshal(e.Payload)
+		if err != nil {
+			payload = []byte(`{"error":"payload could not be encoded"}`)
+		}
+		values = append(values, "(?, ?, ?, ?, ?, ?, ?, ?, ?)")
+		args = append(args, e.UserID, e.Username, string(e.Action), truncate(e.Target, 512),
+			payload, e.HTTPStatus, truncate(e.Response, 1024), truncate(e.RemoteIP, 45), now)
+	}
+
+	query := "INSERT INTO sei_command_audit " + columns + " VALUES " + strings.Join(values, ", ")
+	if _, err := a.db.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("commands: recording %d audit entries: %w", len(entries), err)
+	}
+	return nil
+}
+
 // Record writes one entry.
 func (a *Audit) Record(ctx context.Context, e Entry) error {
 	payload, err := json.Marshal(e.Payload)

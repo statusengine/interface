@@ -133,20 +133,31 @@ an acknowledgement, schedule and delete a downtime, force a check,
 submit a passive result, send a custom notification, and toggle
 notifications or active checks per object.
 
-Two things worth knowing:
+Hosts, services and problems can be ticked and acted on together:
+select rows, then acknowledge, schedule a downtime, or force a check on
+all of them. The three that read the same for one object and for fifty -
+toggling notifications across a mixed selection does not, so it is not
+offered there.
+
+Three things worth knowing:
 
 - **A `202` means the command reached the broker, not that Naemon ran
   it.** The queue acknowledges the publish, the broker module has no
   reply path. So the UI says "submitted", then watches the object for
   about twelve seconds and only then says "confirmed" - and says
   "submitted, not confirmed" when it cannot see the change.
+- **A bulk is all or nothing.** If one selected object fails validation,
+  nothing is submitted and the error names it. A partial success over
+  fifty objects leaves an operator working out which three did not take,
+  at the moment they can least afford it.
 - **Comments cannot contain a semicolon.** Naemon splits command fields
   on it with no escape, so one inside a comment would truncate the field
   and shift everything after it. The interface refuses rather than
   silently rewriting what you typed.
 
 Every submission is recorded in `sei_command_audit`, including the ones
-that were refused, with the submitting account and the response.
+that were refused, with the submitting account and the response - one
+row per object, so a bulk of fifty leaves fifty rows.
 
 ## Live updates
 

@@ -9,7 +9,7 @@ import type { ListMeta } from '../api/types';
 /** A value a filter can hold. Undefined means the filter is off. */
 export type FilterValue = string | number | boolean | undefined;
 
-export interface ListStoreOptions {
+export interface ListStoreOptions<T> {
   /** API path, without /api/v1. */
   path: string;
   /** Column the list sorts by when nothing is chosen. */
@@ -19,6 +19,12 @@ export interface ListStoreOptions {
   /** Filter keys this list understands, so a stray query parameter from
    *  another page is not forwarded to the API and rejected. */
   filterKeys: readonly string[];
+
+  /**
+   * How to identify a row, for selection. Without it the list has no
+   * selection: not every list has anything worth acting on in bulk.
+   */
+  keyOf?: (row: T) => string;
 }
 
 /**
@@ -72,7 +78,35 @@ export class ListStore<T> {
   private searchDebounce?: ReturnType<typeof setTimeout>;
   private requestSeq = 0;
 
-  constructor(private readonly options: ListStoreOptions) {
+  private readonly _selected = signal<ReadonlySet<string>>(new Set());
+
+  /** The keys of the selected rows. */
+  readonly selected = this._selected.asReadonly();
+  readonly selectedCount = computed(() => this._selected().size);
+  readonly hasSelection = computed(() => this._selected().size > 0);
+
+  /** The selected rows themselves, in the order they appear. */
+  readonly selectedRows = computed(() => {
+    const keyOf = this.options.keyOf;
+    if (!keyOf) {
+      return [] as T[];
+    }
+    const keys = this._selected();
+    return this._rows().filter((row) => keys.has(keyOf(row)));
+  });
+
+  /** True when every row on this page is selected. */
+  readonly allOnPageSelected = computed(() => {
+    const keyOf = this.options.keyOf;
+    const rows = this._rows();
+    if (!keyOf || rows.length === 0) {
+      return false;
+    }
+    const keys = this._selected();
+    return rows.every((row) => keys.has(keyOf(row)));
+  });
+
+  constructor(private readonly options: ListStoreOptions<T>) {
     this._sort.set(options.defaultSort);
     this._desc.set(options.defaultDesc ?? false);
     this._limit.set(options.defaultLimit ?? 50);
@@ -119,6 +153,9 @@ export class ListStore<T> {
     }
     this._filters.set(next);
     this._offset.set(0);
+    // A selection was made against what was on screen. Change what is on
+    // screen and it no longer means anything.
+    this.clearSelection();
     this.writeToUrl();
   }
 
@@ -132,6 +169,7 @@ export class ListStore<T> {
   clearFilters(): void {
     this._filters.set({});
     this._offset.set(0);
+    this.clearSelection();
     this.writeToUrl();
   }
 
@@ -150,6 +188,7 @@ export class ListStore<T> {
 
   setPage(offset: number): void {
     this._offset.set(Math.max(0, offset));
+    this.clearSelection();
     this.writeToUrl();
   }
 
@@ -162,6 +201,53 @@ export class ListStore<T> {
   /** Re-run the current request, for a manual refresh or after a command. */
   async reload(): Promise<void> {
     await this.fetch();
+  }
+
+  keyFor(row: T): string {
+    return this.options.keyOf ? this.options.keyOf(row) : '';
+  }
+
+  isSelected(row: T): boolean {
+    return this._selected().has(this.keyFor(row));
+  }
+
+  toggleRow(row: T): void {
+    const key = this.keyFor(row);
+    if (!key) {
+      return;
+    }
+    const next = new Set(this._selected());
+    if (!next.delete(key)) {
+      next.add(key);
+    }
+    this._selected.set(next);
+  }
+
+  /** Selects or clears every row on the current page.
+   *
+   *  Only this page: an operator who ticks the header box has seen these
+   *  fifty rows, not the three thousand behind them, and acting on what
+   *  they cannot see is not what they asked for. */
+  toggleAllOnPage(): void {
+    const keyOf = this.options.keyOf;
+    if (!keyOf) {
+      return;
+    }
+    const next = new Set(this._selected());
+    if (this.allOnPageSelected()) {
+      for (const row of this._rows()) {
+        next.delete(keyOf(row));
+      }
+    } else {
+      for (const row of this._rows()) {
+        next.add(keyOf(row));
+      }
+    }
+    this._selected.set(next);
+  }
+
+  clearSelection(): void {
+    this._selected.set(new Set());
   }
 
   private async fetch(): Promise<void> {

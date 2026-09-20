@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -11,7 +12,16 @@ import (
 	"github.com/statusengine/interface/internal/domain"
 )
 
-// targetRequest is the object part every command body carries.
+// maxVerifyTargets is how many objects the response asks the client to
+// watch for confirmation.
+//
+// Polling fifty objects to confirm one bulk would cost more requests
+// than the command did. Above this the response says so, and the client
+// relies on the list refreshing - which it does anyway, from the event
+// stream or the polling fallback.
+const maxVerifyTargets = 5
+
+// targetRequest is one object a command applies to.
 type targetRequest struct {
 	Kind    string `json:"kind"`
 	Host    string `json:"host"`
@@ -20,7 +30,7 @@ type targetRequest struct {
 
 func (t targetRequest) target() (commands.Target, *apiError) {
 	kind := domain.Kind(t.Kind)
-	if kind == "" {
+	if kind != domain.KindHost && kind != domain.KindService {
 		// Inferring from the presence of a service description would
 		// make a typo in the field name silently change what the
 		// command applies to.
@@ -30,62 +40,131 @@ func (t targetRequest) target() (commands.Target, *apiError) {
 			Field:   "kind",
 		}
 	}
-	if kind != domain.KindHost && kind != domain.KindService {
-		return commands.Target{}, &apiError{
+	return commands.Target{Kind: kind, Hostname: t.Host, Description: t.Service}, nil
+}
+
+// targetsRequest is the object part every command body carries.
+//
+// Always a list. One object is a list of one, which means there is a
+// single shape, a single code path and a single audit record per
+// object, rather than a bulk variant bolted onto a singular API and
+// slowly diverging from it.
+type targetsRequest struct {
+	Targets []targetRequest `json:"targets"`
+}
+
+func (t targetsRequest) resolve() ([]commands.Target, *apiError) {
+	if len(t.Targets) == 0 {
+		return nil, &apiError{
 			Code:    CodeBadRequest,
-			Message: `kind must be "host" or "service"`,
-			Field:   "kind",
+			Message: "targets must name at least one host or service",
+			Field:   "targets",
 		}
 	}
-	return commands.Target{Kind: kind, Hostname: t.Host, Description: t.Service}, nil
+	// Checked before anything is built, so an absurd list is refused
+	// rather than turned into a million envelopes first. A downtime
+	// covering a host's services produces two commands per target, so
+	// the real ceiling can be lower; Bulk catches that with its own
+	// message.
+	if len(t.Targets) > commands.MaxBulkCommands {
+		return nil, &apiError{
+			Code: CodeBadRequest,
+			Message: fmt.Sprintf(
+				"targets names %d objects; the worker accepts at most %d commands in one submission",
+				len(t.Targets), commands.MaxBulkCommands),
+			Field: "targets",
+		}
+	}
+
+	out := make([]commands.Target, 0, len(t.Targets))
+	seen := make(map[string]struct{}, len(t.Targets))
+	for i, raw := range t.Targets {
+		target, apiErr := raw.target()
+		if apiErr != nil {
+			apiErr.Field = fmt.Sprintf("targets[%d].%s", i, apiErr.Field)
+			return nil, apiErr
+		}
+		// A list that names the same object twice would submit the
+		// command twice. Harmless for a toggle, not for a downtime.
+		key := string(target.Kind) + "\x00" + target.Hostname + "\x00" + target.Description
+		if _, duplicate := seen[key]; duplicate {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, target)
+	}
+	return out, nil
+}
+
+// targetRef echoes one object back for the client to watch.
+type targetRef struct {
+	Kind    string `json:"kind"`
+	Host    string `json:"host"`
+	Service string `json:"service,omitempty"`
 }
 
 // commandResponse is what a submission answers with.
 //
 // `submitted` rather than `done`: a 202 from the worker means the
-// command reached the broker, not that Naemon ran it. The client is
-// expected to confirm by watching the object, and `verify` says which
-// one to watch.
+// commands reached the broker, not that Naemon ran them. The client is
+// expected to confirm by watching the objects, and `verify` says which
+// ones - empty when there are too many to be worth polling.
 type commandResponse struct {
-	Status   string `json:"status"`
-	Accepted int    `json:"accepted"`
-	Action   string `json:"action"`
-	Target   string `json:"target"`
-	Verify   struct {
-		Kind    string `json:"kind"`
-		Host    string `json:"host"`
-		Service string `json:"service,omitempty"`
-	} `json:"verify"`
-	Note string `json:"note"`
+	Status    string      `json:"status"`
+	Action    string      `json:"action"`
+	Submitted int         `json:"submitted"`
+	Commands  int         `json:"commands"`
+	Accepted  int         `json:"accepted"`
+	Targets   []string    `json:"targets"`
+	Verify    []targetRef `json:"verify"`
+	Note      string      `json:"note"`
 }
 
-// submit runs the shared path: build, send, record, answer. Every
-// command goes through here so none of them can skip the audit trail.
+// submit builds a command per target, sends them as one submission, and
+// records every one of them.
+//
+// All or nothing. A partial success over fifty objects leaves an
+// operator working out which three did not take, at the moment they can
+// least afford it, so a target that fails to build stops the whole
+// request before anything is sent.
 func (s *Server) submit(
 	w http.ResponseWriter,
 	r *http.Request,
 	action commands.Action,
-	target commands.Target,
+	targets []commands.Target,
 	payload any,
-	build func() (commands.Envelope, error),
+	build func(commands.Target) (commands.Envelope, error),
 ) {
 	ident, _ := identityFrom(r.Context())
 
-	envelope, err := build()
+	envelopes := make([]commands.Envelope, 0, len(targets))
+	for _, target := range targets {
+		envelope, err := build(target)
+		if err != nil {
+			message := err.Error()
+			if len(targets) > 1 {
+				message = target.String() + ": " + message
+			}
+			s.recordCommands(r, ident, action, targets, payload, http.StatusBadRequest, message)
+			writeError(w, http.StatusBadRequest, CodeBadRequest, message)
+			return
+		}
+		envelopes = append(envelopes, envelope)
+	}
+
+	bulk, err := commands.Bulk(envelopes)
 	if err != nil {
-		// A build failure never reached the worker, but it is still an
-		// attempt worth recording.
-		s.recordCommand(r, ident, action, target, payload, http.StatusBadRequest, err.Error())
+		s.recordCommands(r, ident, action, targets, payload, http.StatusBadRequest, err.Error())
 		writeError(w, http.StatusBadRequest, CodeBadRequest, err.Error())
 		return
 	}
 
-	result, err := s.commands.Submit(r.Context(), envelope)
+	result, err := s.commands.Submit(r.Context(), bulk)
 
 	var submitErr *commands.SubmitError
 	switch {
 	case errors.Is(err, commands.ErrDisabled):
-		s.recordCommand(r, ident, action, target, payload, http.StatusServiceUnavailable, err.Error())
+		s.recordCommands(r, ident, action, targets, payload, http.StatusServiceUnavailable, err.Error())
 		writeError(w, http.StatusServiceUnavailable, CodeUnavailable, err.Error())
 		return
 	case errors.As(err, &submitErr):
@@ -99,63 +178,82 @@ func (s *Server) submit(
 			// or the operator's input, not an outage.
 			code = CodeBadRequest
 		}
-		s.recordCommand(r, ident, action, target, payload, status, submitErr.Message)
+		s.recordCommands(r, ident, action, targets, payload, status, submitErr.Message)
 		writeError(w, status, code, submitErr.Message)
 		return
 	case err != nil:
 		loggerFrom(r.Context()).Error("submitting command", "action", action, "error", err)
-		s.recordCommand(r, ident, action, target, payload, http.StatusInternalServerError, err.Error())
+		s.recordCommands(r, ident, action, targets, payload, http.StatusInternalServerError, err.Error())
 		writeError(w, http.StatusInternalServerError, CodeInternal, "could not submit the command")
 		return
 	}
 
-	s.recordCommand(r, ident, action, target, payload, http.StatusAccepted, "accepted")
+	s.recordCommands(r, ident, action, targets, payload, http.StatusAccepted, "accepted")
 
 	resp := commandResponse{
-		Status:   "submitted",
-		Accepted: result.Accepted,
-		Action:   string(action),
-		Target:   target.String(),
-		Note:     "The command reached the message broker. Watch the object to confirm the core applied it.",
+		Status:    "submitted",
+		Action:    string(action),
+		Submitted: len(targets),
+		Commands:  commands.CommandCount(bulk),
+		Accepted:  result.Accepted,
+		Targets:   make([]string, 0, len(targets)),
+		Verify:    []targetRef{},
+		Note:      "The commands reached the message broker. Watch the objects to confirm the core applied them.",
 	}
-	resp.Verify.Kind = string(target.Kind)
-	resp.Verify.Host = target.Hostname
-	resp.Verify.Service = target.Description
+	for _, target := range targets {
+		resp.Targets = append(resp.Targets, target.String())
+	}
+	if len(targets) <= maxVerifyTargets {
+		for _, target := range targets {
+			resp.Verify = append(resp.Verify, targetRef{
+				Kind: string(target.Kind), Host: target.Hostname, Service: target.Description,
+			})
+		}
+	} else {
+		resp.Note = fmt.Sprintf(
+			"%d commands reached the message broker. Too many to confirm one by one; the list will show the change as the core applies them.",
+			commands.CommandCount(bulk))
+	}
 
 	writeJSON(w, http.StatusAccepted, resp)
 }
 
-func (s *Server) recordCommand(
+// recordCommands writes one audit row per object, whatever the outcome.
+func (s *Server) recordCommands(
 	r *http.Request,
 	ident auth.Identity,
 	action commands.Action,
-	target commands.Target,
+	targets []commands.Target,
 	payload any,
 	status int,
 	response string,
 ) {
-	entry := commands.Entry{
-		Username:   ident.User.Username,
-		Action:     action,
-		Target:     target.String(),
-		Payload:    payload,
-		HTTPStatus: status,
-		Response:   response,
-		RemoteIP:   clientIP(r),
-	}
-	if ident.User.ID != 0 {
-		id := ident.User.ID
-		entry.UserID = &id
+	entries := make([]commands.Entry, 0, len(targets))
+	for _, target := range targets {
+		entry := commands.Entry{
+			Username:   ident.User.Username,
+			Action:     action,
+			Target:     target.String(),
+			Payload:    payload,
+			HTTPStatus: status,
+			Response:   response,
+			RemoteIP:   clientIP(r),
+		}
+		if ident.User.ID != 0 {
+			id := ident.User.ID
+			entry.UserID = &id
+		}
+		entries = append(entries, entry)
 	}
 
 	// The request may already be finished or cancelled by the time this
 	// runs; the audit entry is about what happened, so it gets its own
 	// deadline rather than inheriting a dead one.
-	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), 10*time.Second)
 	defer cancel()
-	if err := s.audit.Record(ctx, entry); err != nil {
-		loggerFrom(r.Context()).Error("could not record command audit entry",
-			"action", action, "target", target.String(), "error", err)
+	if err := s.audit.RecordBatch(ctx, entries); err != nil {
+		loggerFrom(r.Context()).Error("could not record command audit entries",
+			"action", action, "targets", len(targets), "error", err)
 	}
 }
 
@@ -170,31 +268,43 @@ func author(r *http.Request) string {
 	return ident.User.Username
 }
 
+// decodeTargets is the opening of every command handler: read the body,
+// resolve the objects, or answer.
+func decodeTargets(w http.ResponseWriter, r *http.Request, body interface{ resolved() targetsRequest }) ([]commands.Target, bool) {
+	if err := decodeJSON(r, body); err != nil {
+		writeError(w, http.StatusBadRequest, CodeBadRequest, err.Error())
+		return nil, false
+	}
+	targets, apiErr := body.resolved().resolve()
+	if apiErr != nil {
+		fail(w, apiErr)
+		return nil, false
+	}
+	return targets, true
+}
+
 // --- acknowledge -----------------------------------------------------------
 
 type acknowledgeBody struct {
-	targetRequest
+	targetsRequest
 	Comment    string `json:"comment"`
 	Sticky     bool   `json:"sticky"`
 	Notify     bool   `json:"notify"`
 	Persistent bool   `json:"persistent"`
 }
 
+func (b *acknowledgeBody) resolved() targetsRequest { return b.targetsRequest }
+
 func (s *Server) handleAcknowledge(w http.ResponseWriter, r *http.Request) {
 	var body acknowledgeBody
-	if err := decodeJSON(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, CodeBadRequest, err.Error())
-		return
-	}
-	target, apiErr := body.target()
-	if apiErr != nil {
-		fail(w, apiErr)
+	targets, ok := decodeTargets(w, r, &body)
+	if !ok {
 		return
 	}
 
-	s.submit(w, r, commands.ActionAcknowledge, target, body, func() (commands.Envelope, error) {
+	s.submit(w, r, commands.ActionAcknowledge, targets, body, func(t commands.Target) (commands.Envelope, error) {
 		return commands.Acknowledge(commands.AcknowledgeRequest{
-			Target:     target,
+			Target:     t,
 			Comment:    body.Comment,
 			Sticky:     body.Sticky,
 			Notify:     body.Notify,
@@ -203,27 +313,28 @@ func (s *Server) handleAcknowledge(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+type plainBody struct {
+	targetsRequest
+}
+
+func (b *plainBody) resolved() targetsRequest { return b.targetsRequest }
+
 func (s *Server) handleRemoveAcknowledgement(w http.ResponseWriter, r *http.Request) {
-	var body targetRequest
-	if err := decodeJSON(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, CodeBadRequest, err.Error())
-		return
-	}
-	target, apiErr := body.target()
-	if apiErr != nil {
-		fail(w, apiErr)
+	var body plainBody
+	targets, ok := decodeTargets(w, r, &body)
+	if !ok {
 		return
 	}
 
-	s.submit(w, r, commands.ActionRemoveAck, target, body, func() (commands.Envelope, error) {
-		return commands.RemoveAcknowledgement(target)
+	s.submit(w, r, commands.ActionRemoveAck, targets, body, func(t commands.Target) (commands.Envelope, error) {
+		return commands.RemoveAcknowledgement(t)
 	})
 }
 
 // --- downtime --------------------------------------------------------------
 
 type downtimeBody struct {
-	targetRequest
+	targetsRequest
 	Start       int64  `json:"start"`
 	End         int64  `json:"end"`
 	Comment     string `json:"comment"`
@@ -232,27 +343,27 @@ type downtimeBody struct {
 	AllServices bool   `json:"all_services,omitempty"`
 }
 
+func (b *downtimeBody) resolved() targetsRequest { return b.targetsRequest }
+
 func (s *Server) handleScheduleDowntime(w http.ResponseWriter, r *http.Request) {
 	var body downtimeBody
-	if err := decodeJSON(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, CodeBadRequest, err.Error())
-		return
-	}
-	target, apiErr := body.target()
-	if apiErr != nil {
-		fail(w, apiErr)
+	targets, ok := decodeTargets(w, r, &body)
+	if !ok {
 		return
 	}
 
-	s.submit(w, r, commands.ActionScheduleDowntime, target, body, func() (commands.Envelope, error) {
+	s.submit(w, r, commands.ActionScheduleDowntime, targets, body, func(t commands.Target) (commands.Envelope, error) {
 		return commands.ScheduleDowntime(commands.DowntimeRequest{
-			Target:      target,
-			Start:       body.Start,
-			End:         body.End,
-			Comment:     body.Comment,
-			Fixed:       body.Fixed,
+			Target:  t,
+			Start:   body.Start,
+			End:     body.End,
+			Comment: body.Comment,
+			Fixed:   body.Fixed,
+			// A host downtime does not cover the host's services unless
+			// asked; asking for it on a service target is a mistake the
+			// builder rejects, so it is only passed on for hosts.
+			AllServices: body.AllServices && t.Kind == domain.KindHost,
 			Duration:    body.Duration,
-			AllServices: body.AllServices,
 		}, author(r))
 	})
 }
@@ -264,6 +375,8 @@ type deleteDowntimeBody struct {
 	InternalID uint32 `json:"internal_id"`
 }
 
+// Deleting is by Naemon's own downtime id, which names one window
+// rather than one object, so this one keeps its singular shape.
 func (s *Server) handleDeleteDowntime(w http.ResponseWriter, r *http.Request) {
 	var body deleteDowntimeBody
 	if err := decodeJSON(r, &body); err != nil {
@@ -276,102 +389,98 @@ func (s *Server) handleDeleteDowntime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.submit(w, r, commands.ActionDeleteDowntime, target, body, func() (commands.Envelope, error) {
-		return commands.DeleteDowntime(target.Kind, body.InternalID)
-	})
+	s.submit(w, r, commands.ActionDeleteDowntime, []commands.Target{target}, body,
+		func(t commands.Target) (commands.Envelope, error) {
+			return commands.DeleteDowntime(t.Kind, body.InternalID)
+		})
 }
 
 // --- checks ----------------------------------------------------------------
 
 type rescheduleBody struct {
-	targetRequest
+	targetsRequest
 	At     int64 `json:"at,omitempty"`
 	Forced bool  `json:"forced,omitempty"`
 }
 
+func (b *rescheduleBody) resolved() targetsRequest { return b.targetsRequest }
+
 func (s *Server) handleReschedule(w http.ResponseWriter, r *http.Request) {
 	var body rescheduleBody
-	if err := decodeJSON(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, CodeBadRequest, err.Error())
-		return
-	}
-	target, apiErr := body.target()
-	if apiErr != nil {
-		fail(w, apiErr)
+	targets, ok := decodeTargets(w, r, &body)
+	if !ok {
 		return
 	}
 
-	s.submit(w, r, commands.ActionReschedule, target, body, func() (commands.Envelope, error) {
+	now := time.Now().Unix()
+	s.submit(w, r, commands.ActionReschedule, targets, body, func(t commands.Target) (commands.Envelope, error) {
 		return commands.Reschedule(commands.RescheduleRequest{
-			Target: target, At: body.At, Forced: body.Forced,
-		}, time.Now().Unix())
+			Target: t, At: body.At, Forced: body.Forced,
+		}, now)
 	})
 }
 
 type submitResultBody struct {
-	targetRequest
+	targetsRequest
 	ReturnCode int    `json:"return_code"`
 	Output     string `json:"output"`
 	LongOutput string `json:"long_output,omitempty"`
 	PerfData   string `json:"perf_data,omitempty"`
 }
 
+func (b *submitResultBody) resolved() targetsRequest { return b.targetsRequest }
+
 func (s *Server) handleSubmitResult(w http.ResponseWriter, r *http.Request) {
 	var body submitResultBody
-	if err := decodeJSON(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, CodeBadRequest, err.Error())
-		return
-	}
-	target, apiErr := body.target()
-	if apiErr != nil {
-		fail(w, apiErr)
+	targets, ok := decodeTargets(w, r, &body)
+	if !ok {
 		return
 	}
 
-	s.submit(w, r, commands.ActionSubmitResult, target, body, func() (commands.Envelope, error) {
+	now := time.Now().Unix()
+	s.submit(w, r, commands.ActionSubmitResult, targets, body, func(t commands.Target) (commands.Envelope, error) {
 		return commands.SubmitResult(commands.SubmitResultRequest{
-			Target:     target,
+			Target:     t,
 			ReturnCode: body.ReturnCode,
 			Output:     body.Output,
 			LongOutput: body.LongOutput,
 			PerfData:   body.PerfData,
-		}, time.Now().Unix())
+		}, now)
 	})
 }
 
 // --- notifications and toggles ---------------------------------------------
 
 type notifyBody struct {
-	targetRequest
+	targetsRequest
 	Comment   string `json:"comment"`
 	Forced    bool   `json:"forced,omitempty"`
 	Broadcast bool   `json:"broadcast,omitempty"`
 }
 
+func (b *notifyBody) resolved() targetsRequest { return b.targetsRequest }
+
 func (s *Server) handleNotify(w http.ResponseWriter, r *http.Request) {
 	var body notifyBody
-	if err := decodeJSON(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, CodeBadRequest, err.Error())
-		return
-	}
-	target, apiErr := body.target()
-	if apiErr != nil {
-		fail(w, apiErr)
+	targets, ok := decodeTargets(w, r, &body)
+	if !ok {
 		return
 	}
 
-	s.submit(w, r, commands.ActionNotify, target, body, func() (commands.Envelope, error) {
+	s.submit(w, r, commands.ActionNotify, targets, body, func(t commands.Target) (commands.Envelope, error) {
 		return commands.Notify(commands.NotifyRequest{
-			Target: target, Comment: body.Comment,
+			Target: t, Comment: body.Comment,
 			Forced: body.Forced, Broadcast: body.Broadcast,
 		}, author(r))
 	})
 }
 
 type toggleBody struct {
-	targetRequest
+	targetsRequest
 	Enable bool `json:"enable"`
 }
+
+func (b *toggleBody) resolved() targetsRequest { return b.targetsRequest }
 
 func (s *Server) handleToggleNotifications(w http.ResponseWriter, r *http.Request) {
 	s.handleToggle(w, r, commands.ActionToggleNotify, commands.ToggleNotifications)
@@ -388,18 +497,13 @@ func (s *Server) handleToggle(
 	build func(commands.ToggleRequest) (commands.Envelope, error),
 ) {
 	var body toggleBody
-	if err := decodeJSON(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, CodeBadRequest, err.Error())
-		return
-	}
-	target, apiErr := body.target()
-	if apiErr != nil {
-		fail(w, apiErr)
+	targets, ok := decodeTargets(w, r, &body)
+	if !ok {
 		return
 	}
 
-	s.submit(w, r, action, target, body, func() (commands.Envelope, error) {
-		return build(commands.ToggleRequest{Target: target, Enable: body.Enable})
+	s.submit(w, r, action, targets, body, func(t commands.Target) (commands.Envelope, error) {
+		return build(commands.ToggleRequest{Target: t, Enable: body.Enable})
 	})
 }
 

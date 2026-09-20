@@ -64,11 +64,24 @@ but `proxy_read_timeout` is still yours to set.
 |---|---|---|
 | `/readyz` reports `mysql: unreachable` | The database is down or unreachable | `/healthz` still answers 200, so an orchestrator does not restart a healthy process. Signed-in users get `503`, **not** `401` - their sessions survive and come back with the database. |
 | Every page says "could not verify your session" | Same as above, seen from a browser | Wait. Nothing needs restarting; the pool reconnects on its own. |
+| A bulk answers `400` naming one object | One selected object failed validation | Nothing was submitted. Fix that object, or deselect it. |
 | A command answers `502` with "could not reach the Statusengine worker" | The worker is down, or `worker_command_url` is wrong | Monitoring data keeps working - it comes from MySQL, not the worker. The attempt is still recorded in `sei_command_audit`. |
 | A command answers `503` with "external commands are switched off" | No `worker_command_key` | The worker leaves `/commands` unserved without one. |
 | The top bar says "Polling" instead of "Live" | The event stream is not available | The UI refreshes every 30 seconds instead. This is a working state, not an error - a deployment with no `worker_events_key` never leaves it. |
 | A list answers `504` "took longer than 20s" | A query hit `query_timeout` | Narrow the window, name a host, or ask for fewer rows. See the performance notes below. |
 | The log entries page is empty | `LogData` is not enabled in the broker | Add `LogData = "statusngin_logentries"` to `statusengine.toml` and restart Naemon. |
+
+### Limits on a bulk
+
+The worker accepts at most 1 000 commands in one submission. A downtime
+that covers a host's services is two commands per host, so the ceiling
+in objects can be half that; the refusal says which limit was hit and by
+how much.
+
+Above five objects the interface stops polling each one for
+confirmation - the list refreshes anyway, from the event stream or the
+polling fallback, and fifty status requests to confirm one command
+would cost more than the command did.
 
 ## What it costs
 

@@ -4,14 +4,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Api } from '../api/api.service';
 import { ApiError } from '../api/api.error';
 import { Toasts } from '../toast/toast.service';
-import { Commands } from './commands.service';
+import { Commands, type CommandTarget } from './commands.service';
+
+const host: CommandTarget = { kind: 'host', host: 'db01' };
 
 const ack = {
   status: 'submitted',
-  accepted: 1,
   action: 'acknowledge',
-  target: 'db01',
-  verify: { kind: 'host' as const, host: 'db01' },
+  submitted: 1,
+  commands: 1,
+  accepted: 1,
+  targets: ['db01'],
+  verify: [host],
   note: 'reached the broker',
 };
 
@@ -43,7 +47,13 @@ describe('Commands', () => {
     const post = vi.fn().mockRejectedValue(new ApiError(403, 'forbidden', 'not your permission'));
     const { commands, toasts } = setup({ post });
 
-    const ok = await commands.run({ action: 'acknowledge', body: {}, pending: 'p', success: 's' });
+    const ok = await commands.run({
+      targets: [host],
+      action: 'acknowledge',
+      body: {},
+      pending: 'p',
+      success: 's',
+    });
 
     expect(ok).toBe(false);
     expect(toasts.items()[0]).toMatchObject({ tone: 'error', body: 'not your permission' });
@@ -56,7 +66,13 @@ describe('Commands', () => {
     const post = vi.fn().mockResolvedValue(ack);
     const { commands, toasts } = setup({ post });
 
-    const ok = await commands.run({ action: 'notify', body: {}, pending: 'p', success: 'sent' });
+    const ok = await commands.run({
+      targets: [host],
+      action: 'notify',
+      body: {},
+      pending: 'p',
+      success: 'sent',
+    });
 
     expect(ok).toBe(true);
     expect(toasts.items()[0]).toMatchObject({ tone: 'success', title: 'sent' });
@@ -71,6 +87,7 @@ describe('Commands', () => {
     const { commands, toasts } = setup({ post, get });
 
     await commands.run({
+      targets: [host],
       action: 'acknowledge',
       body: {},
       pending: 'p',
@@ -99,6 +116,7 @@ describe('Commands', () => {
     const { commands, toasts } = setup({ post, get });
 
     await commands.run({
+      targets: [host],
       action: 'acknowledge',
       body: {},
       pending: 'p',
@@ -123,6 +141,7 @@ describe('Commands', () => {
     const { commands, toasts } = setup({ post, get });
 
     await commands.run({
+      targets: [host],
       action: 'acknowledge',
       body: {},
       pending: 'p',
@@ -139,12 +158,13 @@ describe('Commands', () => {
   it('polls the service endpoint for a service target', async () => {
     const post = vi.fn().mockResolvedValue({
       ...ack,
-      verify: { kind: 'service' as const, host: 'db01', service: 'C:\\ Drive Space' },
+      verify: [{ kind: 'service' as const, host: 'db01', service: 'C:\\ Drive Space' }],
     });
     const get = vi.fn().mockResolvedValue({ acknowledged: true });
     const { commands } = setup({ post, get });
 
     await commands.run({
+      targets: [host],
       action: 'acknowledge',
       body: {},
       pending: 'p',
@@ -162,7 +182,7 @@ describe('Commands', () => {
     const { commands } = setup({ post });
 
     const before = commands.submitted();
-    await commands.run({ action: 'notify', body: {}, pending: 'p', success: 's' });
+    await commands.run({ targets: [host], action: 'notify', body: {}, pending: 'p', success: 's' });
 
     expect(commands.submitted()).toBeGreaterThan(before);
   });

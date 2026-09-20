@@ -102,115 +102,23 @@
   >
     @switch (mode()) {
       @case ('acknowledge') {
-        <p class="mb-3 text-[13px] text-ink-dim">{{ t('commands.acknowledgeExplainer') }}</p>
-
-        <label class="mb-1.5 block text-[13px] font-medium" for="ack-comment">
-          {{ t('commands.comment') }}
-        </label>
-        <textarea
-          id="ack-comment"
-          rows="3"
-          required
-          [ngModel]="comment()"
-          (ngModelChange)="comment.set($event)"
-          [attr.placeholder]="t('commands.commentPlaceholder')"
-          class="sei-input"
-        ></textarea>
-        <p class="mt-1 text-[11px] text-ink-dim">{{ t('commands.noSemicolons') }}</p>
-
-        <div class="mt-3 space-y-2">
-          <label class="flex items-start gap-2 text-[13px]">
-            <input
-              type="checkbox"
-              [ngModel]="sticky()"
-              (ngModelChange)="sticky.set($event)"
-              class="mt-0.5"
-            />
-            <span>
-              {{ t('commands.sticky') }}
-              <span class="block text-[12px] text-ink-dim">{{ t('commands.stickyHelp') }}</span>
-            </span>
-          </label>
-          <label class="flex items-start gap-2 text-[13px]">
-            <input
-              type="checkbox"
-              [ngModel]="notifyContacts()"
-              (ngModelChange)="notifyContacts.set($event)"
-              class="mt-0.5"
-            />
-            <span>
-              {{ t('commands.notifyContacts') }}
-              <span class="block text-[12px] text-ink-dim">{{
-                t('commands.notifyContactsHelp')
-              }}</span>
-            </span>
-          </label>
-          <label class="flex items-start gap-2 text-[13px]">
-            <input
-              type="checkbox"
-              [ngModel]="persistent()"
-              (ngModelChange)="persistent.set($event)"
-              class="mt-0.5"
-            />
-            <span>
-              {{ t('commands.persistent') }}
-              <span class="block text-[12px] text-ink-dim">{{ t('commands.persistentHelp') }}</span>
-            </span>
-          </label>
-        </div>
+        <sei-acknowledge-fields
+          id="ack"
+          [(comment)]="comment"
+          [(sticky)]="sticky"
+          [(notify)]="notifyContacts"
+          [(persistent)]="persistent"
+        />
       }
 
       @case ('downtime') {
-        <p class="mb-3 text-[13px] text-ink-dim">{{ t('commands.downtimeExplainer') }}</p>
-
-        <span class="mb-1.5 block text-[13px] font-medium">{{ t('commands.duration') }}</span>
-        <div class="flex flex-wrap gap-1">
-          @for (minutes of downtimePresets; track minutes) {
-            <button
-              type="button"
-              (click)="downtimeMinutes.set(minutes)"
-              class="rounded-sm border px-2.5 py-1 text-[12px] transition-colors"
-              [class.border-accent]="downtimeMinutes() === minutes"
-              [class.text-accent]="downtimeMinutes() === minutes"
-              [class.bg-accent-wash]="downtimeMinutes() === minutes"
-              [class.border-line]="downtimeMinutes() !== minutes"
-              [class.text-ink-dim]="downtimeMinutes() !== minutes"
-              [attr.aria-pressed]="downtimeMinutes() === minutes"
-            >
-              {{ minutes < 60 ? minutes + 'm' : minutes / 60 + 'h' }}
-            </button>
-          }
-        </div>
-
-        <label class="mb-1.5 mt-3 block text-[13px] font-medium" for="downtime-comment">
-          {{ t('commands.comment') }}
-        </label>
-        <textarea
-          id="downtime-comment"
-          rows="2"
-          required
-          [ngModel]="comment()"
-          (ngModelChange)="comment.set($event)"
-          [attr.placeholder]="t('commands.downtimeCommentPlaceholder')"
-          class="sei-input"
-        ></textarea>
-
-        @if (kind() === 'host') {
-          <label class="mt-3 flex items-start gap-2 text-[13px]">
-            <input
-              type="checkbox"
-              [ngModel]="downtimeAllServices()"
-              (ngModelChange)="downtimeAllServices.set($event)"
-              class="mt-0.5"
-            />
-            <span>
-              {{ t('commands.allServices') }}
-              <span class="block text-[12px] text-ink-dim">{{
-                t('commands.allServicesHelp')
-              }}</span>
-            </span>
-          </label>
-        }
+        <sei-downtime-fields
+          id="downtime"
+          [(minutes)]="downtimeMinutes"
+          [(comment)]="comment"
+          [(allServices)]="downtimeAllServices"
+          [offerAllServices]="kind() === 'host'"
+        />
       }
 
       @case ('result') {

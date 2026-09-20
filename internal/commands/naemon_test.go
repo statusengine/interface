@@ -363,3 +363,103 @@ func TestRequestValidation(t *testing.T) {
 		}
 	})
 }
+
+func TestBulk(t *testing.T) {
+	one, err := Acknowledge(AcknowledgeRequest{Target: hostTarget("a"), Comment: "x"}, "ops")
+	if err != nil {
+		t.Fatal(err)
+	}
+	two, err := Acknowledge(AcknowledgeRequest{Target: hostTarget("b"), Comment: "x"}, "ops")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("a single command needs no wrapper", func(t *testing.T) {
+		got, err := Bulk([]Envelope{one})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got.Messages) != 0 {
+			t.Error("one command was wrapped in a bulk anyway")
+		}
+		if got.Command != "raw" {
+			t.Errorf("command = %q", got.Command)
+		}
+	})
+
+	t.Run("several become one submission", func(t *testing.T) {
+		got, err := Bulk([]Envelope{one, two})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got.Messages) != 2 {
+			t.Fatalf("got %d messages, want 2", len(got.Messages))
+		}
+		// The broker ignores a Command/Data pair beside `messages`, and
+		// the worker rejects that shape rather than confirming a
+		// command that will never run.
+		if got.Command != "" || got.Data != nil {
+			t.Error("a bulk must not also carry Command/Data")
+		}
+	})
+
+	// ScheduleDowntime already returns two commands when asked to cover
+	// a host's services; nesting those inside a bulk would produce a
+	// shape the broker does not understand.
+	t.Run("nested bulks are flattened", func(t *testing.T) {
+		nested, err := ScheduleDowntime(DowntimeRequest{
+			Target: hostTarget("a"), Start: 1, End: 2, Fixed: true,
+			Comment: "x", AllServices: true,
+		}, "ops")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		got, err := Bulk([]Envelope{nested, one})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got.Messages) != 3 {
+			t.Fatalf("got %d messages, want 3", len(got.Messages))
+		}
+		for i, m := range got.Messages {
+			if len(m.Messages) != 0 {
+				t.Errorf("message %d is itself a bulk", i)
+			}
+		}
+	})
+
+	t.Run("an empty bulk is refused", func(t *testing.T) {
+		if _, err := Bulk(nil); err == nil {
+			t.Error("want a rejection")
+		}
+	})
+
+	t.Run("the worker's ceiling is enforced here", func(t *testing.T) {
+		many := make([]Envelope, MaxBulkCommands+1)
+		for i := range many {
+			many[i] = one
+		}
+		_, err := Bulk(many)
+		if err == nil {
+			t.Fatal("want a rejection")
+		}
+		if !strings.Contains(err.Error(), "select fewer") {
+			t.Errorf("the message should say what to do: %v", err)
+		}
+	})
+}
+
+func TestCommandCount(t *testing.T) {
+	single, _ := Acknowledge(AcknowledgeRequest{Target: hostTarget("a"), Comment: "x"}, "ops")
+	if got := CommandCount(single); got != 1 {
+		t.Errorf("CommandCount(single) = %d", got)
+	}
+
+	bulk, _ := Bulk([]Envelope{single, single, single})
+	// Three identical envelopes are three commands; deduplication is
+	// the caller's job, on targets, not here.
+	if got := CommandCount(bulk); got != 3 {
+		t.Errorf("CommandCount(bulk) = %d, want 3", got)
+	}
+}

@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { ListStore } from '../../core/list/list-store';
+import type { CommandTarget } from '../../core/commands/commands.service';
+import { BulkActions } from '../commands/bulk-actions';
 import type { Problem } from '../../core/api/types';
 import { DataTable } from '../../shared/ui/data-table';
 import { FilterToggle } from '../../shared/ui/filter-toggle';
@@ -36,6 +38,7 @@ import { stateClass } from '../../shared/state/state';
     DataTable,
     SortHeader,
     Pagination,
+    BulkActions,
     StateBadge,
     RowFlags,
     DurationPipe,
@@ -59,7 +62,15 @@ export class ProblemsList {
       'handled',
       'hide_services_of_down_hosts',
     ],
+    keyOf: (problem) => this.key(problem),
   });
+
+  /** What the bulk bar acts on: whatever is ticked, right now. */
+  readonly selectedTargets = computed<CommandTarget[]>(() =>
+    this.store
+      .selectedRows()
+      .map((row) => ({ kind: row.kind, host: row.hostname, service: row.service_description })),
+  );
 
   key(problem: Problem): string {
     return problem.kind + ' :: ' + problem.hostname + ' :: ' + (problem.service_description ?? '');

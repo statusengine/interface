@@ -455,3 +455,49 @@ func boolField(v bool) string {
 	}
 	return "0"
 }
+
+// MaxBulkCommands is the worker's own ceiling on one submission. It
+// refuses a bulk carrying more, so the check belongs on this side where
+// the message can name what to do about it.
+const MaxBulkCommands = 1000
+
+// Bulk combines envelopes into one submission.
+//
+// A bulk carries `messages` only - the broker ignores a Command/Data
+// pair sitting beside it, and the worker rejects that shape rather than
+// confirming a command that will never run. Nested bulks are flattened
+// for the same reason: `ScheduleDowntime` already returns two commands
+// when it is asked to cover a host's services.
+func Bulk(envelopes []Envelope) (Envelope, error) {
+	var flat []Envelope
+	for _, e := range envelopes {
+		if len(e.Messages) > 0 {
+			flat = append(flat, e.Messages...)
+			continue
+		}
+		flat = append(flat, e)
+	}
+
+	switch {
+	case len(flat) == 0:
+		return Envelope{}, fmt.Errorf("commands: nothing to submit")
+	case len(flat) > MaxBulkCommands:
+		return Envelope{}, fmt.Errorf(
+			"commands: %d commands exceeds the worker's limit of %d in one submission; select fewer objects",
+			len(flat), MaxBulkCommands)
+	case len(flat) == 1:
+		// One command does not need the bulk wrapper, and the worker's
+		// single-command path is the better-travelled one.
+		return flat[0], nil
+	}
+	return Envelope{Messages: flat}, nil
+}
+
+// CommandCount reports how many commands an envelope carries, which is
+// what the worker counts against its limit.
+func CommandCount(e Envelope) int {
+	if len(e.Messages) > 0 {
+		return len(e.Messages)
+	}
+	return 1
+}

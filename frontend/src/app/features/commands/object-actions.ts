@@ -2,17 +2,15 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { FormsModule } from '@angular/forms';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { Auth } from '../../core/auth/auth.service';
-import { Commands } from '../../core/commands/commands.service';
+import { Commands, type CommandTarget } from '../../core/commands/commands.service';
 import { ServerInfo } from '../../core/meta/meta.service';
 import type { HostStatus, Kind, ServiceStatus } from '../../core/api/types';
 import { Dialog } from '../../shared/ui/dialog';
 import { Icon } from '../../shared/ui/icon';
+import { AcknowledgeFields, DOWNTIME_PRESETS, DowntimeFields } from './command-fields';
 
 /** Which form the one dialog is currently showing. */
 type Mode = 'none' | 'acknowledge' | 'downtime' | 'result' | 'notify';
-
-/** Minutes offered for a quick downtime. */
-const DOWNTIME_PRESETS = [30, 60, 120, 240, 480, 1440];
 
 /**
  * What an operator can do to one host or service.
@@ -24,7 +22,7 @@ const DOWNTIME_PRESETS = [30, 60, 120, 240, 480, 1440];
 @Component({
   selector: 'sei-object-actions',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, TranslocoDirective, Dialog, Icon],
+  imports: [FormsModule, TranslocoDirective, Dialog, Icon, AcknowledgeFields, DowntimeFields],
   templateUrl: './object-actions.html',
 })
 export class ObjectActions {
@@ -103,8 +101,9 @@ export class ObjectActions {
     () => this.status().state !== 0 && !this.status().acknowledged,
   );
 
-  private target(): Record<string, unknown> {
-    return { kind: this.kind(), host: this.host(), service: this.service() };
+  /** This object, as the single-element list every command takes. */
+  private targets(): CommandTarget[] {
+    return [{ kind: this.kind(), host: this.host(), service: this.service() }];
   }
 
   open(mode: Mode): void {
@@ -134,7 +133,8 @@ export class ObjectActions {
     const before = this.status().last_check;
     await this.commands.run({
       action: 'reschedule',
-      body: { ...this.target(), forced: true },
+      targets: this.targets(),
+      body: { forced: true },
       pending: this.t('commands.rescheduling', { target: this.label() }),
       success: this.t('commands.rescheduled', { target: this.label() }),
       // A forced check has landed once the core records a newer one.
@@ -145,8 +145,8 @@ export class ObjectActions {
   async acknowledge(): Promise<void> {
     const ok = await this.commands.run({
       action: 'acknowledge',
+      targets: this.targets(),
       body: {
-        ...this.target(),
         comment: this.comment(),
         sticky: this.sticky(),
         notify: this.notifyContacts(),
@@ -164,7 +164,8 @@ export class ObjectActions {
   async removeAcknowledgement(): Promise<void> {
     await this.commands.run({
       action: 'remove-acknowledgement',
-      body: this.target(),
+      targets: this.targets(),
+      body: {},
       pending: this.t('commands.removingAck', { target: this.label() }),
       success: this.t('commands.removedAck', { target: this.label() }),
       verify: (status) => !status.acknowledged,
@@ -177,8 +178,8 @@ export class ObjectActions {
 
     const ok = await this.commands.run({
       action: 'downtime',
+      targets: this.targets(),
       body: {
-        ...this.target(),
         start,
         end,
         fixed: true,
@@ -198,8 +199,8 @@ export class ObjectActions {
     const before = this.status().last_check;
     const ok = await this.commands.run({
       action: 'submit-result',
+      targets: this.targets(),
       body: {
-        ...this.target(),
         return_code: this.resultCode(),
         output: this.resultOutput(),
         perf_data: this.resultPerfdata() || undefined,
@@ -216,8 +217,8 @@ export class ObjectActions {
   async sendNotification(): Promise<void> {
     const ok = await this.commands.run({
       action: 'notify',
+      targets: this.targets(),
       body: {
-        ...this.target(),
         comment: this.comment(),
         forced: this.notifyForced(),
         broadcast: this.notifyBroadcast(),
@@ -236,7 +237,8 @@ export class ObjectActions {
     const enable = !this.status().notifications_enabled;
     await this.commands.run({
       action: 'toggle-notifications',
-      body: { ...this.target(), enable },
+      targets: this.targets(),
+      body: { enable },
       pending: this.t(
         enable ? 'commands.enablingNotifications' : 'commands.disablingNotifications',
         {
@@ -254,7 +256,8 @@ export class ObjectActions {
     const enable = !this.status().active_checks_enabled;
     await this.commands.run({
       action: 'toggle-active-checks',
-      body: { ...this.target(), enable },
+      targets: this.targets(),
+      body: { enable },
       pending: this.t(enable ? 'commands.enablingChecks' : 'commands.disablingChecks', {
         target: this.label(),
       }),

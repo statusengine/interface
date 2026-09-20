@@ -55,6 +55,7 @@ function setup(options: { queryParams?: Record<string, string>; list?: ReturnTyp
         defaultSort: 'severity',
         defaultDesc: true,
         filterKeys: ['state', 'acknowledged'],
+        keyOf: (row) => row.hostname,
       }),
   );
 
@@ -245,5 +246,95 @@ describe('ListStore', () => {
     const options = navigate.mock.calls.at(-1)?.[1];
     expect(options.queryParams.offset).toBeNull();
     expect(options.queryParams.sort).toBeNull();
+  });
+
+  describe('selection', () => {
+    const threeRows = {
+      data: [{ hostname: 'a' }, { hostname: 'b' }, { hostname: 'c' }],
+      meta: { total: 3, limit: 50, offset: 0 },
+    };
+
+    it('ticks and unticks one row', async () => {
+      const { store } = setup({ list: vi.fn().mockResolvedValue(threeRows) });
+      await settle();
+
+      store.toggleRow({ hostname: 'b' });
+      expect(store.selectedCount()).toBe(1);
+      expect(store.isSelected({ hostname: 'b' })).toBe(true);
+      expect(store.selectedRows()).toEqual([{ hostname: 'b' }]);
+
+      store.toggleRow({ hostname: 'b' });
+      expect(store.hasSelection()).toBe(false);
+    });
+
+    // An operator who ticks the header box has seen these rows, not the
+    // three thousand behind them.
+    it('selects only the rows on this page', async () => {
+      const { store } = setup({ list: vi.fn().mockResolvedValue(threeRows) });
+      await settle();
+
+      store.toggleAllOnPage();
+      expect(store.selectedCount()).toBe(3);
+      expect(store.allOnPageSelected()).toBe(true);
+
+      store.toggleAllOnPage();
+      expect(store.selectedCount()).toBe(0);
+    });
+
+    // A selection was made against what was on screen. Change what is
+    // on screen and it no longer means anything - acting on a stale
+    // selection is how the wrong host ends up in a downtime.
+    const viewChanges: [string, (s: ListStore<Row>) => void][] = [
+      ['a filter', (store) => store.setFilter('acknowledged', 'true')],
+      ['a page', (store) => store.setPage(50)],
+      ['clearing the filters', (store) => store.clearFilters()],
+    ];
+
+    for (const [what, change] of viewChanges) {
+      it(`drops the selection when ${what} changes`, async () => {
+        const { store } = setup({ list: vi.fn().mockResolvedValue(threeRows) });
+        await settle();
+        store.toggleAllOnPage();
+        expect(store.selectedCount()).toBe(3);
+
+        change(store);
+        expect(store.selectedCount()).toBe(0);
+      });
+    }
+
+    // Not every list has anything worth acting on in bulk, and one
+    // without a key must not pretend to have a selection.
+    it('has no selection without a key', async () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          { provide: Api, useValue: { list: vi.fn().mockResolvedValue(threeRows) } },
+          { provide: Router, useValue: { navigate: vi.fn().mockResolvedValue(true) } },
+          {
+            provide: ActivatedRoute,
+            useValue: { snapshot: { queryParamMap: { get: () => null } } },
+          },
+          { provide: Live, useValue: { tick: signal(0).asReadonly() } },
+          { provide: Commands, useValue: { submitted: signal(0).asReadonly() } },
+        ],
+      });
+      const store = runInInjectionContext(
+        TestBed.inject(Injector),
+        () =>
+          new ListStore<Row>({
+            path: '/logentries',
+            defaultSort: 'entry_time',
+            filterKeys: [],
+          }),
+      );
+      await settle();
+
+      store.toggleRow({ hostname: 'a' });
+      store.toggleAllOnPage();
+
+      expect(store.selectedCount()).toBe(0);
+      expect(store.allOnPageSelected()).toBe(false);
+      expect(store.selectedRows()).toEqual([]);
+    });
   });
 });

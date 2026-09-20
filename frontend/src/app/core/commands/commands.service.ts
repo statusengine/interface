@@ -5,13 +5,27 @@ import { ApiError } from '../api/api.error';
 import { Toasts } from '../toast/toast.service';
 import type { HostStatus, Kind, ServiceStatus } from '../api/types';
 
+/** One object a command applies to. */
+export interface CommandTarget {
+  kind: Kind;
+  host: string;
+  service?: string;
+}
+
 /** What the server answers to a submission. */
 export interface CommandAck {
   status: string;
-  accepted: number;
   action: string;
-  target: string;
-  verify: { kind: Kind; host: string; service?: string };
+  /** How many objects the command was aimed at. */
+  submitted: number;
+  /** How many Naemon commands that became - a host downtime covering
+   *  its services is two. */
+  commands: number;
+  accepted: number;
+  targets: string[];
+  /** The objects worth polling. Empty when there are too many for that
+   *  to be cheaper than waiting for the list to refresh. */
+  verify: CommandTarget[];
   note: string;
 }
 
@@ -21,6 +35,9 @@ export type Verifier = (status: HostStatus | ServiceStatus) => boolean;
 export interface RunOptions {
   /** Endpoint under /commands. */
   action: string;
+  /** The objects to act on. One is a list of one. */
+  targets: CommandTarget[];
+  /** Everything else the command needs. */
   body: Record<string, unknown>;
   /** Shown while the command is in flight and while it is being
    *  confirmed. */
@@ -75,7 +92,10 @@ export class Commands {
 
     let ack: CommandAck;
     try {
-      ack = await this.api.post<CommandAck>(`/commands/${options.action}`, options.body);
+      ack = await this.api.post<CommandAck>(`/commands/${options.action}`, {
+        ...options.body,
+        targets: options.targets,
+      });
     } catch (err) {
       const error = ApiError.from(err);
       this.toasts.replace(
@@ -91,7 +111,7 @@ export class Commands {
 
     this._submitted.update((n) => n + 1);
 
-    if (!options.verify) {
+    if (!options.verify || ack.verify.length === 0) {
       this.toasts.replace(
         toastId,
         'success',
@@ -107,11 +127,25 @@ export class Commands {
   }
 
   private async confirm(toastId: number, ack: CommandAck, options: RunOptions): Promise<void> {
+    // Every object has to show the change, not just the first: a bulk
+    // that took on three of four is not done.
+    const pending = [...ack.verify];
+
     for (let attempt = 0; attempt < VERIFY_ATTEMPTS; attempt++) {
       await sleep(VERIFY_INTERVAL_MS);
       try {
-        const status = await this.fetchTarget(ack);
-        if (options.verify!(status)) {
+        const results = await Promise.all(
+          pending.map(async (target) => ({
+            target,
+            done: options.verify!(await this.fetchTarget(target)),
+          })),
+        );
+        for (const { target, done } of results) {
+          if (done) {
+            pending.splice(pending.indexOf(target), 1);
+          }
+        }
+        if (pending.length === 0) {
           this.toasts.replace(toastId, 'success', options.success);
           this._submitted.update((n) => n + 1);
           return;
@@ -130,18 +164,20 @@ export class Commands {
       toastId,
       'warning',
       this.transloco.translate('commands.notConfirmed'),
-      this.transloco.translate('commands.notConfirmedNote', { target: ack.target }),
+      this.transloco.translate('commands.notConfirmedNote', {
+        target: pending.map((t) => (t.service ? `${t.host}/${t.service}` : t.host)).join(', '),
+      }),
     );
   }
 
-  private fetchTarget(ack: CommandAck): Promise<HostStatus | ServiceStatus> {
-    if (ack.verify.kind === 'service' && ack.verify.service) {
+  private fetchTarget(target: CommandTarget): Promise<HostStatus | ServiceStatus> {
+    if (target.kind === 'service' && target.service) {
       return this.api.get<ServiceStatus>('/service', {
-        host: ack.verify.host,
-        service: ack.verify.service,
+        host: target.host,
+        service: target.service,
       });
     }
-    return this.api.get<HostStatus>(`/hosts/${encodeURIComponent(ack.verify.host)}`);
+    return this.api.get<HostStatus>(`/hosts/${encodeURIComponent(target.host)}`);
   }
 }
 

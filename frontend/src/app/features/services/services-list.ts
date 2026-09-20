@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { ListStore } from '../../core/list/list-store';
+import type { CommandTarget } from '../../core/commands/commands.service';
+import { BulkActions } from '../commands/bulk-actions';
 import type { ServiceStatus } from '../../core/api/types';
 import { DataTable } from '../../shared/ui/data-table';
 import { FilterToggle } from '../../shared/ui/filter-toggle';
@@ -31,6 +33,7 @@ import { SERVICE_STATES, stateClass } from '../../shared/state/state';
     DataTable,
     SortHeader,
     Pagination,
+    BulkActions,
     StateBadge,
     RowFlags,
     DurationPipe,
@@ -57,10 +60,20 @@ export class ServicesList {
       'hard_state',
       'handled',
     ],
+    keyOf: (service) => this.key(service),
   });
 
   /** A service is identified by host plus description, so @for needs
    *  both. The separator only has to be stable, not unguessable. */
+  /** What the bulk bar acts on: whatever is ticked, right now. */
+  readonly selectedTargets = computed<CommandTarget[]>(() =>
+    this.store.selectedRows().map((row) => ({
+      kind: 'service' as const,
+      host: row.hostname,
+      service: row.service_description,
+    })),
+  );
+
   key(service: ServiceStatus): string {
     return service.hostname + ' :: ' + service.service_description;
   }

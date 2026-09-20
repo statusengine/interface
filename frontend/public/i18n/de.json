@@ -442,5 +442,20 @@
     "submittedNote": "Das Kommando hat den Message-Broker erreicht.",
     "notConfirmed": "Übermittelt, aber nicht bestätigt",
     "notConfirmedNote": "Das Kommando hat den Message-Broker erreicht, aber {{target}} hat sich noch nicht geändert. Der Kern arbeitet möglicherweise noch seine Warteschlange ab."
+  },
+  "bulk": {
+    "region": "Aktionen für die ausgewählten Objekte",
+    "selected": "{{count}} ausgewählt",
+    "selectPage": "Alle Zeilen dieser Seite auswählen",
+    "selectOne": "{{name}} auswählen",
+    "clear": "Auswahl aufheben",
+    "applyTo": "Auf {{count}} anwenden",
+    "andMore": "{{names}} und {{count}} weitere",
+    "rescheduling": "Checks für {{count}} Objekte werden geplant",
+    "rescheduled": "Checks für {{count}} Objekte geplant",
+    "acknowledging": "{{count}} Objekte werden quittiert",
+    "acknowledged": "{{count}} Objekte quittiert",
+    "schedulingDowntime": "Wartungsfenster für {{count}} Objekte werden geplant",
+    "downtimeScheduled": "{{count}} Objekte sind in Wartung"
   }
 }

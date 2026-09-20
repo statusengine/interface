@@ -442,5 +442,20 @@
     "submittedNote": "The command reached the message broker.",
     "notConfirmed": "Submitted, but not confirmed",
     "notConfirmedNote": "The command reached the message broker, but {{target}} has not changed yet. The core may still be working through its queue."
+  },
+  "bulk": {
+    "region": "Actions for the selected objects",
+    "selected": "{{count}} selected",
+    "selectPage": "Select every row on this page",
+    "selectOne": "Select {{name}}",
+    "clear": "Clear selection",
+    "applyTo": "Apply to {{count}}",
+    "andMore": "{{names}} and {{count}} more",
+    "rescheduling": "Scheduling checks for {{count}} objects",
+    "rescheduled": "Checks scheduled for {{count}} objects",
+    "acknowledging": "Acknowledging {{count}} objects",
+    "acknowledged": "{{count}} objects acknowledged",
+    "schedulingDowntime": "Scheduling downtimes for {{count}} objects",
+    "downtimeScheduled": "{{count}} objects are in a downtime"
   }
 }

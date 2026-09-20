@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { ListStore } from '../../core/list/list-store';
+import type { CommandTarget } from '../../core/commands/commands.service';
+import { BulkActions } from '../commands/bulk-actions';
 import type { HostStatus } from '../../core/api/types';
 import { DataTable } from '../../shared/ui/data-table';
 import { FilterToggle } from '../../shared/ui/filter-toggle';
@@ -31,6 +33,7 @@ import { RowFlags } from '../../shared/ui/row-flags';
     DataTable,
     SortHeader,
     Pagination,
+    BulkActions,
     StateBadge,
     RowFlags,
     DurationPipe,
@@ -59,9 +62,15 @@ export class HostsList {
       'hard_state',
       'handled',
     ],
+    keyOf: (host) => host.hostname,
   });
 
   /** Seconds the host has been in its current state. */
+  /** What the bulk bar acts on: whatever is ticked, right now. */
+  readonly selectedTargets = computed<CommandTarget[]>(() =>
+    this.store.selectedRows().map((row) => ({ kind: 'host' as const, host: row.hostname })),
+  );
+
   duration(host: HostStatus, now = Math.floor(Date.now() / 1000)): number {
     return host.last_state_change ? now - host.last_state_change : 0;
   }

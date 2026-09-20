@@ -17,6 +17,7 @@ import (
 	"github.com/statusengine/interface/internal/auth"
 	"github.com/statusengine/interface/internal/config"
 	"github.com/statusengine/interface/internal/database"
+	"github.com/statusengine/interface/internal/events"
 	"github.com/statusengine/interface/internal/httpapi"
 	"github.com/statusengine/interface/internal/logging"
 	"github.com/statusengine/interface/internal/migrate"
@@ -125,12 +126,23 @@ func serve(args []string) error {
 		log.Warn("live updates are disabled: set worker_events_key to enable them; the UI will poll instead")
 	}
 
+	// One WebSocket to the worker for the whole process, fanned out to
+	// browsers over SSE. Nil when no key is configured, which the
+	// endpoint reports so the UI can poll instead.
+	var hub *events.Hub
+	if cfg.EventsEnabled() {
+		hub = events.NewHub(log, events.HubOptions{})
+		go hub.Run(ctx)
+		go events.NewWorkerSource(cfg.WorkerEventsURL, cfg.WorkerEventsKey, hub, log).Run(ctx)
+	}
+
 	srv := httpapi.New(httpapi.Options{
 		Config: cfg,
 		Logger: log,
 		DB:     db,
 		Auth:   authSvc,
 		UI:     resolveUI(cfg, log),
+		Events: hub,
 	})
 	return srv.ListenAndServe(ctx)
 }

@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/statusengine/interface/internal/auth"
+	"github.com/statusengine/interface/internal/commands"
 	"github.com/statusengine/interface/internal/config"
+	"github.com/statusengine/interface/internal/events"
 	"github.com/statusengine/interface/internal/metrics"
 	"github.com/statusengine/interface/internal/metrics/graphite"
 	"github.com/statusengine/interface/internal/metrics/mysqlprov"
@@ -41,6 +43,16 @@ type Server struct {
 	// which backend answered.
 	metrics metrics.Provider
 
+	// commands carries operator actions to the monitoring core, and
+	// audit records every one of them - including the refusals.
+	commands commands.Transport
+	audit    *commands.Audit
+
+	// events fans the worker's stream out to browsers. Nil when live
+	// updates are switched off, in which case the endpoint says so and
+	// the UI polls.
+	events *events.Hub
+
 	// ui is the built frontend. It may be nil during development, when
 	// the Angular dev server serves the UI and proxies /api here.
 	ui fs.FS
@@ -55,6 +67,7 @@ type Options struct {
 	DB     *sql.DB
 	Auth   *auth.Service
 	UI     fs.FS
+	Events *events.Hub
 }
 
 // New builds the Server and its routing table.
@@ -76,6 +89,11 @@ func New(opt Options) *Server {
 		history:   repo.NewHistory(opt.DB),
 
 		metrics: newMetricsProvider(opt.Config, opt.DB),
+
+		commands: commands.NewClient(
+			opt.Config.WorkerCommandURL, opt.Config.WorkerCommandKey, opt.Config.WorkerTimeout),
+		audit:  commands.NewAudit(opt.DB),
+		events: opt.Events,
 	}
 	s.handler = s.routes()
 	return s
@@ -139,6 +157,25 @@ func (s *Server) routes() http.Handler {
 	api.Handle("GET /api/v1/metrics/labels", authed(auth.PermMetricsRead, s.handleMetricLabels))
 	api.Handle("GET /api/v1/metrics/series", authed(auth.PermMetricsRead, s.handleMetricSeries))
 
+	// Commands. Each route names the permission it needs right here, so
+	// the rules read as a table rather than hiding inside the handlers.
+	api.Handle("POST /api/v1/commands/acknowledge", authed(auth.PermCmdAcknowledge, s.handleAcknowledge))
+	api.Handle("POST /api/v1/commands/remove-acknowledgement", authed(auth.PermCmdAcknowledge, s.handleRemoveAcknowledgement))
+	api.Handle("POST /api/v1/commands/downtime", authed(auth.PermCmdDowntime, s.handleScheduleDowntime))
+	api.Handle("POST /api/v1/commands/downtime/delete", authed(auth.PermCmdDowntime, s.handleDeleteDowntime))
+	api.Handle("POST /api/v1/commands/reschedule", authed(auth.PermCmdReschedule, s.handleReschedule))
+	api.Handle("POST /api/v1/commands/submit-result", authed(auth.PermCmdPassiveResult, s.handleSubmitResult))
+	api.Handle("POST /api/v1/commands/notify", authed(auth.PermCmdNotification, s.handleNotify))
+	api.Handle("POST /api/v1/commands/toggle-notifications", authed(auth.PermCmdToggle, s.handleToggleNotifications))
+	api.Handle("POST /api/v1/commands/toggle-active-checks", authed(auth.PermCmdToggle, s.handleToggleActiveChecks))
+
+	api.Handle("GET /api/v1/commands/audit", authed(auth.PermAuditRead, s.handleListAudit))
+
+	// Live change notifications. Any signed-in user may watch: it says
+	// what moved, never what it moved to, so it grants nothing the
+	// read permissions do not.
+	api.Handle("GET /api/v1/events", authed("", s.handleEvents))
+
 	root := http.NewServeMux()
 	root.Handle("/api/", api)
 	root.Handle("/", s.uiHandler())
@@ -149,6 +186,19 @@ func (s *Server) routes() http.Handler {
 		recoverMiddleware(s.log),
 		securityHeadersMiddleware,
 	)
+}
+
+// handleEvents streams change notifications, or explains why it cannot.
+func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
+	if s.events == nil {
+		// Not an error: a deployment without a worker events key is a
+		// choice, and the client falls back to polling. Saying so beats
+		// a dead stream the browser keeps retrying.
+		writeError(w, http.StatusNotImplemented, CodeUnavailable,
+			"live updates are switched off; set worker_events_key to enable them")
+		return
+	}
+	events.NewHandler(s.events).ServeHTTP(w, r)
 }
 
 // newMetricsProvider picks the backend named in the configuration. The

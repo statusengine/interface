@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { formatAxisValue, formatDuration, formatValue, withAlpha } from './metric-format';
+import {
+  formatAxisValue,
+  formatDuration,
+  formatValue,
+  isDarkSurface,
+  washFor,
+  withAlpha,
+} from './metric-format';
 
 describe('formatDuration', () => {
   it('uses the largest whole unit', () => {
@@ -68,5 +75,52 @@ describe('withAlpha', () => {
   it('passes anything it cannot parse straight through', () => {
     expect(withAlpha('rebeccapurple', 0.2)).toBe('rebeccapurple');
     expect(withAlpha('', 0.2)).toBe('');
+  });
+});
+
+describe('washFor', () => {
+  // One series can carry a visible wash; several cannot, because where
+  // they overlap the alphas add up.
+  it('fades out as the series multiply, and gives up past three', () => {
+    const one = washFor(1, false)!;
+    const three = washFor(3, false)!;
+    expect(one.top).toBeGreaterThan(three.top);
+    expect(washFor(4, false)).toBeNull();
+    expect(washFor(8, true)).toBeNull();
+  });
+
+  // The same alpha that reads as a tint on white is a rumour at night.
+  it('shades harder on a dark surface', () => {
+    expect(washFor(1, true)!.top).toBeGreaterThan(washFor(1, false)!.top);
+    expect(washFor(2, true)!.floor).toBeGreaterThan(washFor(2, false)!.floor);
+  });
+
+  // A wash that drops away to nothing puts all its colour under the
+  // highest peak and leaves the rest of the line looking unfilled.
+  it('keeps a floor under the fade', () => {
+    for (const count of [1, 2, 3]) {
+      for (const dark of [true, false]) {
+        const wash = washFor(count, dark)!;
+        expect(wash.floor).toBeGreaterThan(0);
+        expect(wash.floor).toBeLessThan(wash.top);
+        expect(wash.top).toBeLessThan(0.5); // a fill, not a block of colour
+      }
+    }
+  });
+});
+
+describe('isDarkSurface', () => {
+  it('reads the theme off the surface colour', () => {
+    expect(isDarkSurface('#11161f')).toBe(true);
+    expect(isDarkSurface('#ffffff')).toBe(false);
+    expect(isDarkSurface('#f7f8fa')).toBe(false);
+  });
+
+  // The token can be missing or in a notation this does not parse; a
+  // light surface is the safer guess, because the lighter wash is the
+  // one that cannot drown a line.
+  it('assumes light when it cannot tell', () => {
+    expect(isDarkSurface('')).toBe(false);
+    expect(isDarkSurface('oklch(0.2 0.02 250)')).toBe(false);
   });
 });

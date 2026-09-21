@@ -14,7 +14,14 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import uPlot from 'uplot';
 import type { Series } from '../../core/api/types';
 import { Theme } from '../../core/theme/theme.service';
-import { formatDuration, formatValue, formatAxisValue, withAlpha } from './metric-format';
+import {
+  formatAxisValue,
+  formatDuration,
+  formatValue,
+  isDarkSurface,
+  washFor,
+  withAlpha,
+} from './metric-format';
 
 /** The eight categorical slots, in fixed order. Never cycled. */
 const SERIES_SLOTS = 8;
@@ -196,13 +203,42 @@ export class MetricChart {
       );
     }
 
+    // How strongly to shade under a line.
+    //
+    // One series can carry a visible wash; several cannot, because
+    // where they overlap the alphas add up and the chart turns to soup.
+    // Past three, the lines have to speak for themselves.
+    //
+    // And a translucent colour carries further on white than on a dark
+    // surface: the same alpha that reads as a tint in daylight is a
+    // rumour at night. The theme is read from the surface token rather
+    // than from matchMedia, so the manual switch counts too.
+    const dark = isDarkSurface(token('--surface'));
+    const wash = washFor(series.length, dark);
+
     for (const [i, s] of series.entries()) {
       const byTime = new Map((s.points ?? []).map((p) => [p.t, p]));
+      const colour = colours[i % SERIES_SLOTS];
       data.push(times.map((t) => byTime.get(t)?.avg ?? null));
       plotSeries.push({
         label: s.label,
-        stroke: colours[i % SERIES_SLOTS],
+        stroke: colour,
         width: 2,
+        ...(wash
+          ? {
+              fill: verticalWash(colour, wash.top, wash.floor),
+              // Only when the whole range sits above zero: then there is
+              // no baseline on screen and shading to the bottom edge is
+              // what a monitoring chart is read as. When zero is in
+              // range, uPlot fills to it, which is the honest reading -
+              // and the only one that makes sense for a series that goes
+              // negative.
+              fillTo: (u: uPlot) => {
+                const min = u.scales['y']?.min ?? 0;
+                return min > 0 ? min : 0;
+              },
+            }
+          : {}),
         // Markers only once the points are sparse enough to be distinct;
         // a dot on every sample of a dense series is a thick line.
         points: { show: (_u, _i, i0, i1) => i1 - i0 < 40, size: 5 },
@@ -256,4 +292,48 @@ export class MetricChart {
     });
     this.observer.observe(element);
   }
+}
+
+/**
+ * A wash under a line: the series colour at the top, fading out
+ * downwards.
+ *
+ * A flat fill at this strength reads as a block of colour with a line
+ * on top of it - the shape a stock ticker draws, where the area is the
+ * point. Here the line is the point and the fill is only there to give
+ * it a body, so it fades: strongest where it meets the line, gone by
+ * the bottom of the plot.
+ */
+function verticalWash(colour: string, alpha: number, floor: number) {
+  return (u: uPlot, seriesIdx: number): CanvasGradient | string => {
+    const bottom = u.bbox.top + u.bbox.height;
+
+    // Anchored to the series, not to the plot box. Anchored to the box,
+    // how strong the wash looks depends on where the line happens to
+    // sit: a series drawn across the lower third gets the faded end of
+    // the gradient and reads as having no fill at all. Starting at the
+    // series' own high point means the wash is always at full strength
+    // where it meets the line.
+    let top = u.bbox.top;
+    const values = u.data[seriesIdx] as (number | null)[] | undefined;
+    if (values) {
+      let highest: number | null = null;
+      for (const v of values) {
+        if (v !== null && v !== undefined && (highest === null || v > highest)) {
+          highest = v;
+        }
+      }
+      if (highest !== null) {
+        top = Math.min(bottom - 1, Math.max(u.bbox.top, u.valToPos(highest, 'y', true)));
+      }
+    }
+
+    const gradient = u.ctx.createLinearGradient(0, top, 0, bottom);
+    gradient.addColorStop(0, withAlpha(colour, alpha));
+    // Not all the way to nothing: a wash that ends at zero leaves the
+    // bottom of a tall plot looking like the line stopped having an
+    // underside.
+    gradient.addColorStop(1, withAlpha(colour, floor));
+    return gradient;
+  };
 }

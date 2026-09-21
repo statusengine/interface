@@ -1,24 +1,18 @@
 # Statusengine Web Interface
 
+> [!WARNING]  
+> This project is 100% vibe coded. Currently I have no need for the Statusengine
+> Web Interface. I use it primarily as an AI playground.
+> Other then the Statusengine Worker, which is used in production on hundreds of
+> systems. In case you are looking for a human made web interface, take a look
+> at [openITCOCKPIT](https://openitcockpit.io)
+
 An operations interface for [Statusengine](https://statusengine.org) and Naemon.
 It reads monitoring data from MySQL, submits external commands through the
 Statusengine worker, and ships as a single binary with the frontend embedded.
 
 Naemon, the broker module, the Statusengine worker and MySQL are upstream
 systems. This repository is the web interface and its API.
-
-## Status
-
-| Phase | Scope | State |
-|---|---|---|
-| 1 | Scaffolding, authentication, roles, demo mode, responsive shell | done |
-| 2 | Dashboard, hosts, services, problems, downtimes, acknowledgements, log entries | done |
-| 3 | History pages, performance charts, metrics provider abstraction | done |
-| 4 | External commands, live updates with polling fallback | done |
-| 5 | Accessibility pass, edge cases, hardening | done |
-
-Pages from a later phase are already routed and permission-guarded; they
-say which phase they belong to rather than showing a spinner.
 
 ## Requirements
 

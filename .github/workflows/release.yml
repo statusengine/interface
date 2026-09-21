@@ -48,11 +48,8 @@ jobs:
           RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
         run: tools/release/publish.sh "${{ github.ref_name }}" dist
 
-      # Keeps the artifacts reachable even if publishing fails, so a
-      # broken token does not mean building everything again.
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: seid-${{ github.ref_name }}
-          path: dist/
-          if-no-files-found: warn
+      # The archives are attached to the release itself. There is no
+      # upload-artifact step on purpose: v4 needs an artifact API that
+      # Gitea's runner does not serve, and v3 no longer works on GitHub,
+      # so it is the one step that cannot be written for both. If
+      # publishing fails, fix the token and re-run the workflow.

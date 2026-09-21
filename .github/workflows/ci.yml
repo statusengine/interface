@@ -3,9 +3,10 @@
 # reason it lives in .github rather than .gitea.
 name: CI
 
+# Every branch, not just main: the work happens on feature branches, and
+# a check that only runs after a merge is a check that reports too late.
 on:
   push:
-    branches: [main]
   pull_request:
 
 jobs:
@@ -13,6 +14,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # What this runner actually has. A first run on a new runner fails
+      # for boring reasons - no make, no bash, an old git - and this
+      # turns "something went wrong in step 4" into one line of answer.
+      - name: The tools this runner brought
+        run: |
+          set -x
+          bash --version | head -1
+          git --version
+          curl --version | head -1
+          make --version | head -1
+          uname -sm
 
       - uses: actions/setup-go@v5
         with:

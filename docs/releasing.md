@@ -63,6 +63,28 @@ Before the first tag:
       there. That is Gitea's default; an air-gapped runner needs
       `DEFAULT_ACTIONS_URL` pointed at a mirror.
 
+There is deliberately no `actions/upload-artifact` step. Its v4 needs an
+artifact API that Gitea's runner does not serve, and its v3 no longer
+works on GitHub - it is the one step that cannot be written for both
+forges at once. The archives are attached to the release, and a failed
+publish is a re-run.
+
+## Moving to GitHub
+
+Nothing in the workflows is Gitea-specific. On GitHub:
+
+- `secrets.GITHUB_TOKEN` is provided automatically and can create
+  releases, so `RELEASE_TOKEN` becomes unnecessary - the fallback in
+  `release.yml` already prefers whichever exists.
+- `publish.sh` notices `api.github.com` and switches to GitHub's upload
+  host and encoding on its own. `publish-test.sh` covers that path.
+- The `permissions: contents: write` block in `release.yml` is what
+  GitHub needs and Gitea ignores.
+
+The one thing worth doing on the day of the move is pushing a
+`v0.0.0-rc` tag first and deleting the release afterwards, the same way
+the pipeline was tried out here.
+
 ## Trying it without publishing anything
 
 `publish.sh` will show exactly what it would create:

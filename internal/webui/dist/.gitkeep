@@ -1,0 +1,2 @@
+# Keeps this directory in git so go:embed always has something to
+# point at. The built frontend lands here and is ignored.

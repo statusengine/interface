@@ -44,15 +44,65 @@ worker_events_key: ""
 # --- Sessions --------------------------------------------------------------
 
 session_ttl: 12h
-# Turn this on whenever the interface is served over TLS.
+# Turn this on whenever the browser reaches the interface over TLS. It
+# marks the session cookie Secure and sends HSTS.
 secure_cookies: false
+
+# Failed logins allowed per address per window, which is what makes
+# online guessing slow.
+login_rate_limit: 10
+login_rate_window: 1m
 
 # --- Demo mode -------------------------------------------------------------
 
-# Offers a read-only account on the login page. The account is created on
-# start and every external command it submits is refused.
+# Offers an account on the login page that signs in with one click. The
+# account is created on start.
 demo_mode: false
 demo_user: guest
+
+# What that account may submit. Empty means it can only read, which is
+# the default and the right setting unless you decided otherwise.
+#
+# Allowed names: acknowledge, downtime, reschedule, submit-result,
+# toggle. Each is one right - acknowledging and removing an
+# acknowledgement are the same one, as are scheduling a downtime and
+# cancelling it.
+#
+# "notify" is refused here whatever you write: a custom notification
+# mails and pages the real contacts of whatever is being monitored.
+#
+# Read docs/security.md before turning this on for something reachable
+# from the internet.
+demo_commands: []
+
+# --- Limits ----------------------------------------------------------------
+
+# Command submissions allowed per caller per minute. Every command that
+# gets through becomes work for the monitoring core, so this bounds what
+# the interface can ask of it. A negative number switches it off.
+command_rate_limit: 60
+
+# The same for the demo account, which is shared by everybody trying it,
+# plus a ceiling on how many objects one of its commands may address.
+demo_command_rate_limit: 10
+demo_max_targets: 25
+
+# Concurrent event-stream connections. Each is cheap; the limit is there
+# so one client cannot hold them until the process runs out of file
+# descriptors.
+max_event_clients: 500
+
+# --- Command audit ---------------------------------------------------------
+
+# Every submitted command is recorded in sei_command_audit, refusals
+# included. These two decide what that record keeps.
+
+# The caller's address. Right for an internal deployment, where the
+# question is who did this; a public demo records strangers.
+audit_client_ip: true
+
+# Drop records older than this many days. Zero keeps them forever.
+audit_retention_days: 0
 
 # --- Performance data ------------------------------------------------------
 

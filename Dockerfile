@@ -11,7 +11,7 @@ COPY frontend/ ./
 # angular.json already points the build at ../internal/webui/dist, which
 # from /build resolves to /internal/webui/dist. Leaving that alone keeps
 # the container build and a local `make build` producing the same layout.
-RUN npx ng build
+RUN npm run build
 
 FROM golang:1.26-alpine AS backend
 WORKDIR /src

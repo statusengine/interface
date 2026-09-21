@@ -1,0 +1,38 @@
+# Runs on Gitea Actions, which reads these files and speaks GitHub's
+# workflow syntax. The same file works on GitHub unchanged, which is the
+# reason it lives in .github rather than .gitea.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          # Caching needs the runner's cache service. Turn it on once
+          # that is known to work; a cache miss that fails the build is
+          # worse than a build that takes another minute.
+          cache: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm --prefix frontend ci
+
+      # Everything CI checks lives in the repository, so a failure here
+      # can be reproduced with one command instead of by pushing again.
+      - run: tools/ci/checks.sh
+
+      # The publishing path cannot be tried out by running it - the
+      # first real attempt creates a public release - so it is checked
+      # against a stand-in forge on every change.
+      - run: tools/release/publish-test.sh

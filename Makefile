@@ -20,6 +20,28 @@ build-api: ## Build the binary without a frontend (API only, fast)
 frontend: ## Build the Angular bundle into internal/webui/dist
 	cd frontend && npm run build
 
+# Platforms a release ships. Statusengine runs on servers; these are the
+# two that matter, and both are static so they run anywhere with a libc
+# or without one.
+PLATFORMS ?= linux/amd64 linux/arm64
+
+.PHONY: dist
+dist: frontend ## Cross-compile release archives into dist/ (VERSION=v1.2.3)
+	@rm -rf dist && mkdir -p dist
+	@for platform in $(PLATFORMS); do \
+		os=$${platform%/*}; arch=$${platform#*/}; \
+		name=seid_$(VERSION)_$${os}_$${arch}; \
+		echo "building $$name"; \
+		mkdir -p dist/$$name; \
+		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch \
+			go build -trimpath -ldflags "$(LDFLAGS)" -o dist/$$name/seid ./cmd/seid || exit 1; \
+		cp README.md seid.example.yaml dist/$$name/; \
+		tar -czf dist/$$name.tar.gz -C dist $$name; \
+		rm -rf dist/$$name; \
+	done
+	@cd dist && sha256sum *.tar.gz > SHA256SUMS
+	@echo; ls -lh dist/; echo; cat dist/SHA256SUMS
+
 .PHONY: deps
 deps: ## Install frontend dependencies
 	cd frontend && npm ci
@@ -31,6 +53,10 @@ dev-api: ## Run the API on :8090 (pair with `make dev-ui`)
 .PHONY: dev-ui
 dev-ui: ## Run the Angular dev server on :4200, proxying /api to :8090
 	cd frontend && npm start
+
+.PHONY: ci
+ci: ## Run everything CI runs, the way CI runs it
+	tools/ci/checks.sh
 
 .PHONY: test
 test: test-go test-ui test-i18n ## Run every test
@@ -44,7 +70,7 @@ test-i18n: ## Check both translation files against the code that uses them
 	node tools/i18n/check.mjs
 
 .PHONY: test-integration
-test-integration: ## Run the repository tests against a real Statusengine schema (read-only)
+test-integration: ## Run the repository and audit tests against a real schema (point at a test database)
 	@test -n "$(SEI_TEST_DSN)" || { \
 		echo "SEI_TEST_DSN is not set. Example:"; \
 		echo "  make test-integration SEI_TEST_DSN='user:pass@tcp(127.0.0.1:3306)/statusengine'"; \

@@ -1,0 +1,58 @@
+# Cuts a release from a version tag: builds the binaries, then creates
+# the release and uploads them.
+#
+#   git tag -a v1.2.3 -m "v1.2.3" && git push origin v1.2.3
+#
+# Works on Gitea Actions and on GitHub; publish.sh handles the one place
+# the two APIs differ. docs/releasing.md has the prerequisites.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The release notes are the commit subjects since the previous
+          # tag, and a shallow checkout has neither the tags nor the
+          # history to find them.
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm --prefix frontend ci
+
+      # A tag that does not pass the checks is not a release. This is
+      # the same script CI runs on every push, so a green branch stays
+      # green here unless the tag points somewhere else.
+      - run: tools/ci/checks.sh
+
+      - name: Build the archives
+        run: make dist VERSION=${{ github.ref_name }}
+
+      - name: Publish
+        env:
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+        run: tools/release/publish.sh "${{ github.ref_name }}" dist
+
+      # Keeps the artifacts reachable even if publishing fails, so a
+      # broken token does not mean building everything again.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: seid-${{ github.ref_name }}
+          path: dist/
+          if-no-files-found: warn

@@ -285,6 +285,20 @@ Worth knowing before filing a bug:
   partition by `time DIV 86400`, note that MySQL does not prune for that
   expression, so the clustering above is still what carries the cost.
 
+## Releasing
+
+Pushing a tag builds the release. `docs/releasing.md` has the details;
+the short version:
+
+```bash
+git tag -a v1.2.3 -m "v1.2.3" && git push origin v1.2.3
+```
+
+That produces a static `seid` for linux/amd64 and linux/arm64, each with
+the frontend compiled in, plus `SHA256SUMS`, and attaches them to a
+release whose notes are the commits since the previous tag. The
+workflows are written for Gitea Actions and work unchanged on GitHub.
+
 ## Testing
 
 ```bash
@@ -305,6 +319,10 @@ themes, plus the four command dialogs, and a keyboard-only walkthrough
 that asserts every tab stop is visible and has a focus ring. The colour
 tokens are not eyeballed: every text colour is computed against all
 three surfaces of its theme and must clear 4.5:1.
+
+`make ci` runs exactly what the pipeline runs, from the same script, so
+a red build can be reproduced without pushing another commit to find
+out what broke.
 
 The repository tests can also run against a real Statusengine schema.
 They are skipped unless a DSN is given:

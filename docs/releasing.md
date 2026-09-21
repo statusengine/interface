@@ -103,9 +103,9 @@ and the list of files - and sends nothing.
 ## When something goes wrong
 
 - **The release exists but has no files.** The upload step failed after
-  the release was created. The archives are still attached to the
-  workflow run as an artifact; download them and run `publish.sh`
-  locally, or delete the release and push the tag again.
+  the release was created. Delete the release in the web interface and
+  re-run the workflow, or build locally with `make dist VERSION=v1.2.3`
+  and attach the archives by hand.
 - **The workflow never starts.** No runner has the `ubuntu-latest`
   label, or Actions is off for the repository.
 - **`pattern all:dist: no matching files found`.** The frontend was not

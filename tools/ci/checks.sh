@@ -47,10 +47,23 @@ if [ "$what" = all ] || [ "$what" = frontend ]; then
   run "translations" node tools/i18n/check.mjs
 fi
 
+build_everything() {
+  # make is not on every runner image, and a check suite that cannot run
+  # because of that tells you nothing about the code. The fallback does
+  # the same two steps the Makefile does.
+  if command -v make > /dev/null; then
+    make build
+  else
+    echo "no make on this machine; building directly"
+    npm --prefix frontend run build \
+      && go build -trimpath -o seid ./cmd/seid
+  fi
+}
+
 if [ "$what" = all ]; then
   # Last, because it is the slowest and the least likely to be the
   # reason somebody is reading this output.
-  run "build" make build
+  run "build" build_everything
 fi
 
 if [ ${#failed[@]} -gt 0 ]; then

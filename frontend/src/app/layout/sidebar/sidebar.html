@@ -9,13 +9,9 @@
     class="flex h-12 items-center gap-2.5 border-b border-line px-3"
     [class.justify-center]="collapsed()"
   >
-    <!-- The mark is the state rail itself: three bars, one per severity.
-         It is the same device the tables use, so the logo teaches it. -->
-    <span class="flex items-end gap-[3px]" aria-hidden="true">
-      <span class="block h-3.5 w-[3px] rounded-full bg-ok"></span>
-      <span class="block h-2.5 w-[3px] rounded-full bg-warning"></span>
-      <span class="block h-4.5 w-[3px] rounded-full bg-critical"></span>
-    </span>
+    <!-- Decorative: the product name is right beside it, and when the
+         rail is collapsed the page title still carries it. -->
+    <img src="logo-mark.svg" width="22" height="22" alt="" class="shrink-0" />
     @if (!collapsed()) {
       <span class="truncate text-[13px] font-semibold tracking-tight">Statusengine</span>
     }

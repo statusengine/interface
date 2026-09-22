@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Statusengine">
+  <!-- The Statusengine brand mark. The source of truth lives in the
+       documentation repository, at brand/statusengine-mark.svg with the
+       raster exports beside it. Nothing in either build keeps the copies in
+       step, so a change there is a change here. -->
+  <!-- An area chart on the brand gradient: metrics are what Statusengine
+       moves, and the filled area is what separates this from the plain
+       polyline. The area closes on its own baseline rather than running to
+       the tile edge, so the chart reads as one element with room around it. -->
+  <defs>
+    <linearGradient id="se-mark-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c9503d"/>
+      <stop offset="1" stop-color="#8c2f24"/>
+    </linearGradient>
+    <linearGradient id="se-mark-area" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".6"/>
+      <stop offset="1" stop-color="#fff" stop-opacity=".1"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="url(#se-mark-bg)"/>
+  <path d="M6.4 24V17.6L12.8 12.8 19.2 19.2 25.6 9.6V24Z" fill="url(#se-mark-area)"/>
+  <path d="M6.4 17.6 12.8 12.8 19.2 19.2 25.6 9.6"
+        fill="none" stroke="#fff" stroke-width="2.4"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

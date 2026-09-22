@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- The state rail, the device the whole interface is built on: three
-       bars, one per severity. -->
-  <rect width="32" height="32" rx="6" fill="#161d27"/>
-  <rect x="7"  y="12" width="4" height="13" rx="2" fill="#3cb37f"/>
-  <rect x="14" y="15" width="4" height="10" rx="2" fill="#dfa23c"/>
-  <rect x="21" y="7"  width="4" height="18" rx="2" fill="#ef5a5f"/>
-</svg>

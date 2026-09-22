@@ -82,6 +82,8 @@ interface UnitGroup {
                 [series]="group.series"
                 [unit]="group.unit"
                 [bucketSeconds]="bucketSeconds()"
+                [from]="windowFrom()"
+                [to]="windowTo()"
               />
             }
           </div>
@@ -106,6 +108,11 @@ export class MetricsPanel {
   readonly from = computed(() => this.window()?.from);
   readonly to = computed(() => this.window()?.to);
   readonly bucketSeconds = computed(() => this.result()?.bucket_seconds ?? 0);
+
+  // The window the server answered for, so every chart draws the span
+  // that was asked for rather than the span that happened to have data.
+  readonly windowFrom = computed(() => this.result()?.from ?? 0);
+  readonly windowTo = computed(() => this.result()?.to ?? 0);
 
   /** The earliest sample the service has, so an empty window can say how
    *  far back there is anything to see. */

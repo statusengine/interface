@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  axisRange,
   formatAxisValue,
   formatDuration,
   formatValue,
@@ -122,5 +123,29 @@ describe('isDarkSurface', () => {
   it('assumes light when it cannot tell', () => {
     expect(isDarkSurface('')).toBe(false);
     expect(isDarkSurface('oklch(0.2 0.02 250)')).toBe(false);
+  });
+});
+
+describe('axisRange', () => {
+  // A chart that fits itself to the data answers a different question
+  // than the one that was asked.
+  it('draws the window that was requested', () => {
+    expect(axisRange(1000, 5000, 3000, 4000, 60)).toEqual([1000, 5000]);
+    // Even when the data is only a sliver of it: the gap is the point.
+    expect(axisRange(1000, 5000, 4900, 4950, 60)).toEqual([1000, 5000]);
+  });
+
+  // A zero-width range is where uPlot invents one of its own, and one
+  // sample renders as an axis running from 2026 to 2029.
+  it('widens a single point into something drawable', () => {
+    expect(axisRange(0, 0, 1790095680, 1790095680, 60)).toEqual([1790095620, 1790095740]);
+    // No bucket size to go by: a minute either side.
+    expect(axisRange(0, 0, 100, 100, 0)).toEqual([40, 160]);
+  });
+
+  it('falls back to the data when there is no window', () => {
+    expect(axisRange(0, 0, 100, 200, 60)).toEqual([100, 200]);
+    // A window that makes no sense is not a window.
+    expect(axisRange(500, 100, 100, 200, 60)).toEqual([100, 200]);
   });
 });

@@ -15,6 +15,7 @@ import uPlot from 'uplot';
 import type { Series } from '../../core/api/types';
 import { Theme } from '../../core/theme/theme.service';
 import {
+  axisRange,
   formatAxisValue,
   formatDuration,
   formatValue,
@@ -114,6 +115,20 @@ export class MetricChart {
   readonly series = input.required<Series[]>();
   readonly unit = input('');
   readonly bucketSeconds = input(0);
+
+  /** The window the data was asked for, in unix seconds.
+   *
+   * Without it the axis fits whatever came back, which is wrong twice
+   * over. A gap rescales the axis silently, so "the last six hours"
+   * quietly becomes "the two hours that happen to have data". And a
+   * single point has no range at all: uPlot invents one, and a six-hour
+   * window renders as an axis running from 2026 to 2029. That is not a
+   * hypothetical - it is what a chart looks like the first time anybody
+   * opens it after the monitoring was down.
+   */
+  readonly from = input(0);
+  readonly to = input(0);
+
   readonly height = input(180);
 
   /** Index of the point under the cursor, or null. */
@@ -159,6 +174,10 @@ export class MetricChart {
       this.observer?.disconnect();
       this.plot?.destroy();
     });
+  }
+
+  private xRange(): uPlot.Scale['range'] {
+    return (_u, min, max) => axisRange(this.from(), this.to(), min, max, this.bucketSeconds());
   }
 
   private render(): void {
@@ -255,7 +274,7 @@ export class MetricChart {
         y: false,
         points: { size: 7 },
       },
-      scales: { x: { time: true } },
+      scales: { x: { time: true, range: this.xRange() } },
       axes: [
         {
           stroke: ink,

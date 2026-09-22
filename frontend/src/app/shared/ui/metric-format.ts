@@ -101,3 +101,34 @@ export function washFor(count: number, dark: boolean): { top: number; floor: num
   }
   return null;
 }
+
+/**
+ * What the time axis should span.
+ *
+ * The requested window wins whenever there is one: a chart that fits
+ * itself to the data answers a different question than the one that was
+ * asked. "The last six hours" quietly becomes "the two hours that
+ * happen to have data", and the gap - which is usually the interesting
+ * part - disappears along with it.
+ *
+ * Without a window, the data's own extent, widened when every point
+ * lands on the same timestamp. A zero-width range is where uPlot
+ * invents one of its own, and a single sample renders as an axis
+ * running from 2026 to 2029.
+ */
+export function axisRange(
+  from: number,
+  to: number,
+  dataMin: number,
+  dataMax: number,
+  pad: number,
+): [number, number] {
+  if (from > 0 && to > from) {
+    return [from, to];
+  }
+  if (dataMin === dataMax) {
+    const width = pad > 0 ? pad : 60;
+    return [dataMin - width, dataMax + width];
+  }
+  return [dataMin, dataMax];
+}

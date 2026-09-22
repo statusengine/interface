@@ -16,14 +16,12 @@
   },
 
   "require": {
-    "php": ">=5.5.9",
+    "php": ">=7.4",
     "ext-ldap": "*",
     "ext-json": "*",
     "slim/slim": "^3.7",
-    "symfony/yaml": "2.8",
-    "symfony/console": "2.8",
-    "crate/crate-dbal":"*",
-    "crate/crate-pdo":">=0.6.0",
+    "symfony/yaml": "^5.",
+    "symfony/console": "^5.",
     "slim/csrf": "^0.8.1",
     "guzzlehttp/guzzle": "~6.0"
   },

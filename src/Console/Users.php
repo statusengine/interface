@@ -78,7 +78,13 @@ class Users extends Command {
             case 'add':
                 $helper = $this->getHelper('question');
                 $username = $input->getOption('username');
+                if($username === null){
+                    $username = '';
+                }
                 $password = $input->getOption('password');
+                if($password === null){
+                    $password = '';
+                }
 
                 if (mb_strlen($username) == 0) {
                     $question = new Question('Please enter a username' . PHP_EOL);
@@ -124,7 +130,13 @@ class Users extends Command {
             case 'edit':
                 $helper = $this->getHelper('question');
                 $username = $input->getOption('username');
+                if($username === null){
+                    $username = '';
+                }
                 $password = $input->getOption('password');
+                if($password === null){
+                    $password = '';
+                }
 
                 if (mb_strlen($username) == 0) {
                     $question = new Question('Please enter the username of the user, you want to modify' . PHP_EOL);
@@ -171,6 +183,9 @@ class Users extends Command {
             case 'delete':
                 $helper = $this->getHelper('question');
                 $username = $input->getOption('username');
+                if($username === null){
+                    $username = '';
+                }
                 if (mb_strlen($username) == 0) {
                     $question = new Question('Please enter a username' . PHP_EOL);
                     $question->setAutocompleterValues($this->getUsersForAutocompletion());
@@ -210,6 +225,7 @@ class Users extends Command {
                 $table->render();
                 break;
         }
+        return 0;
     }
 
     /**

@@ -331,8 +331,7 @@ $app->get('/serviceperfdata', function (Request $request, Response $response) {
     $params = $request->getQueryParams();
 
 
-    $Config = new \Statusengine\Config();
-    $StorageBackend = new \Statusengine\Backend\StorageBackend(new \Statusengine\Backend\Crate\Crate($Config), $Config);
+    $StorageBackend = $this->get('StorageBackend');
 
     $ServicePerfdataController = new \Statusengine\Controller\ServicePerfdata(
         $StorageBackend->getServicePerfdataLoader()

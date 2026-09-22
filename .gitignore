@@ -15,6 +15,7 @@ node_modules/
 /frontend/dist/
 
 # Local configuration and credentials
+/.claude/
 /seid.yaml
 /config.local.yaml
 *.local.yaml

@@ -29,6 +29,8 @@ FROM alpine:3.21
 RUN apk add --no-cache ca-certificates tzdata \
     && adduser -D -u 10001 seid
 COPY --from=backend /out/seid /usr/local/bin/seid
+# The binary carries other people's code; their licences travel with it.
+COPY LICENSE THIRD-PARTY-NOTICES.md /usr/share/doc/statusengine-interface/
 USER 10001
 # Inside a container the loopback default would make the service
 # unreachable from anywhere, so the image binds all interfaces and leaves

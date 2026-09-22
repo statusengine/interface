@@ -37,6 +37,7 @@ gofmt_check() {
 
 if [ "$what" = all ] || [ "$what" = go ]; then
   run "go vet" go vet ./...
+  run "licences" ./tools/licenses/collect.sh --check
   run "gofmt" gofmt_check
   run "go test" go test ./...
 fi

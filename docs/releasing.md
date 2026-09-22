@@ -18,11 +18,16 @@ workflow file, so any of it can be run by hand:
 | `make dist VERSION=v1.2.3` | The release archives and their checksums, in `dist/` |
 | `tools/release/publish.sh v1.2.3 dist` | Creates the release and uploads the archives |
 | `tools/release/publish-test.sh` | Proves `publish.sh` still speaks both forge APIs |
+| `tools/licenses/collect.sh` | Regenerates `THIRD-PARTY-NOTICES.md` after a dependency change |
 
 ## What a release contains
 
 One archive per platform - `linux/amd64` and `linux/arm64` - each with
-the `seid` binary, `seid.example.yaml` and the README. The binary is
+the `seid` binary, `seid.example.yaml`, the README, the licence and the
+third-party notices. The last one matters: the frontend is compiled into
+the binary, so a release carries Angular, uPlot, the IBM Plex fonts, the
+MySQL driver and several Go libraries, and their licences ask to travel
+with the copy. The binary is
 static (`CGO_ENABLED=0`), built with `-trimpath`, and carries its version:
 
 ```

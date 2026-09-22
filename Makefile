@@ -35,7 +35,7 @@ dist: frontend ## Cross-compile release archives into dist/ (VERSION=v1.2.3)
 		mkdir -p dist/$$name; \
 		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch \
 			go build -trimpath -ldflags "$(LDFLAGS)" -o dist/$$name/seid ./cmd/seid || exit 1; \
-		cp README.md seid.example.yaml dist/$$name/; \
+		cp README.md LICENSE THIRD-PARTY-NOTICES.md seid.example.yaml dist/$$name/; \
 		tar -czf dist/$$name.tar.gz -C dist $$name; \
 		rm -rf dist/$$name; \
 	done

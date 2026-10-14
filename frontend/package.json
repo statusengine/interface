@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "@angular/build": "^21.2.24",
-    "@angular/cli": "^21.2.24",
+    "@angular/cli": "^21.2.26",
     "@angular/compiler-cli": "^21.2.0",
     "@jsverse/transloco-keys-manager": "^8.1.1",
     "@tailwindcss/postcss": "^4.3.3",
